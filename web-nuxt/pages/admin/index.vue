@@ -5,6 +5,21 @@ definePageMeta({ layout: 'admin', middleware: 'admin' })
 const api = useApi()
 const { data: stats, refresh } = await useAsyncData('admin-stats', () => api.get<any>('/api/v1/admin/stats'))
 const s = computed(() => (stats.value as any) ?? {})
+
+const refreshing = ref(false)
+async function doRefresh() {
+  refreshing.value = true
+  try { await refresh() } finally { refreshing.value = false }
+}
+onMounted(() => {
+  document.addEventListener('visibilitychange', onVis)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', onVis)
+})
+function onVis() {
+  if (document.visibilityState === 'visible') doRefresh()
+}
 </script>
 
 <template>
@@ -40,7 +55,7 @@ const s = computed(() => (stats.value as any) ?? {})
     </div>
 
     <div class="mt-6 flex gap-2">
-      <AppButton @click="refresh">刷新数据</AppButton>
+      <AppButton :loading="refreshing" @click="doRefresh">刷新数据</AppButton>
     </div>
   </div>
 </template>

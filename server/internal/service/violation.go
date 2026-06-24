@@ -28,10 +28,10 @@ func (s *ViolationService) Create(ctx context.Context, userID, photoID uint64, r
 		Status: model.ViolationStatusUnhandled,
 	}
 	if userID > 0 {
-		v.UserID = &userID
+		v.UserID = userID
 	}
 	if photoID > 0 {
-		v.PhotoID = &photoID
+		v.PhotoID = photoID
 	}
 	if err := s.db.WithContext(ctx).Create(v).Error; err != nil {
 		return nil, fmt.Errorf("create violation: %w", err)

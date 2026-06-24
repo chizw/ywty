@@ -42,7 +42,7 @@ type CreateAlbumReq struct {
 func (s *AlbumService) Create(ctx context.Context, userID uint64, req CreateAlbumReq) (*AlbumDTO, error) {
 	uid := userID
 	a := &model.Album{
-		UserID:   &uid,
+		UserID:   uid,
 		Name:     req.Name,
 		Intro:    req.Intro,
 		IsPublic: req.IsPublic,

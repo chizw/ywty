@@ -30,7 +30,7 @@ type AdminCouponReq struct {
 	Code       string  `json:"code" binding:"required"`
 	Value      float64 `json:"value" binding:"required"`
 	UsageLimit uint    `json:"usage_limit"`
-	ExpiredAt  *int64  `json:"expired_at"`
+	ExpiredAt  int64   `json:"expired_at"`
 }
 
 // List 分页列表
@@ -141,7 +141,7 @@ func (s *CouponService) Validate(ctx context.Context, code string, amount uint) 
 		return nil, 0, err
 	}
 
-	if coupon.ExpiredAt != nil && time.Now().Unix() > *coupon.ExpiredAt {
+	if coupon.ExpiredAt != 0 && time.Now().Unix() > coupon.ExpiredAt {
 		return nil, 0, bizerr.BadRequest.WithMessage("优惠券已过期")
 	}
 	if coupon.UsageLimit == 0 {

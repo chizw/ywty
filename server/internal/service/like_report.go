@@ -76,7 +76,7 @@ type CreateReportReq struct {
 // Create 提交举报
 func (s *ReportService) Create(ctx context.Context, userID uint64, ip string, req CreateReportReq) (*model.Report, error) {
 	r := &model.Report{
-		ReportUserID:   &userID,
+		ReportUserID:   userID,
 		ReportableType: req.TargetType,
 		ReportableID:   req.TargetID,
 		Content:        req.Content,

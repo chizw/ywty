@@ -83,7 +83,7 @@ function fmtTime(s: any) {
         v-model="keyword"
         placeholder="搜索用户名/邮箱/姓名"
         class="flex-1 max-w-sm px-3 py-2 border border-gray-300 rounded-md"
-        @keyup.enter="refresh"
+        @keyup.enter="() => refresh()"
       />
       <AppButton @click="refresh">搜索</AppButton>
     </div>

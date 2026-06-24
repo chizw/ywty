@@ -3,10 +3,10 @@
 const { t } = useI18n()
 const api = useApi()
 
-// 获取最新图片
+// 获取最新公开图片（无需鉴权）
 const { data: latestData } = await useAsyncData('home-latest', async () => {
   try {
-    return await api.get<any[]>('/api/v1/photos', { query: { page: 1, per_page: 12, sort: 'created_at', order: 'desc' } })
+    return await api.get<any>('/api/v1/public/photos', { query: { page: 1, per_page: 12 } })
   } catch {
     return []
   }
@@ -37,9 +37,16 @@ useSeoMeta({
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <div
+    :class="[
+      'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8',
+      latestPhotos.length === 0
+        ? 'min-h-[calc(100vh-12rem)] flex items-center justify-center'
+        : 'py-12',
+    ]"
+  >
     <!-- Hero 区域 -->
-    <div class="text-center mb-12">
+    <div class="text-center w-full">
       <h1 class="text-5xl font-bold text-gray-900">云雾图驿</h1>
       <p class="mt-3 text-lg text-gray-600">自托管图床 / 云相册 · 重构版</p>
       <div class="mt-8 flex items-center justify-center gap-4">

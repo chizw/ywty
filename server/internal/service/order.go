@@ -54,7 +54,7 @@ func (s *OrderService) CreatePlanOrder(ctx context.Context, userID uint64, req C
 	}
 
 	amount := uint(price.Price)
-	var couponID *uint64
+	var couponID uint64
 	if req.CouponCode != "" {
 		var c model.Coupon
 		if err := s.db.WithContext(ctx).Where("code = ?", req.CouponCode).First(&c).Error; err != nil {
@@ -64,13 +64,13 @@ func (s *OrderService) CreatePlanOrder(ctx context.Context, userID uint64, req C
 			return nil, err
 		}
 		now := time.Now().Unix()
-		if c.ExpiredAt != nil && *c.ExpiredAt < now {
+		if c.ExpiredAt < now {
 			return nil, bizerr.BadRequest.WithMessage("优惠券已过期")
 		}
 		if c.UsageLimit == 0 {
 			return nil, bizerr.BadRequest.WithMessage("优惠券已用完")
 		}
-		couponID = &c.ID
+		couponID = c.ID
 		switch c.Type {
 		case model.CouponTypeDirect:
 			amount = uint(math.Max(0, float64(amount)-math.Round(c.Value*100)))
@@ -83,8 +83,8 @@ func (s *OrderService) CreatePlanOrder(ctx context.Context, userID uint64, req C
 	expiredAt := time.Now().Add(30 * time.Minute).Unix()
 
 	order := &model.Order{
-		PlanID:       &req.PlanID,
-		UserID:       &userID,
+		PlanID:       req.PlanID,
+		UserID:       userID,
 		CouponID:     couponID,
 		TradeNo:      tradeNo,
 		OutTradeNo:   tradeNo,
@@ -223,18 +223,18 @@ func (s *OrderService) HandlePaid(ctx context.Context, tradeNo, outTradeNo, payM
 			return err
 		}
 
-		if o.PlanID == nil || o.UserID == nil {
+		if o.PlanID == 0 {
 			return nil
 		}
 
 		var capacities []model.PlanCapacity
-		if err := tx.Where("plan_id = ?", *o.PlanID).Find(&capacities).Error; err != nil {
+		if err := tx.Where("plan_id = ?", o.PlanID).Find(&capacities).Error; err != nil {
 			return err
 		}
 		for _, pc := range capacities {
 			uc := model.UserCapacity{
-				UserID:   *o.UserID,
-				OrderID:  &o.ID,
+				UserID:   o.UserID,
+				OrderID:  o.ID,
 				Capacity: pc.Capacity,
 				From:     model.CapacityFromOrder,
 			}
@@ -244,15 +244,15 @@ func (s *OrderService) HandlePaid(ctx context.Context, tradeNo, outTradeNo, payM
 		}
 
 		var groups []model.PlanGroup
-		if err := tx.Where("plan_id = ?", *o.PlanID).Find(&groups).Error; err != nil {
+		if err := tx.Where("plan_id = ?", o.PlanID).Find(&groups).Error; err != nil {
 			return err
 		}
 		for _, pg := range groups {
-			if pg.GroupID != nil {
+			if pg.GroupID != 0 {
 				ug := model.UserGroup{
-					UserID:  *o.UserID,
-					GroupID: *pg.GroupID,
-					OrderID: &o.ID,
+					UserID:  o.UserID,
+					GroupID: pg.GroupID,
+					OrderID: o.ID,
 					From:    model.GroupFromOrder,
 				}
 				if err := tx.Create(&ug).Error; err != nil {
@@ -261,8 +261,8 @@ func (s *OrderService) HandlePaid(ctx context.Context, tradeNo, outTradeNo, payM
 			}
 		}
 
-		if o.CouponID != nil {
-			if err := tx.Model(&model.Coupon{}).Where("id = ?", *o.CouponID).
+		if o.CouponID != 0 {
+			if err := tx.Model(&model.Coupon{}).Where("id = ?", o.CouponID).
 				Update("usage_limit", gorm.Expr("usage_limit - ?", 1)).Error; err != nil {
 				return err
 			}

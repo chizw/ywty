@@ -155,6 +155,8 @@ func New(opt *Options) *gin.Engine {
 		// 公开
 		verifyH.Mount(v1)
 		authH.Mount(v1, nil) // auth.Mount 内部处理
+		// 公开图片列表（无需鉴权）
+		v1.GET("/public/photos", photoH.ListPublic)
 
 		// 鉴权
 		authMW := auth.Middleware(opt.DB, issuer)

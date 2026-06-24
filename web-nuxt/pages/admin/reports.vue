@@ -36,7 +36,7 @@ function fmtTime(s: any) {
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-2xl font-bold text-gray-900">举报管理</h1>
       <div class="flex gap-2">
-        <select v-model="filterStatus" class="px-3 py-2 text-sm border border-gray-300 rounded-md" @change="refresh">
+        <select v-model="filterStatus" class="px-3 py-2 text-sm border border-gray-300 rounded-md" @change="() => refresh()">
           <option value="">全部</option>
           <option value="unhandled">未处理</option>
           <option value="handled">已处理</option>

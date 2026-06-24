@@ -2,6 +2,7 @@
 import { useAuthStore } from '~/stores/auth'
 import { useApi } from '~/composables/useApi'
 import type { TokenPair } from '~/types/api'
+import type { UserInfo } from '~/types/api'
 
 export function useAuth() {
   const store = useAuthStore()

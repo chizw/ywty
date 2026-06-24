@@ -34,22 +34,6 @@ export interface UploadResult {
   html: string
 }
 
-export interface PhotoData {
-  id: number
-  name: string
-  pathname: string
-  mimetype: string
-  size: number
-  is_public: boolean
-}
-
-export interface UploadResult {
-  photo: PhotoData
-  url: string
-  markdown: string
-  html: string
-}
-
 export interface ApiResponse<T = unknown> {
   code: number
   message: string

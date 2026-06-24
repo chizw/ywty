@@ -68,8 +68,8 @@ func (s *TagService) Delete(ctx context.Context, id uint64) error {
 // Attach 绑定标签到资源
 func (s *TagService) Attach(ctx context.Context, userID, tagID uint64, targetType string, targetID uint64) error {
 	rel := &model.Taggable{
-		TagID:        &tagID,
-		UserID:       &userID,
+		TagID:        tagID,
+		UserID:       userID,
 		TaggableType: targetType,
 		TaggableID:   targetID,
 	}

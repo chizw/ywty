@@ -3,10 +3,10 @@ package model
 // Album 相册
 type Album struct {
 	Base
-	UserID   *uint64 `gorm:"index" json:"user_id,omitempty"`                // 用户
-	Name     string  `gorm:"size:255;not null;default:''" json:"name"`      // 名称
-	Intro    string  `gorm:"size:2000;not null;default:''" json:"intro"`    // 介绍
-	IsPublic bool    `gorm:"not null;default:false;index" json:"is_public"` // 是否公开
+	UserID   uint64 `gorm:"index" json:"user_id"`                            // 用户
+	Name     string `gorm:"size:255;not null;default:''" json:"name"`        // 名称
+	Intro    string `gorm:"size:2000;not null;default:''" json:"intro"`      // 介绍
+	IsPublic bool   `gorm:"not null;default:false;index" json:"is_public"`   // 是否公开
 }
 
 // TableName 指定表名

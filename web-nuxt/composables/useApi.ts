@@ -1,6 +1,6 @@
 // 统一 API 客户端：自动注入 access token、统一错误处理、统一返回 data
 import { useAuthStore } from '~/stores/auth'
-import type { ApiResponse } from '~/types/api'
+import type { ApiResponse, TokenPair } from '~/types/api'
 
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'

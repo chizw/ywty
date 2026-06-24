@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // 图片上传组件：拖拽 / 粘贴 / 批量选择，独立进度条，缩略图预览，失败重试
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { NUpload, NProgress, NButton } from 'naive-ui'
+import { ref, computed, onMounted, onBeforeUnmount, triggerRef, watch } from 'vue'
+import { NUpload, NButton } from 'naive-ui'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import { useAuthStore } from '~/stores/auth'
 import type { UploadResult } from '~/types/api'
@@ -96,6 +96,7 @@ function uploadTask(item: TaskItem, callbacks?: UploadCallbacks) {
   item.status = 'uploading'
   item.progress = 0
   item.errorMsg = undefined
+  triggerRef(tasks)
 
   const formData = new FormData()
   formData.append('file', item.file)
@@ -110,8 +111,16 @@ function uploadTask(item: TaskItem, callbacks?: UploadCallbacks) {
   }
 
   xhr.upload.onprogress = (e: ProgressEvent) => {
-    if (e.lengthComputable) {
-      item.progress = Math.ceil((e.loaded / e.total) * 100)
+    if (e.lengthComputable && e.total > 0) {
+      item.progress = Math.min(99, Math.ceil((e.loaded / e.total) * 100))
+      triggerRef(tasks)
+    }
+  }
+
+  xhr.upload.onload = () => {
+    if (item.progress < 100) {
+      item.progress = 99
+      triggerRef(tasks)
     }
   }
 
@@ -124,23 +133,27 @@ function uploadTask(item: TaskItem, callbacks?: UploadCallbacks) {
           item.status = 'success'
           item.progress = 100
           item.result = data
+          triggerRef(tasks)
           emit('uploaded', data)
           callbacks?.onFinish?.()
         } else {
           item.status = 'error'
           item.errorMsg = '响应数据异常'
+          triggerRef(tasks)
           emit('error', `${item.name} 上传失败：响应数据异常`)
           callbacks?.onError?.()
         }
       } catch {
         item.status = 'error'
         item.errorMsg = '解析响应失败'
+        triggerRef(tasks)
         emit('error', `${item.name} 上传失败：解析响应失败`)
         callbacks?.onError?.()
       }
     } else {
       item.status = 'error'
       item.errorMsg = `HTTP ${xhr.status}`
+      triggerRef(tasks)
       emit('error', `${item.name} 上传失败：HTTP ${xhr.status}`)
       callbacks?.onError?.()
     }
@@ -149,6 +162,7 @@ function uploadTask(item: TaskItem, callbacks?: UploadCallbacks) {
   xhr.onerror = () => {
     item.status = 'error'
     item.errorMsg = '网络错误'
+    triggerRef(tasks)
     emit('error', `${item.name} 上传失败：网络错误`)
     callbacks?.onError?.()
   }
@@ -253,6 +267,54 @@ function formatSize(bytes: number): string {
 
 const hasPending = computed(() => tasks.value.some((t) => t.status === 'pending'))
 const successCount = computed(() => tasks.value.filter((t) => t.status === 'success').length)
+const errorCount = computed(() => tasks.value.filter((t) => t.status === 'error').length)
+const uploadingCount = computed(() => tasks.value.filter((t) => t.status === 'uploading').length)
+const pendingCount = computed(() => tasks.value.filter((t) => t.status === 'pending').length)
+const totalCount = computed(() => tasks.value.length)
+const isAllDone = computed(() => totalCount.value > 0 && uploadingCount.value === 0 && pendingCount.value === 0)
+const hasFailures = computed(() => errorCount.value > 0)
+
+// 整体进度：按文件 size 加权平均
+const overallProgress = computed(() => {
+  const list = tasks.value
+  if (list.length === 0) return 0
+  const totalSize = list.reduce((s, t) => s + (t.size || 0), 0)
+  if (totalSize === 0) {
+    // size 缺失时退化为按文件数等权
+    const sum = list.reduce((s, t) => s + t.progress, 0)
+    return Math.ceil(sum / list.length)
+  }
+  const sum = list.reduce((s, t) => s + (t.progress * (t.size || 0)), 0)
+  return Math.ceil(sum / totalSize)
+})
+
+// 详情展开：上传中默认折叠（节省空间），全部完成后默认折叠，可点击展开
+const showDetail = ref(false)
+watch(isAllDone, (v) => {
+  // 上传完毕后 2s 自动折叠
+  if (v) {
+    setTimeout(() => {
+      if (isAllDone.value) showDetail.value = false
+    }, 2000)
+  }
+})
+
+function clearFinished() {
+  // 仅清除 success 的任务，保留 error / uploading / pending
+  for (let i = tasks.value.length - 1; i >= 0; i--) {
+    const t = tasks.value[i]
+    if (t.status === 'success') {
+      if (t.preview) URL.revokeObjectURL(t.preview)
+      tasks.value.splice(i, 1)
+    }
+  }
+}
+
+function retryAllFailed() {
+  for (const t of tasks.value) {
+    if (t.status === 'error') retryTask(t)
+  }
+}
 </script>
 
 <template>
@@ -288,66 +350,99 @@ const successCount = computed(() => tasks.value.filter((t) => t.status === 'succ
         <NButton type="primary" @click="uploadPending">上传全部</NButton>
       </div>
 
-      <!-- 文件列表 + 独立进度条 -->
-      <div v-if="tasks.length > 0" class="mt-4 space-y-3">
+      <!-- 聚合进度条（始终单行，不占大量空间） -->
+      <div
+        v-if="totalCount > 0"
+        class="mt-3 bg-white border border-gray-200 rounded-lg p-3"
+      >
+        <!-- 状态行 -->
+        <div class="flex items-center gap-3 text-sm">
+          <div class="flex-1 min-w-0">
+            <span v-if="uploadingCount > 0 || pendingCount > 0" class="text-gray-800">
+              正在上传 <b class="text-primary-600">{{ totalCount }}</b> 个文件
+              <span v-if="successCount > 0" class="text-green-600">· 已完成 {{ successCount }}</span>
+              <span v-if="errorCount > 0" class="text-red-500">· 失败 {{ errorCount }}</span>
+            </span>
+            <span v-else-if="isAllDone && errorCount > 0" class="text-red-600">
+              上传完成 · 成功 {{ successCount }} · 失败 {{ errorCount }}
+            </span>
+            <span v-else class="text-green-600">
+              上传完成 · 成功 {{ successCount }} 个文件
+            </span>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              v-if="hasFailures && isAllDone"
+              class="px-2 py-1 text-xs border border-red-300 text-red-600 rounded hover:bg-red-50"
+              @click="retryAllFailed"
+            >重试失败</button>
+            <button
+              v-if="isAllDone && successCount > 0"
+              class="px-2 py-1 text-xs text-gray-500 hover:text-gray-700"
+              @click="clearFinished"
+            >清除已完成</button>
+            <button
+              class="px-2 py-1 text-xs text-primary-600 hover:underline"
+              @click="showDetail = !showDetail"
+            >{{ showDetail ? '收起' : '详情' }} {{ showDetail ? '▴' : '▾' }}</button>
+          </div>
+        </div>
+        <!-- 整体进度条 -->
+        <div class="mt-2 w-full bg-gray-200 rounded-full overflow-hidden" style="height: 4px;">
+          <div
+            class="h-full rounded-full transition-all duration-200 ease-out"
+            :class="hasFailures && isAllDone ? 'bg-red-500' : (isAllDone ? 'bg-green-500' : 'bg-primary-600')"
+            :style="{ width: overallProgress + '%' }"
+          ></div>
+        </div>
+      </div>
+
+      <!-- 文件详情列表（按需展开，默认折叠） -->
+      <div v-if="showDetail && totalCount > 0" class="mt-2 max-h-72 overflow-y-auto space-y-2 pr-1">
         <div
           v-for="task in tasks"
           :key="task.id"
-          class="flex items-center gap-3 bg-gray-50 px-3 py-2 rounded"
+          class="flex items-center gap-2 bg-gray-50 px-2 py-1.5 rounded text-sm"
         >
           <!-- 缩略图预览 -->
-          <div class="w-12 h-12 flex-shrink-0 bg-gray-200 rounded overflow-hidden">
+          <div class="w-8 h-8 flex-shrink-0 bg-gray-200 rounded overflow-hidden">
             <img :src="task.preview" :alt="task.name" class="w-full h-full object-cover" />
           </div>
 
-          <!-- 文件信息 + 进度条 -->
+          <!-- 文件名 + 进度条 -->
           <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center justify-between text-xs">
               <span class="truncate text-gray-800">{{ task.name }}</span>
-              <span class="text-xs text-gray-500 ml-2 shrink-0">{{ formatSize(task.size) }}</span>
+              <span class="text-gray-500 ml-2 shrink-0">
+                <template v-if="task.status === 'success'">✓</template>
+                <template v-else-if="task.status === 'error'">✕</template>
+                <template v-else>{{ task.progress }}%</template>
+                · {{ formatSize(task.size) }}
+              </span>
             </div>
-            <div class="mt-1">
-              <NProgress
-                v-if="task.status === 'uploading' || task.status === 'success'"
-                :percentage="task.progress"
-                :status="task.status === 'success' ? 'success' : 'default'"
-                :show-indicator="false"
-                :height="6"
-              />
-              <div v-else-if="task.status === 'pending'" class="text-xs text-gray-400">
-                等待上传...
-              </div>
-              <div v-else class="text-xs text-red-500">
-                {{ task.errorMsg || '上传失败' }}
-              </div>
+            <div class="mt-1 w-full bg-gray-200 rounded-full overflow-hidden" style="height: 3px;">
+              <div
+                class="h-full rounded-full transition-all duration-200 ease-out"
+                :class="task.status === 'success' ? 'bg-green-500' : (task.status === 'error' ? 'bg-red-500' : 'bg-primary-600')"
+                :style="{ width: task.progress + '%' }"
+              ></div>
             </div>
           </div>
 
           <!-- 操作按钮 -->
           <div class="flex-shrink-0 flex gap-1 items-center">
-            <NButton
-              v-if="task.status === 'error'"
-              size="tiny"
-              type="primary"
-              ghost
-              @click="retryTask(task)"
-            >
-              重试
-            </NButton>
             <button
-              class="text-red-500 text-xs px-1 hover:text-red-700"
+              v-if="task.status === 'error'"
+              class="text-primary-600 text-xs px-1 hover:underline"
+              @click="retryTask(task)"
+            >重试</button>
+            <button
+              class="text-gray-400 hover:text-red-500 text-sm px-1"
               title="移除"
               @click="removeTask(task)"
-            >
-              ✕
-            </button>
+            >✕</button>
           </div>
         </div>
-      </div>
-
-      <!-- 汇总 -->
-      <div v-if="successCount > 0" class="mt-3 text-xs text-gray-500">
-        已成功上传 {{ successCount }} 张
       </div>
     </div>
 

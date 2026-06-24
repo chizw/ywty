@@ -14,7 +14,7 @@ type Coupon struct {
 	Code       string  `gorm:"size:64;not null;uniqueIndex" json:"code"`          // 券码
 	Value      float64 `gorm:"type:decimal(8,2);not null;default:0" json:"value"` // 金额或折扣率
 	UsageLimit uint    `gorm:"not null;default:1" json:"usage_limit"`             // 可使用次数
-	ExpiredAt  *int64  `gorm:"index" json:"expired_at,omitempty"`                 // 到期时间
+	ExpiredAt  int64   `gorm:"index;default:0" json:"expired_at"`                 // 到期时间
 }
 
 // TableName 指定表名

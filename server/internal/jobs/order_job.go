@@ -113,12 +113,12 @@ func (h *Handlers) HandleOrderPaid(ctx context.Context, t *asynq.Task) error {
 			return err
 		}
 
-		if order.PlanID == nil || *order.PlanID == 0 {
+		if order.PlanID == 0 {
 			return nil
 		}
 
 		var plan model.Plan
-		if err := tx.First(&plan, *order.PlanID).Error; err != nil {
+		if err := tx.First(&plan, order.PlanID).Error; err != nil {
 			return err
 		}
 
@@ -136,16 +136,16 @@ func (h *Handlers) HandleOrderPaid(ctx context.Context, t *asynq.Task) error {
 		}
 
 		// 套餐容量：从关联的 PlanCapacity 取
-		var capacity float64
+		var capacity int64
 		var pc model.PlanCapacity
-		if err := tx.Where("plan_id = ?", *order.PlanID).First(&pc).Error; err == nil {
+		if err := tx.Where("plan_id = ?", order.PlanID).First(&pc).Error; err == nil {
 			capacity = pc.Capacity
 		}
 
 		// 创建订阅
 		sub := model.Subscription{
-			UserID:    derefUint64(order.UserID),
-			PlanID:    *order.PlanID,
+			UserID:    order.UserID,
+			PlanID:    order.PlanID,
 			OrderID:   order.ID,
 			StartedAt: now,
 			ExpireAt:  time.Now().AddDate(0, 0, duration).Unix(),
@@ -158,7 +158,7 @@ func (h *Handlers) HandleOrderPaid(ctx context.Context, t *asynq.Task) error {
 		// 调整用户容量：累加 plan 容量
 		if capacity > 0 {
 			if err := tx.Model(&model.User{}).
-				Where("id = ?", *order.UserID).
+				Where("id = ?", order.UserID).
 				Update("storage_quota", gorm.Expr("COALESCE(storage_quota, 0) + ?", capacity)).Error; err != nil {
 				return err
 			}
@@ -172,14 +172,7 @@ func (h *Handlers) HandleOrderPaid(ctx context.Context, t *asynq.Task) error {
 
 	logger.L.Info("order paid processed",
 		zap.String("trade_no", order.TradeNo),
-		zap.Uint64("user_id", derefUint64(order.UserID)),
+		zap.Uint64("user_id", order.UserID),
 	)
 	return nil
-}
-
-func derefUint64(p *uint64) uint64 {
-	if p == nil {
-		return 0
-	}
-	return *p
 }

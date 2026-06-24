@@ -92,6 +92,35 @@ func (h *PhotoHandler) Upload(c *gin.Context) {
 }
 
 // List GET /api/v1/photos?page=1&per_page=20
+// ListPublic GET /api/v1/public/photos
+// 公开浏览接口：仅返回 is_public=true 的图片
+func (h *PhotoHandler) ListPublic(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+	if page <= 0 {
+		page = 1
+	}
+	if perPage <= 0 || perPage > 100 {
+		perPage = 20
+	}
+	photos, total, err := h.svc.ListPublic(c.Request.Context(), page, perPage)
+	if err != nil {
+		response.Fail(c, err)
+		return
+	}
+	lastPage := (int(total) + perPage - 1) / perPage
+	if lastPage == 0 {
+		lastPage = 1
+	}
+	response.Page(c, photos, response.PageMeta{
+		CurrentPage: page,
+		PerPage:     perPage,
+		Total:       total,
+		LastPage:    lastPage,
+	})
+}
+
+// List GET /api/v1/photos?page=1&per_page=20
 func (h *PhotoHandler) List(c *gin.Context) {
 	uid, ok := auth.CurrentUserID(c)
 	if !ok {
@@ -206,6 +235,34 @@ func (h *PhotoHandler) BatchDelete(c *gin.Context) {
 	response.Success(c, gin.H{"deleted": n})
 }
 
+// BatchUpdate PATCH /api/v1/photos/batch-update
+// 批量更新公开/私有等字段（仅 is_public / name / intro）
+func (h *PhotoHandler) BatchUpdate(c *gin.Context) {
+	uid, ok := auth.CurrentUserID(c)
+	if !ok {
+		response.FailCode(c, bizerr.Unauthorized)
+		return
+	}
+	var req struct {
+		IDs      []uint64 `json:"ids" binding:"required,min=1"`
+		IsPublic *bool    `json:"is_public,omitempty"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailCode(c, bizerr.BadRequest.WithMessage(err.Error()))
+		return
+	}
+	if req.IsPublic == nil {
+		response.FailCode(c, bizerr.BadRequest.WithMessage("no updatable field"))
+		return
+	}
+	n, err := h.svc.BatchUpdatePublic(c.Request.Context(), req.IDs, uid, *req.IsPublic)
+	if err != nil {
+		response.Fail(c, err)
+		return
+	}
+	response.Success(c, gin.H{"updated": n})
+}
+
 // MoveToAlbum POST /api/v1/photos/:id/move-to-album
 func (h *PhotoHandler) MoveToAlbum(c *gin.Context) {
 	uid, ok := auth.CurrentUserID(c)
@@ -272,6 +329,7 @@ func (h *PhotoHandler) Mount(rg *gin.RouterGroup, mw gin.HandlerFunc) {
 	g.GET("/:id", mw, h.Get)
 	g.POST("", mw, h.Upload)
 	g.POST("/batch-delete", mw, h.BatchDelete)
+	g.PATCH("/batch-update", mw, h.BatchUpdate)
 	g.PATCH("/:id", mw, h.Update)
 	g.DELETE("/:id", mw, h.Delete)
 	g.POST("/:id/move-to-album", mw, h.MoveToAlbum)

@@ -35,9 +35,9 @@ func (PlanPrice) TableName() string { return "plan_prices" }
 
 // PlanGroup 计划可用组（中间表，无时间戳）
 type PlanGroup struct {
-	ID      uint64  `gorm:"primaryKey;autoIncrement" json:"id"`
-	PlanID  uint64  `gorm:"not null;index" json:"plan_id"`   // 计划
-	GroupID *uint64 `gorm:"index" json:"group_id,omitempty"` // 角色组
+	ID      uint64 `gorm:"primaryKey;autoIncrement" json:"id"`
+	PlanID  uint64 `gorm:"not null;index" json:"plan_id"`  // 计划
+	GroupID uint64 `gorm:"index;default:0" json:"group_id"` // 角色组
 }
 
 // TableName 指定表名
@@ -45,9 +45,9 @@ func (PlanGroup) TableName() string { return "plan_groups" }
 
 // PlanCapacity 计划可用容量
 type PlanCapacity struct {
-	ID       uint64  `gorm:"primaryKey;autoIncrement" json:"id"`
-	PlanID   uint64  `gorm:"not null;index" json:"plan_id"`                         // 计划
-	Capacity float64 `gorm:"type:decimal(20,0);not null;default:0" json:"capacity"` // 容量(kb)
+	ID       uint64 `gorm:"primaryKey;autoIncrement" json:"id"`
+	PlanID   uint64 `gorm:"not null;index" json:"plan_id"`                         // 计划
+	Capacity int64  `gorm:"type:decimal(20,0);not null;default:0" json:"capacity"` // 容量(字节)
 }
 
 // TableName 指定表名

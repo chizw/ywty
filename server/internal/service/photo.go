@@ -117,7 +117,7 @@ func (s *PhotoService) Upload(ctx context.Context, userID uint64, filename strin
 
 	// 入库
 	photo := &model.Photo{
-		UserID:    &userID,
+		UserID:    userID,
 		Name:      name,
 		Intro:     opt.Intro,
 		Filename:  filepath.Base(filename),
@@ -126,7 +126,7 @@ func (s *PhotoService) Upload(ctx context.Context, userID uint64, filename strin
 		Extension: ext,
 		MD5:       md5Hex,
 		SHA1:      sha1Hex,
-		Size:      float64(len(buf)) / 1024, // 保留为 kb
+		Size:      int64(len(buf)), // 字节
 		IsPublic:  opt.IsPublic,
 		Status:    model.PhotoStatusNormal,
 	}
@@ -156,7 +156,27 @@ func (s *PhotoService) Upload(ctx context.Context, userID uint64, filename strin
 	}, nil
 }
 
-// List 列出我的图片
+// ListPublic 列出公开的图片（is_public = true）
+func (s *PhotoService) ListPublic(ctx context.Context, page, perPage int) ([]model.Photo, int64, error) {
+	if page <= 0 {
+		page = 1
+	}
+	if perPage <= 0 || perPage > 100 {
+		perPage = 20
+	}
+	var photos []model.Photo
+	var total int64
+	q := s.db.WithContext(ctx).Model(&model.Photo{}).Where("is_public = ?", true)
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if err := q.Order("id DESC").Offset((page - 1) * perPage).Limit(perPage).Find(&photos).Error; err != nil {
+		return nil, 0, err
+	}
+	return photos, total, nil
+}
+
+// List 列出当前用户的图片
 func (s *PhotoService) List(ctx context.Context, userID uint64, page, perPage int) ([]model.Photo, int64, error) {
 	if page <= 0 {
 		page = 1
@@ -185,7 +205,7 @@ func (s *PhotoService) Get(ctx context.Context, id uint64, userID uint64) (*mode
 		}
 		return nil, err
 	}
-	if p.UserID == nil || *p.UserID != userID {
+	if p.UserID != userID {
 		return nil, bizerr.Forbidden
 	}
 	return &p, nil
@@ -200,7 +220,7 @@ func (s *PhotoService) Delete(ctx context.Context, id uint64, userID uint64) err
 		}
 		return err
 	}
-	if p.UserID == nil || *p.UserID != userID {
+	if p.UserID != userID {
 		return bizerr.Forbidden
 	}
 	// 软删 + 删除存储文件
@@ -239,6 +259,24 @@ func (s *PhotoService) BatchDelete(ctx context.Context, ids []uint64, userID uin
 	}
 	_ = s.db.WithContext(ctx).Where("photo_id IN ?", ids).Delete(&model.AlbumPhoto{}).Error
 	return len(rows), nil
+}
+
+// BatchUpdatePublic 批量设置公开/私有
+func (s *PhotoService) BatchUpdatePublic(ctx context.Context, ids []uint64, userID uint64, isPublic bool) (int, error) {
+	if len(ids) == 0 {
+		return 0, bizerr.BadRequest.WithMessage("ids required")
+	}
+	if len(ids) > 100 {
+		return 0, bizerr.BadRequest.WithMessage("too many ids")
+	}
+	res := s.db.WithContext(ctx).
+		Model(&model.Photo{}).
+		Where("id IN ? AND user_id = ?", ids, userID).
+		Update("is_public", isPublic)
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	return int(res.RowsAffected), nil
 }
 
 // MoveToAlbum 移入相册（albumID=0 表示移出）
@@ -289,7 +327,7 @@ func (s *PhotoService) Copy(ctx context.Context, photoID, userID uint64) (*model
 		src.MD5, time.Now().UnixNano()%1_000_000,
 		strings.TrimPrefix(src.Extension, "."),
 	)
-	if _, err := s.driver.Put(ctx, key, rd, int64(src.Size*1024), src.Mimetype); err != nil {
+	if _, err := s.driver.Put(ctx, key, rd, src.Size, src.Mimetype); err != nil {
 		return nil, bizerr.StorageUploadFail.WithCause(err)
 	}
 	dup := &model.Photo{

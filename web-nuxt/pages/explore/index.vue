@@ -5,7 +5,7 @@ const { t } = useI18n()
 
 const { data } = await useAsyncData('explore', async () => {
   try {
-    return await api.get<any[]>('/api/v1/photos', { query: { page: 1, per_page: 24 } })
+    return await api.get<any>('/api/v1/public/photos', { query: { page: 1, per_page: 24 } })
   } catch {
     return []
   }

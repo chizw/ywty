@@ -284,13 +284,13 @@ func (s *PlanService) GetPrices(ctx context.Context, planID uint64) ([]model.Pla
 	return rows, nil
 }
 
-// GetCapacities 获取套餐容量列表（KB）
-func (s *PlanService) GetCapacities(ctx context.Context, planID uint64) ([]float64, error) {
+// GetCapacities 获取套餐容量列表（字节）
+func (s *PlanService) GetCapacities(ctx context.Context, planID uint64) ([]int64, error) {
 	var rows []model.PlanCapacity
 	if err := s.db.WithContext(ctx).Where("plan_id = ?", planID).Order("id ASC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
-	out := make([]float64, len(rows))
+	out := make([]int64, len(rows))
 	for i, r := range rows {
 		out[i] = r.Capacity
 	}
@@ -305,8 +305,8 @@ func (s *PlanService) GetGroupIDs(ctx context.Context, planID uint64) ([]uint64,
 	}
 	out := make([]uint64, 0, len(rows))
 	for _, r := range rows {
-		if r.GroupID != nil {
-			out = append(out, *r.GroupID)
+		if r.GroupID != 0 {
+			out = append(out, r.GroupID)
 		}
 	}
 	return out, nil
@@ -333,7 +333,7 @@ func createPlanRelations(ctx context.Context, tx *gorm.DB, planID uint64, req Ad
 		for _, c := range req.Capacities {
 			caps = append(caps, model.PlanCapacity{
 				PlanID:   planID,
-				Capacity: c,
+				Capacity: int64(c),
 			})
 		}
 		if err := tx.WithContext(ctx).Create(&caps).Error; err != nil {
@@ -344,10 +344,9 @@ func createPlanRelations(ctx context.Context, tx *gorm.DB, planID uint64, req Ad
 	if len(req.GroupIDs) > 0 {
 		groups := make([]model.PlanGroup, 0, len(req.GroupIDs))
 		for _, gid := range req.GroupIDs {
-			gid := gid
 			groups = append(groups, model.PlanGroup{
 				PlanID:  planID,
-				GroupID: &gid,
+				GroupID: gid,
 			})
 		}
 		if err := tx.WithContext(ctx).Create(&groups).Error; err != nil {
