@@ -2,6 +2,8 @@
 // 分享管理
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
+import { Plus, Copy, ExternalLink, Trash2 } from '@lucide/vue'
+
 const api = useApi()
 
 const rawData = ref<any>(null)
@@ -32,16 +34,16 @@ const form = reactive({
   password: '',
   expire_minutes: 0,
 })
-const loading = ref(false)
+const creating = ref(false)
 const msg = ref('')
 
 async function create() {
   const ids = form.ids.split(/[,\s]+/).map((s) => Number(s.trim())).filter((n) => n > 0)
   if (ids.length === 0) {
-    msg.value = '请填写至少一个资源 ID'
+    msg.value = '请填写至少一个资�?ID'
     return
   }
-  loading.value = true
+  creating.value = true
   msg.value = ''
   try {
     const body: any = { type: form.type, ids }
@@ -57,7 +59,7 @@ async function create() {
   } catch (err: any) {
     msg.value = err?.statusMessage || '创建失败'
   } finally {
-    loading.value = false
+    creating.value = false
   }
 }
 
@@ -70,7 +72,7 @@ async function remove(id: number) {
 function copyUrl(slug: string) {
   const url = `${window.location.origin}/s/${slug}`
   navigator.clipboard?.writeText(url).then(
-    () => (msg.value = '链接已复制'),
+    () => (msg.value = '链接已复�?),
     () => (msg.value = '复制失败，请手动复制')
   )
 }
@@ -79,53 +81,75 @@ function copyUrl(slug: string) {
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-bold text-gray-900">分享管理</h1>
-      <AppButton @click="showCreate = !showCreate">{{ showCreate ? '取消' : '新建分享' }}</AppButton>
+      <h1 class="text-2xl font-bold text-foreground">分享管理</h1>
+      <Button @click="showCreate = !showCreate">
+        <Plus v-if="!showCreate" class="mr-2 h-4 w-4" />
+        {{ showCreate ? '取消' : '新建分享' }}
+      </Button>
     </div>
 
-    <div v-if="showCreate" class="mb-6 p-4 bg-white border border-gray-200 rounded-lg space-y-3">
-      <div>
-        <label class="block text-sm text-gray-700 mb-1">资源类型</label>
-        <select v-model="form.type" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-          <option value="photo">图片</option>
-          <option value="album">相册</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm text-gray-700 mb-1">资源 ID（多个用逗号或空格分隔）</label>
-        <input v-model="form.ids" placeholder="如 1,2,3" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
-      </div>
-      <div>
-        <label class="block text-sm text-gray-700 mb-1">访问密码（可选）</label>
-        <input v-model="form.password" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
-      </div>
-      <div>
-        <label class="block text-sm text-gray-700 mb-1">过期分钟数（0 = 永不过期）</label>
-        <input v-model.number="form.expire_minutes" type="number" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
-      </div>
-      <AppButton :loading="loading" @click="create">创建</AppButton>
-      <p v-if="msg" class="text-sm" :class="msg.includes('失败') ? 'text-red-500' : 'text-primary-600'">{{ msg }}</p>
-    </div>
+    <Card v-if="showCreate" class="mb-6">
+      <CardContent class="pt-6 space-y-3">
+        <div>
+          <Label>资源类型</Label>
+          <Select v-model="form.type">
+            <SelectTrigger class="mt-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="photo">图片</SelectItem>
+              <SelectItem value="album">相册</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>资源 ID（多个用逗号或空格分隔）</Label>
+          <Input v-model="form.ids" placeholder="�?1,2,3" class="mt-1" />
+        </div>
+        <div>
+          <Label>访问密码（可选）</Label>
+          <Input v-model="form.password" class="mt-1" />
+        </div>
+        <div>
+          <Label>过期分钟数（0 = 永不过期�?/Label>
+          <Input v-model.number="form.expire_minutes" type="number" min="0" class="mt-1" />
+        </div>
+        <Button :loading="creating" @click="create">创建</Button>
+        <p v-if="msg" class="text-sm" :class="msg.includes('失败') ? 'text-destructive' : 'text-green-600'">{{ msg }}</p>
+      </CardContent>
+    </Card>
 
-    <AppEmpty v-if="shares.length === 0" title="还没有分享" description="把图片或相册生成可分享链接" />
-    <div v-else class="bg-white border border-gray-200 rounded-lg divide-y">
-      <div v-for="s in shares" :key="s.id" class="flex items-center justify-between p-4">
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-medium text-gray-900">{{ s.type === 'photo' ? '图片' : '相册' }} 分享</span>
-            <span class="text-xs text-gray-500">#{{ s.id }}</span>
+    <AppEmpty v-if="shares.length === 0" title="还没有分�? description="把图片或相册生成可分享链�? />
+    <Card v-else>
+      <CardContent class="p-0 divide-y divide-border">
+        <div v-for="s in shares" :key="s.id" class="flex items-center justify-between p-4">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-medium text-foreground">{{ s.type === 'photo' ? '图片' : '相册' }} 分享</span>
+              <Badge variant="secondary">#{{ s.id }}</Badge>
+            </div>
+            <div class="mt-1 text-xs text-muted-foreground truncate">
+              /s/{{ s.slug }} · 浏览 {{ s.view_count ?? 0 }} �?              <span v-if="s.expired_at"> · 过期 {{ new Date(s.expired_at * 1000).toLocaleString() }}</span>
+            </div>
           </div>
-          <div class="mt-1 text-xs text-gray-500 truncate">
-            /s/{{ s.slug }} · 浏览 {{ s.view_count ?? 0 }} 次
-            <span v-if="s.expired_at"> · 过期 {{ new Date(s.expired_at * 1000).toLocaleString() }}</span>
+          <div class="flex gap-2">
+            <Button variant="outline" size="sm" @click="copyUrl(s.slug)">
+              <Copy class="mr-1 h-3 w-3" />
+              复制链接
+            </Button>
+            <a :href="`/s/${s.slug}`" target="_blank">
+              <Button variant="outline" size="sm">
+                <ExternalLink class="mr-1 h-3 w-3" />
+                查看
+              </Button>
+            </a>
+            <Button variant="ghost" size="sm" class="text-destructive hover:text-destructive" @click="remove(s.id)">
+              <Trash2 class="mr-1 h-3 w-3" />
+              删除
+            </Button>
           </div>
         </div>
-        <div class="flex gap-2">
-          <button class="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50" @click="copyUrl(s.slug)">复制链接</button>
-          <a :href="`/s/${s.slug}`" target="_blank" class="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50">查看</a>
-          <button class="px-2 py-1 text-xs text-red-500" @click="remove(s.id)">删除</button>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   </div>
 </template>

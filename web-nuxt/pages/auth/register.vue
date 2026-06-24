@@ -36,7 +36,7 @@ async function onSubmit() {
     <CardContent>
       <form class="space-y-4" @submit.prevent="onSubmit">
         <div class="space-y-2">
-          <Label for="reg-username">用户名</Label>
+          <Label for="reg-username">用户�?/Label>
           <Input id="reg-username" v-model="form.username" required minlength="3" maxlength="32" />
         </div>
         <div class="space-y-2">
@@ -59,8 +59,7 @@ async function onSubmit() {
     </CardContent>
     <CardFooter class="justify-center">
       <p class="text-sm text-muted-foreground">
-        已有账号？
-        <NuxtLink to="/auth/login" class="text-primary hover:underline">去登录</NuxtLink>
+        已有账号�?        <NuxtLink to="/auth/login" class="text-primary hover:underline">去登�?/NuxtLink>
       </p>
     </CardFooter>
   </Card>

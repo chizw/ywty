@@ -144,4 +144,159 @@ function formatCapacity(kb?: number) {
         <ArrowLeft class="h-3 w-3" />
         返回套餐列表
       </NuxtLink>
-      <h1 class="text-2xl font-bold text-foreground mt-1">{{ plan.name || '套餐详情' }}
+      <h1 class="text-2xl font-bold text-foreground mt-1">{{ plan.name || '套餐详情' }}</h1>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- 左侧：套餐信息 -->
+      <div class="lg:col-span-2 space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>套餐信息</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p v-if="plan.intro" class="text-sm text-muted-foreground mb-4">{{ plan.intro }}</p>
+
+            <div v-if="plan.features?.length" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <div
+                v-for="feature in plan.features"
+                :key="feature"
+                class="flex items-start gap-2 text-sm text-foreground"
+              >
+                <Check class="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                <span>{{ feature }}</span>
+              </div>
+            </div>
+
+            <div v-if="capacities.length" class="flex flex-wrap gap-2">
+              <span class="text-sm text-muted-foreground">包含容量：</span>
+              <Badge v-for="(c, idx) in capacities" :key="idx" variant="secondary">{{ formatCapacity(c) }}</Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>选择价格方案</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div v-if="prices.length" class="space-y-2">
+              <div
+                v-for="price in prices"
+                :key="price.id"
+                class="flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors"
+                :class="selectedPriceId === price.id ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'"
+                @click="selectedPriceId = price.id"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    class="h-4 w-4 rounded-full border-2 flex items-center justify-center"
+                    :class="selectedPriceId === price.id ? 'border-primary' : 'border-muted-foreground'"
+                  >
+                    <div v-if="selectedPriceId === price.id" class="h-2 w-2 rounded-full bg-primary" />
+                  </div>
+                  <div>
+                    <div class="text-sm font-medium text-foreground">{{ price.name }}</div>
+                    <div class="text-xs text-muted-foreground">时长 {{ price.duration }} 分钟</div>
+                  </div>
+                </div>
+                <div class="text-lg font-bold text-destructive">{{ formatPrice(price.price) }}</div>
+              </div>
+            </div>
+            <AppEmpty v-else title="暂无价格方案" description="该套餐暂时没有可购买的价格方案" />
+          </CardContent>
+        </Card>
+      </div>
+
+      <!-- 右侧：订单汇总 -->
+      <div class="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle class="flex items-center gap-2">
+              <Tag class="h-4 w-4" />
+              优惠券
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="flex gap-2">
+              <Input v-model="couponCode" placeholder="输入券码" class="flex-1" />
+              <Button :disabled="!couponCode.trim() || validating" :loading="validating" @click="validateCoupon">
+                校验
+              </Button>
+            </div>
+            <div v-if="couponInfo" class="mt-3 text-sm text-green-600">
+              抵扣金额：{{ formatPrice(discountAmount) }}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>订单汇总</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="space-y-3 text-sm">
+              <div class="flex justify-between">
+                <span class="text-muted-foreground">套餐</span>
+                <span>{{ plan.name }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-muted-foreground">方案</span>
+                <span>{{ selectedPrice?.name || '-' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-muted-foreground">原价</span>
+                <span>{{ formatPrice(selectedPrice?.price) }}</span>
+              </div>
+              <div v-if="discountAmount > 0" class="flex justify-between text-green-600">
+                <span>优惠抵扣</span>
+                <span>-{{ formatPrice(discountAmount) }}</span>
+              </div>
+              <div class="border-t border-border pt-3 flex justify-between items-center">
+                <span class="font-medium">应付金额</span>
+                <span class="text-xl font-bold text-destructive">{{ formatPrice(finalAmount) }}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>支付方式</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="space-y-2">
+              <div
+                v-for="m in payMethods"
+                :key="m.value"
+                class="flex items-center gap-3 p-2 rounded cursor-pointer transition-colors"
+                :class="selectedPayMethod === m.value ? 'bg-primary/5' : 'hover:bg-muted/50'"
+                @click="selectedPayMethod = m.value"
+              >
+                <div
+                  class="h-4 w-4 rounded-full border-2 flex items-center justify-center"
+                  :class="selectedPayMethod === m.value ? 'border-primary' : 'border-muted-foreground'"
+                >
+                  <div v-if="selectedPayMethod === m.value" class="h-2 w-2 rounded-full bg-primary" />
+                </div>
+                <span class="text-sm">{{ m.label }}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Alert v-if="selectedPayMethod === 'log'" variant="info">
+          <Info class="h-4 w-4" />
+          <AlertDescription class="text-xs">
+            日志支付方式仅用于测试，不会产生真实扣款。
+          </AlertDescription>
+        </Alert>
+
+        <Button size="lg" class="w-full" :loading="submitting" :disabled="!selectedPrice" @click="submitOrder">
+          <ShoppingCart class="mr-2 h-4 w-4" />
+          立即下单
+        </Button>
+      </div>
+    </div>
+  </div>
+</template>

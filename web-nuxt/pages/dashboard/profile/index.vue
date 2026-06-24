@@ -43,61 +43,77 @@ async function save() {
   saving.value = true
   try {
     await api.request('/api/v1/user/profile', { method: 'PATCH', body: form })
-    message.success('已保存')
+    message.success('已保�?)
   } catch (err: any) {
     message.error(err?.statusMessage || '保存失败')
   } finally {
     saving.value = false
   }
 }
+
+const navItems = [
+  { to: '/dashboard/profile', label: '基本信息', active: true },
+  { to: '/dashboard/profile/email', label: '更换邮箱', active: false },
+  { to: '/dashboard/profile/phone', label: '更换手机', active: false },
+  { to: '/dashboard/profile/password', label: '修改密码', active: false },
+  { to: '/dashboard/profile/social', label: '社交账号', active: false },
+]
 </script>
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">个人资料</h1>
+    <h1 class="text-2xl font-bold text-foreground mb-4">个人资料</h1>
 
     <div class="mb-6 flex flex-wrap gap-2">
-      <NuxtLink to="/dashboard/profile" class="px-3 py-1.5 text-sm rounded-md bg-primary-50 text-primary-700">基本信息</NuxtLink>
-      <NuxtLink to="/dashboard/profile/email" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">更换邮箱</NuxtLink>
-      <NuxtLink to="/dashboard/profile/phone" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">更换手机</NuxtLink>
-      <NuxtLink to="/dashboard/profile/password" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">修改密码</NuxtLink>
-      <NuxtLink to="/dashboard/profile/social" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">社交账号</NuxtLink>
+      <NuxtLink
+        v-for="item in navItems"
+        :key="item.to"
+        :to="item.to"
+        class="px-3 py-1.5 text-sm rounded-md"
+        :class="item.to === '/dashboard/profile' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'"
+      >{{ item.label }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="text-center py-12 text-gray-500">加载中...</div>
+    <Skeleton v-if="loading" class="h-64 w-full max-w-2xl" />
 
-    <form v-else class="bg-white border border-gray-200 rounded-lg p-6 space-y-4 max-w-2xl" @submit.prevent="save">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm text-gray-700 mb-1">姓名</label>
-          <input v-model="form.name" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-700 mb-1">所在地</label>
-          <input v-model="form.location" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-700 mb-1">个人网站</label>
-          <input v-model="form.url" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-700 mb-1">公司</label>
-          <input v-model="form.company" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-700 mb-1">职位</label>
-          <input v-model="form.company_title" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
-        </div>
-        <div>
-          <label class="block text-sm text-gray-700 mb-1">签名</label>
-          <input v-model="form.tagline" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
-        </div>
-      </div>
-      <div>
-        <label class="block text-sm text-gray-700 mb-1">个人简介</label>
-        <textarea v-model="form.bio" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
-      </div>
-      <AppButton type="submit" :loading="saving">保存</AppButton>
-    </form>
+    <Card v-else class="max-w-2xl">
+      <form @submit.prevent="save">
+        <CardContent class="pt-6 space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>姓名</Label>
+              <Input v-model="form.name" class="mt-1" />
+            </div>
+            <div>
+              <Label>所在地</Label>
+              <Input v-model="form.location" class="mt-1" />
+            </div>
+            <div>
+              <Label>个人网站</Label>
+              <Input v-model="form.url" class="mt-1" />
+            </div>
+            <div>
+              <Label>公司</Label>
+              <Input v-model="form.company" class="mt-1" />
+            </div>
+            <div>
+              <Label>职位</Label>
+              <Input v-model="form.company_title" class="mt-1" />
+            </div>
+            <div>
+              <Label>签名</Label>
+              <Input v-model="form.tagline" class="mt-1" />
+            </div>
+          </div>
+          <div>
+            <Label>个人简�?/Label>
+            <Textarea v-model="form.bio" rows="3" class="mt-1" />
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button type="submit" :loading="saving">保存</Button>
+        </CardFooter>
+      </form>
+    </Card>
   </div>
 </template>

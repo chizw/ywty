@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// 照片批量操作组件：批量删除 / 移入相册 / 移出相册 / 公开 / 私有 / 分享 / 全选
-import { Button } from '~/components/ui/button'
+// 照片批量操作组件：批量删�?/ 移入相册 / 移出相册 / 公开 / 私有 / 分享 / 全�?import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import {
@@ -42,7 +41,7 @@ const sharePassword = ref('')
 const shareExpire = ref(0)
 const publicTarget = ref<boolean>(true)
 
-// --- 自定义确认弹窗（替代 confirm()）---
+// --- 自定义确认弹窗（替代 confirm()�?--
 const confirmState = reactive({
   show: false,
   title: '确认',
@@ -89,7 +88,7 @@ async function batchDelete() {
   if (!hasSelection.value) return
   const ok = await openConfirm({
     title: '批量删除',
-    message: `确定删除选中的 ${props.selectedIds.length} 张图片？此操作不可撤销。`,
+    message: `确定删除选中�?${props.selectedIds.length} 张图片？此操作不可撤销。`,
     okText: '全部删除',
     danger: true,
   })
@@ -97,7 +96,7 @@ async function batchDelete() {
   loading.value = true
   try {
     await api.post('/api/v1/photos/batch-delete', { ids: props.selectedIds })
-    message.success(`已删除 ${props.selectedIds.length} 张图片`)
+    message.success(`已删�?${props.selectedIds.length} 张图片`)
     clearSelection()
     emit('done')
   } catch (err: any) {
@@ -131,7 +130,7 @@ async function confirmMove() {
         fail++
       }
     }
-    if (fail === 0) message.success(`已移动 ${ok} 张图片到相册`)
+    if (fail === 0) message.success(`已移�?${ok} 张图片到相册`)
     else message.warning(`成功 ${ok} 张，失败 ${fail} 张`)
     showMoveModal.value = false
     clearSelection()
@@ -145,7 +144,7 @@ async function batchRemoveFromAlbum() {
   if (!hasSelection.value) return
   const ok = await openConfirm({
     title: '移出相册',
-    message: `将选中的 ${props.selectedIds.length} 张图片移出所有相册？`,
+    message: `将选中�?${props.selectedIds.length} 张图片移出所有相册？`,
     okText: '移出',
   })
   if (!ok) return
@@ -161,7 +160,7 @@ async function batchRemoveFromAlbum() {
         fail++
       }
     }
-    if (fail === 0) message.success(`已移出 ${ok2} 张图片`)
+    if (fail === 0) message.success(`已移�?${ok2} 张图片`)
     else message.warning(`成功 ${ok2} 张，失败 ${fail} 张`)
     clearSelection()
     emit('done')
@@ -184,7 +183,7 @@ async function confirmPublic() {
       is_public: publicTarget.value,
     })
     const n = (res as any)?.updated ?? props.selectedIds.length
-    message.success(`已${publicTarget.value ? '公开' : '转私有'} ${n} 张图片`)
+    message.success(`�?{publicTarget.value ? '公开' : '转私�?} ${n} 张图片`)
     showPublicModal.value = false
     clearSelection()
     emit('done')
@@ -209,7 +208,7 @@ async function confirmShare() {
     if (sharePassword.value) body.password = sharePassword.value
     if (shareExpire.value > 0) body.expire_minutes = shareExpire.value
     await api.post('/api/v1/shares', body)
-    message.success('已创建分享链接')
+    message.success('已创建分享链�?)
     showShareModal.value = false
     clearSelection()
     emit('done')
@@ -225,14 +224,13 @@ async function confirmShare() {
   <ClientOnly>
     <div class="flex flex-wrap items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg p-2">
       <span class="text-sm text-foreground px-2">
-        已选 <b class="text-primary">{{ selectedIds.length }}</b> 项
-      </span>
+        已�?<b class="text-primary">{{ selectedIds.length }}</b> �?      </span>
 
       <div class="flex-1" />
 
       <div class="flex items-center gap-1">
         <Button variant="outline" size="sm" :disabled="allIds.length === 0" @click="toggleSelectAll">
-          {{ allSelected ? '取消全选' : '全选' }}
+          {{ allSelected ? '取消全�? : '全�? }}
         </Button>
         <Button variant="outline" size="sm" :disabled="!hasSelection" @click="clearSelection">清空</Button>
       </div>
@@ -259,7 +257,7 @@ async function confirmShare() {
           <DialogTitle>移入相册</DialogTitle>
         </DialogHeader>
         <div class="space-y-3">
-          <p class="text-sm text-muted-foreground">将选中的 {{ selectedIds.length }} 张图片移入以下相册：</p>
+          <p class="text-sm text-muted-foreground">将选中�?{{ selectedIds.length }} 张图片移入以下相册：</p>
           <Select v-model="albumId">
             <SelectTrigger>
               <SelectValue placeholder="选择目标相册" />
@@ -282,11 +280,10 @@ async function confirmShare() {
     <Dialog :open="showPublicModal" @update:open="showPublicModal = $event">
       <DialogContent class="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{{ publicTarget ? '批量公开' : '批量转私有' }}</DialogTitle>
+          <DialogTitle>{{ publicTarget ? '批量公开' : '批量转私�? }}</DialogTitle>
         </DialogHeader>
         <p class="text-sm text-muted-foreground">
-          确定将选中的 {{ selectedIds.length }} 张图片{{ publicTarget ? '设为公开' : '设为私有' }}？
-        </p>
+          确定将选中�?{{ selectedIds.length }} 张图片{{ publicTarget ? '设为公开' : '设为私有' }}�?        </p>
         <DialogFooter>
           <Button variant="outline" @click="showPublicModal = false">取消</Button>
           <Button :loading="loading" @click="confirmPublic">确定</Button>
@@ -301,13 +298,13 @@ async function confirmShare() {
           <DialogTitle>批量分享</DialogTitle>
         </DialogHeader>
         <div class="space-y-3">
-          <p class="text-sm text-muted-foreground">为选中的 {{ selectedIds.length }} 张图片创建分享链接：</p>
+          <p class="text-sm text-muted-foreground">为选中�?{{ selectedIds.length }} 张图片创建分享链接：</p>
           <div class="space-y-1">
             <Label>访问密码（可选）</Label>
             <Input v-model="sharePassword" placeholder="留空则公开访问" />
           </div>
           <div class="space-y-1">
-            <Label>过期分钟数（0 = 永不过期）</Label>
+            <Label>过期分钟数（0 = 永不过期�?/Label>
             <Input v-model="shareExpire" type="number" :min="0" />
           </div>
         </div>
@@ -318,7 +315,7 @@ async function confirmShare() {
       </DialogContent>
     </Dialog>
 
-    <!-- 自定义确认弹窗 -->
+    <!-- 自定义确认弹�?-->
     <AppConfirm
       :show="confirmState.show"
       :title="confirmState.title"
@@ -331,7 +328,7 @@ async function confirmShare() {
     />
 
     <template #fallback>
-      <div class="text-sm text-muted-foreground">已选 {{ selectedIds.length }} 项</div>
+      <div class="text-sm text-muted-foreground">已�?{{ selectedIds.length }} �?/div>
     </template>
   </ClientOnly>
 </template>

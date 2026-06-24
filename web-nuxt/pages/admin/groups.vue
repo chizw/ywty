@@ -22,7 +22,7 @@ async function create() {
   msg.value = ''
   try {
     await api.post('/api/v1/admin/groups', newGroup)
-    msg.value = '已创建'
+    msg.value = '已创�?
     newGroup.name = ''
     newGroup.intro = ''
     newGroup.is_default = false
@@ -54,7 +54,7 @@ async function saveEdit() {
       method: 'PATCH',
       body: { name: editForm.name, intro: editForm.intro, is_default: editForm.is_default },
     })
-    msg.value = '已保存'
+    msg.value = '已保�?
     closeEdit()
     refresh()
   } catch (err: any) {
@@ -86,10 +86,10 @@ async function doRemove() {
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-bold text-foreground">角色组</h1>
+      <h1 class="text-2xl font-bold text-foreground">角色�?/h1>
       <Button @click="showCreate = !showCreate">
         <Plus v-if="!showCreate" class="h-4 w-4 mr-2" />
-        {{ showCreate ? '取消' : '新建角色组' }}
+        {{ showCreate ? '取消' : '新建角色�? }}
       </Button>
     </div>
 
@@ -99,14 +99,14 @@ async function doRemove() {
         <Textarea v-model="newGroup.intro" placeholder="介绍（可选）" :rows="2" />
         <div class="flex items-center gap-2">
           <Checkbox :checked="newGroup.is_default" @update:checked="(val: boolean) => newGroup.is_default = val" />
-          <Label>注册时默认使用</Label>
+          <Label>注册时默认使�?/Label>
         </div>
         <Button :loading="saving" @click="create">创建</Button>
         <p v-if="msg" class="text-sm" :class="msg.includes('失败') ? 'text-destructive' : 'text-primary'">{{ msg }}</p>
       </CardContent>
     </Card>
 
-    <div v-if="groups.length === 0" class="text-sm text-muted-foreground">暂无角色组</div>
+    <div v-if="groups.length === 0" class="text-sm text-muted-foreground">暂无角色�?/div>
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <Card v-for="g in groups" :key="g.id">
         <CardContent class="p-4">
@@ -132,14 +132,14 @@ async function doRemove() {
     <Dialog :open="!!editing" @update:open="(val: boolean) => { if (!val) closeEdit() }">
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>编辑角色组 #{{ editing?.id }}</DialogTitle>
+          <DialogTitle>编辑角色�?#{{ editing?.id }}</DialogTitle>
         </DialogHeader>
         <div class="space-y-3">
           <Input v-model="editForm.name" />
           <Textarea v-model="editForm.intro" :rows="2" />
           <div class="flex items-center gap-2">
             <Checkbox :checked="editForm.is_default" @update:checked="(val: boolean) => editForm.is_default = val" />
-            <Label>注册时默认使用</Label>
+            <Label>注册时默认使�?/Label>
           </div>
           <p v-if="msg" class="text-sm" :class="msg.includes('失败') ? 'text-destructive' : 'text-primary'">{{ msg }}</p>
         </div>
@@ -156,7 +156,7 @@ async function doRemove() {
         <DialogHeader>
           <DialogTitle>确认删除</DialogTitle>
         </DialogHeader>
-        <p class="text-sm text-muted-foreground">确定删除该角色组？相关用户角色绑定也会被解除。</p>
+        <p class="text-sm text-muted-foreground">确定删除该角色组？相关用户角色绑定也会被解除�?/p>
         <DialogFooter>
           <Button variant="outline" @click="closeConfirm">取消</Button>
           <Button variant="destructive" @click="doRemove">删除</Button>

@@ -2,6 +2,8 @@
 // 标签管理
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
+import { Plus, X, Tag } from '@lucide/vue'
+
 const api = useApi()
 
 const rawData = ref<any>(null)
@@ -33,7 +35,7 @@ async function create() {
   try {
     await api.post('/api/v1/tags', { name: newName.value })
     newName.value = ''
-    msg.value = '已添加'
+    msg.value = '已添�?
     fetchTags()
   } catch (err: any) {
     msg.value = err?.statusMessage || '添加失败'
@@ -50,21 +52,36 @@ async function remove(id: number) {
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-bold text-gray-900">标签</h1>
+      <h1 class="text-2xl font-bold text-foreground">标签</h1>
     </div>
 
-    <div class="mb-6 p-4 bg-white border border-gray-200 rounded-lg flex gap-2">
-      <input v-model="newName" placeholder="新标签名" class="flex-1 px-3 py-2 border border-gray-300 rounded-md" />
-      <AppButton @click="create">添加</AppButton>
-    </div>
-    <p v-if="msg" class="text-sm mb-2" :class="msg.includes('失败') ? 'text-red-500' : 'text-primary-600'">{{ msg }}</p>
+    <Card class="mb-6">
+      <CardContent class="pt-6">
+        <div class="flex gap-2">
+          <Input v-model="newName" placeholder="新标签名" class="flex-1" />
+          <Button @click="create">
+            <Plus class="mr-1 h-4 w-4" />
+            添加
+          </Button>
+        </div>
+        <p v-if="msg" class="text-sm mt-2" :class="msg.includes('失败') ? 'text-destructive' : 'text-green-600'">{{ msg }}</p>
+      </CardContent>
+    </Card>
 
-    <AppEmpty v-if="tags.length === 0" title="还没有标签" description="添加标签后可以绑定到图片" />
+    <AppEmpty v-if="tags.length === 0" title="还没有标�? description="添加标签后可以绑定到图片" />
     <div v-else class="flex flex-wrap gap-2">
-      <div v-for="t in tags" :key="t.id" class="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-sm">
-        <span>{{ t.name }}</span>
-        <button class="text-red-500 text-xs" @click="remove(t.id)">×</button>
-      </div>
+      <Badge
+        v-for="t in tags"
+        :key="t.id"
+        variant="secondary"
+        class="gap-1.5 pr-1.5 cursor-pointer hover:bg-secondary/80"
+      >
+        <Tag class="h-3 w-3" />
+        {{ t.name }}
+        <button class="ml-1 text-destructive hover:text-destructive/80" @click="remove(t.id)">
+          <X class="h-3 w-3" />
+        </button>
+      </Badge>
     </div>
   </div>
 </template>

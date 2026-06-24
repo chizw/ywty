@@ -1,4 +1,4 @@
-// 鉴权中间件：未登录跳到 /auth/login
+// 鉴权中间件：未登录跳�?/auth/login
 export default defineNuxtRouteMiddleware((to) => {
   const auth = useAuthStore()
   auth.hydrate()

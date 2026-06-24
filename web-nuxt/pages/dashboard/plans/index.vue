@@ -33,7 +33,7 @@ function formatPrice(price?: number) {
   <div>
     <h1 class="text-2xl font-bold text-foreground mb-4">套餐列表</h1>
 
-    <AppEmpty v-if="plans.length === 0" title="暂无可用套餐" description="当前没有上架的套餐，请稍后再来" />
+    <AppEmpty v-if="plans.length === 0" title="暂无可用套餐" description="当前没有上架的套餐，请稍后再�? />
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <Card
@@ -55,7 +55,7 @@ function formatPrice(price?: number) {
               :key="feature"
               class="flex items-start gap-2 text-sm text-foreground"
             >
-              <span class="text-green-500 mt-0.5">✓</span>
+              <span class="text-green-500 mt-0.5">�?/span>
               <span>{{ feature }}</span>
             </div>
           </div>

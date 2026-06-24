@@ -2,6 +2,8 @@
 // 个人资料 - 修改密码
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
+import { Lock } from '@lucide/vue'
+
 const api = useApi()
 const message = useMessage()
 
@@ -15,15 +17,15 @@ const changing = ref(false)
 
 async function changePassword() {
   if (!form.old_password || !form.password || !form.password_confirmation) {
-    message.error('请填写完整')
+    message.error('请填写完�?)
     return
   }
   if (form.password !== form.password_confirmation) {
-    message.error('两次密码不一致')
+    message.error('两次密码不一�?)
     return
   }
   if (form.password.length < 6) {
-    message.error('密码至少 6 位')
+    message.error('密码至少 6 �?)
     return
   }
 
@@ -34,7 +36,7 @@ async function changePassword() {
       password: form.password,
       password_confirmation: form.password_confirmation,
     })
-    message.success('密码已修改')
+    message.success('密码已修�?)
     form.old_password = ''
     form.password = ''
     form.password_confirmation = ''
@@ -44,37 +46,53 @@ async function changePassword() {
     changing.value = false
   }
 }
+
+const navItems = [
+  { to: '/dashboard/profile', label: '基本信息' },
+  { to: '/dashboard/profile/email', label: '更换邮箱' },
+  { to: '/dashboard/profile/phone', label: '更换手机' },
+  { to: '/dashboard/profile/password', label: '修改密码' },
+  { to: '/dashboard/profile/social', label: '社交账号' },
+]
 </script>
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">修改密码</h1>
+    <h1 class="text-2xl font-bold text-foreground mb-4">修改密码</h1>
 
     <div class="mb-6 flex flex-wrap gap-2">
-      <NuxtLink to="/dashboard/profile" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">基本信息</NuxtLink>
-      <NuxtLink to="/dashboard/profile/email" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">更换邮箱</NuxtLink>
-      <NuxtLink to="/dashboard/profile/phone" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">更换手机</NuxtLink>
-      <NuxtLink to="/dashboard/profile/password" class="px-3 py-1.5 text-sm rounded-md bg-primary-50 text-primary-700">修改密码</NuxtLink>
-      <NuxtLink to="/dashboard/profile/social" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">社交账号</NuxtLink>
+      <NuxtLink
+        v-for="item in navItems"
+        :key="item.to"
+        :to="item.to"
+        class="px-3 py-1.5 text-sm rounded-md"
+        :class="item.to === '/dashboard/profile/password' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'"
+      >{{ item.label }}</NuxtLink>
     </div>
 
-    <div class="bg-white border border-gray-200 rounded-lg p-6 space-y-4 max-w-2xl">
-      <div>
-        <label class="block text-sm text-gray-700 mb-1">当前密码</label>
-        <input v-model="form.old_password" type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="请输入当前密码" />
-      </div>
+    <Card class="max-w-2xl">
+      <CardContent class="pt-6 space-y-4">
+        <div>
+          <Label>当前密码</Label>
+          <Input v-model="form.old_password" type="password" placeholder="请输入当前密�? class="mt-1" />
+        </div>
 
-      <div>
-        <label class="block text-sm text-gray-700 mb-1">新密码</label>
-        <input v-model="form.password" type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="请输入新密码（至少 6 位）" />
-      </div>
+        <div>
+          <Label>新密�?/Label>
+          <Input v-model="form.password" type="password" placeholder="请输入新密码（至�?6 位）" class="mt-1" />
+        </div>
 
-      <div>
-        <label class="block text-sm text-gray-700 mb-1">确认新密码</label>
-        <input v-model="form.password_confirmation" type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="请再次输入新密码" />
-      </div>
-
-      <AppButton type="button" :loading="changing" @click="changePassword">修改密码</AppButton>
-    </div>
+        <div>
+          <Label>确认新密�?/Label>
+          <Input v-model="form.password_confirmation" type="password" placeholder="请再次输入新密码" class="mt-1" />
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button :loading="changing" @click="changePassword">
+          <Lock class="mr-2 h-4 w-4" />
+          修改密码
+        </Button>
+      </CardFooter>
+    </Card>
   </div>
 </template>

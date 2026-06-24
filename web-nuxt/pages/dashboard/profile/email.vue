@@ -2,6 +2,8 @@
 // 个人资料 - 更换邮箱
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
+import { Mail } from '@lucide/vue'
+
 const api = useApi()
 const message = useMessage()
 const { user, fetchMe } = useAuth()
@@ -17,7 +19,7 @@ const countdown = ref(0)
 
 async function sendCode() {
   if (!form.email) {
-    message.error('请先输入新邮箱')
+    message.error('请先输入新邮�?)
     return
   }
   if (countdown.value > 0) return
@@ -29,14 +31,14 @@ async function sendCode() {
       account: form.email,
       event: 'change_email',
     })
-    message.success('验证码已发送')
+    message.success('验证码已发�?)
     countdown.value = 60
     const t = setInterval(() => {
       countdown.value--
       if (countdown.value <= 0) clearInterval(t)
     }, 1000)
   } catch (err: any) {
-    message.error(err?.statusMessage || '发送失败')
+    message.error(err?.statusMessage || '发送失�?)
   } finally {
     sending.value = false
   }
@@ -44,7 +46,7 @@ async function sendCode() {
 
 async function changeEmail() {
   if (!form.email || !form.code) {
-    message.error('请填写完整')
+    message.error('请填写完�?)
     return
   }
 
@@ -55,7 +57,7 @@ async function changeEmail() {
       code: form.code,
     })
     await fetchMe()
-    message.success('邮箱已更换')
+    message.success('邮箱已更�?)
     form.email = ''
     form.code = ''
   } catch (err: any) {
@@ -64,47 +66,60 @@ async function changeEmail() {
     changing.value = false
   }
 }
+
+const navItems = [
+  { to: '/dashboard/profile', label: '基本信息' },
+  { to: '/dashboard/profile/email', label: '更换邮箱' },
+  { to: '/dashboard/profile/phone', label: '更换手机' },
+  { to: '/dashboard/profile/password', label: '修改密码' },
+  { to: '/dashboard/profile/social', label: '社交账号' },
+]
 </script>
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">更换邮箱</h1>
+    <h1 class="text-2xl font-bold text-foreground mb-4">更换邮箱</h1>
 
     <div class="mb-6 flex flex-wrap gap-2">
-      <NuxtLink to="/dashboard/profile" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">基本信息</NuxtLink>
-      <NuxtLink to="/dashboard/profile/email" class="px-3 py-1.5 text-sm rounded-md bg-primary-50 text-primary-700">更换邮箱</NuxtLink>
-      <NuxtLink to="/dashboard/profile/phone" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">更换手机</NuxtLink>
-      <NuxtLink to="/dashboard/profile/password" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">修改密码</NuxtLink>
-      <NuxtLink to="/dashboard/profile/social" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">社交账号</NuxtLink>
+      <NuxtLink
+        v-for="item in navItems"
+        :key="item.to"
+        :to="item.to"
+        class="px-3 py-1.5 text-sm rounded-md"
+        :class="item.to === '/dashboard/profile/email' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'"
+      >{{ item.label }}</NuxtLink>
     </div>
 
-    <div class="bg-white border border-gray-200 rounded-lg p-6 space-y-4 max-w-2xl">
-      <div>
-        <label class="block text-sm text-gray-700 mb-1">当前邮箱</label>
-        <input :value="user?.email" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50" />
-      </div>
-
-      <div>
-        <label class="block text-sm text-gray-700 mb-1">新邮箱</label>
-        <input v-model="form.email" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="请输入新邮箱" />
-      </div>
-
-      <div>
-        <label class="block text-sm text-gray-700 mb-1">验证码</label>
-        <div class="flex gap-2">
-          <input v-model="form.code" type="text" maxlength="6" class="flex-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="请输入验证码" />
-          <button
-            type="button"
-            class="px-4 py-2 border border-gray-300 text-sm rounded-md disabled:opacity-50 whitespace-nowrap"
-            :disabled="countdown > 0 || sending"
-            @click="sendCode"
-          >
-            {{ countdown > 0 ? `${countdown}s` : '发送验证码' }}
-          </button>
+    <Card class="max-w-2xl">
+      <CardContent class="pt-6 space-y-4">
+        <div>
+          <Label>当前邮箱</Label>
+          <Input :model-value="user?.email" disabled class="mt-1 bg-muted" />
         </div>
-      </div>
 
-      <AppButton type="button" :loading="changing" @click="changeEmail">更换邮箱</AppButton>
-    </div>
+        <div>
+          <Label>新邮�?/Label>
+          <Input v-model="form.email" type="email" placeholder="请输入新邮箱" class="mt-1" />
+        </div>
+
+        <div>
+          <Label>验证�?/Label>
+          <div class="flex gap-2 mt-1">
+            <Input v-model="form.code" type="text" maxlength="6" placeholder="请输入验证码" class="flex-1" />
+            <Button
+              variant="outline"
+              :disabled="countdown > 0 || sending"
+              @click="sendCode"
+            >
+              <Mail class="mr-1 h-4 w-4" />
+              {{ countdown > 0 ? `${countdown}s` : '发送验证码' }}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button :loading="changing" @click="changeEmail">更换邮箱</Button>
+      </CardFooter>
+    </Card>
   </div>
 </template>

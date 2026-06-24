@@ -2,7 +2,7 @@
 // 我的相册
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-import { Plus, Trash2, Eye } from 'lucide-vue-next'
+import { Plus, Trash2, Eye } from '@lucide/vue'
 
 const api = useApi()
 
@@ -60,8 +60,8 @@ async function remove(id: number) {
     <Card v-if="showCreate" class="mb-6">
       <CardContent class="pt-6 space-y-3">
         <div>
-          <Label>相册名</Label>
-          <Input v-model="newAlbum.name" placeholder="相册名" class="mt-1" />
+          <Label>相册�?/Label>
+          <Input v-model="newAlbum.name" placeholder="相册�? class="mt-1" />
         </div>
         <div>
           <Label>介绍（可选）</Label>
@@ -75,7 +75,7 @@ async function remove(id: number) {
       </CardContent>
     </Card>
 
-    <AppEmpty v-if="albums.length === 0" title="还没有相册" description="点击右上角新建一个相册，把图片归类管理" />
+    <AppEmpty v-if="albums.length === 0" title="还没有相�? description="点击右上角新建一个相册，把图片归类管�? />
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
       <Card
         v-for="a in albums"
@@ -89,7 +89,7 @@ async function remove(id: number) {
           <CardDescription v-if="a.intro" class="line-clamp-2">{{ a.intro }}</CardDescription>
         </CardHeader>
         <CardContent class="pt-0">
-          <p class="text-xs text-muted-foreground">{{ a.photo_count }} 张图片</p>
+          <p class="text-xs text-muted-foreground">{{ a.photo_count }} 张图�?/p>
         </CardContent>
         <CardFooter class="gap-2">
           <NuxtLink :to="`/dashboard/albums/${a.id}`">

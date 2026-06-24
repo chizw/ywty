@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 通用加载占位 — 使用 shadcn Skeleton
+// 通用加载占位 �?使用 shadcn Skeleton
 import { Skeleton } from '~/components/ui/skeleton'
 
 withDefaults(defineProps<{

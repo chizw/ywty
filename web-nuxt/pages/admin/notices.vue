@@ -22,7 +22,7 @@ const msg = ref('')
 
 async function create() {
   if (!form.title.trim()) {
-    msg.value = '请输入标题'
+    msg.value = '请输入标�?
     return
   }
   loading.value = true
@@ -111,7 +111,7 @@ async function doRemove() {
         <DialogHeader>
           <DialogTitle>确认删除</DialogTitle>
         </DialogHeader>
-        <p class="text-sm text-muted-foreground">确定删除该通知？</p>
+        <p class="text-sm text-muted-foreground">确定删除该通知�?/p>
         <DialogFooter>
           <Button variant="outline" @click="closeConfirm">取消</Button>
           <Button variant="destructive" @click="doRemove">删除</Button>

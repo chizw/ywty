@@ -2,6 +2,8 @@
 // 工单详情 + 回复（前端骨架，后端 P7 完成后对接）
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
+import { ArrowLeft, Send, XCircle, MessageSquare, UserCircle } from 'lucide-vue-next'
+
 const route = useRoute()
 const ticketId = Number(route.params.id)
 const api = useApi()
@@ -31,17 +33,17 @@ const notFound = computed(() => !ticket.value)
 
 onMounted(() => { fetchTicket(); fetchReplies() })
 
-const statusMap: Record<string, { label: string; cls: string }> = {
-  pending: { label: '待处理', cls: 'bg-gray-100 text-gray-700' },
-  processing: { label: '处理中', cls: 'bg-blue-100 text-blue-700' },
-  resolved: { label: '已解决', cls: 'bg-emerald-100 text-emerald-700' },
-  closed: { label: '已关闭', cls: 'bg-gray-200 text-gray-500' },
+const statusMap: Record<string, { label: string; variant: 'secondary' | 'default' | 'success' | 'warning' }> = {
+  pending: { label: '待处理', variant: 'secondary' },
+  processing: { label: '处理中', variant: 'default' },
+  resolved: { label: '已解决', variant: 'success' },
+  closed: { label: '已关闭', variant: 'secondary' },
 }
 const priorityMap: Record<string, { label: string; cls: string }> = {
-  low: { label: '低', cls: 'text-gray-500' },
+  low: { label: '低', cls: 'text-muted-foreground' },
   medium: { label: '中', cls: 'text-blue-600' },
   high: { label: '高', cls: 'text-orange-600' },
-  urgent: { label: '紧急', cls: 'text-red-600' },
+  urgent: { label: '紧急', cls: 'text-destructive' },
 }
 const typeMap: Record<string, string> = {
   bug: 'Bug 反馈',
@@ -89,62 +91,84 @@ function fmtTime(t: any) {
 <template>
   <div>
     <div class="mb-4">
-      <NuxtLink to="/dashboard/tickets" class="text-xs text-gray-500 hover:text-primary-600">← 返回工单列表</NuxtLink>
+      <NuxtLink to="/dashboard/tickets" class="text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
+        <ArrowLeft class="h-3 w-3" />
+        返回工单列表
+      </NuxtLink>
     </div>
 
     <AppEmpty v-if="notFound" title="工单不存在或尚未加载" description="该工单可能已被删除，或工单服务尚未上线">
-      <NuxtLink to="/dashboard/tickets" class="px-3 py-1.5 bg-primary-600 text-white text-sm rounded-md hover:bg-primary-700">返回列表</NuxtLink>
+      <NuxtLink to="/dashboard/tickets">
+        <Button>返回列表</Button>
+      </NuxtLink>
     </AppEmpty>
 
     <template v-else>
-      <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <div class="flex items-start justify-between gap-4">
-          <div class="min-w-0">
-            <h1 class="text-xl font-bold text-gray-900">{{ ticket.title }}</h1>
-            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-              <span>#{{ ticket.id }}</span>
-              <span>·</span>
-              <span>{{ typeMap[ticket.type] || ticket.type }}</span>
-              <span>·</span>
-              <span :class="priorityMap[ticket.priority]?.cls">{{ priorityMap[ticket.priority]?.label || ticket.priority }}</span>
-              <span>·</span>
-              <span>{{ fmtTime(ticket.created_at) }}</span>
+      <Card class="mb-6">
+        <CardContent class="pt-6">
+          <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <h1 class="text-xl font-bold text-foreground">{{ ticket.title }}</h1>
+              <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span>#{{ ticket.id }}</span>
+                <span>·</span>
+                <span>{{ typeMap[ticket.type] || ticket.type }}</span>
+                <span>·</span>
+                <span :class="priorityMap[ticket.priority]?.cls">{{ priorityMap[ticket.priority]?.label || ticket.priority }}</span>
+                <span>·</span>
+                <span>{{ fmtTime(ticket.created_at) }}</span>
+              </div>
             </div>
+            <Badge :variant="statusMap[ticket.status]?.variant || 'secondary'">
+              {{ statusMap[ticket.status]?.label || ticket.status }}
+            </Badge>
           </div>
-          <span
-            class="px-2 py-1 text-xs rounded whitespace-nowrap"
-            :class="statusMap[ticket.status]?.cls || 'bg-gray-100 text-gray-700'"
-          >{{ statusMap[ticket.status]?.label || ticket.status }}</span>
-        </div>
-        <div class="mt-4 text-sm text-gray-700 whitespace-pre-wrap">{{ ticket.content }}</div>
-        <div class="mt-4 flex gap-2" v-if="ticket.status !== 'closed'">
-          <button class="px-3 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50" @click="closeTicket">关闭工单</button>
-        </div>
-      </div>
+          <div class="mt-4 text-sm text-foreground whitespace-pre-wrap">{{ ticket.content }}</div>
+          <div class="mt-4 flex gap-2" v-if="ticket.status !== 'closed'">
+            <Button variant="outline" size="sm" @click="closeTicket">
+              <XCircle class="mr-1 h-3 w-3" />
+              关闭工单
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <!-- 回复列表 -->
       <div class="mb-6">
-        <h3 class="text-sm font-medium text-gray-700 mb-3">回复（{{ replyList.length }}）</h3>
-        <div v-if="replyList.length === 0" class="text-sm text-gray-400 py-4">暂无回复</div>
+        <h3 class="text-sm font-medium text-foreground mb-3">回复（{{ replyList.length }}）</h3>
+        <div v-if="replyList.length === 0" class="text-sm text-muted-foreground py-4">暂无回复</div>
         <div v-else class="space-y-3">
-          <div v-for="r in replyList" :key="r.id" class="bg-white border border-gray-200 rounded-lg p-4">
-            <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
-              <span>{{ r.user?.name || r.user?.username || '用户' }}{{ r.is_staff ? '（客服）' : '' }}</span>
-              <span>{{ fmtTime(r.created_at) }}</span>
-            </div>
-            <div class="text-sm text-gray-700 whitespace-pre-wrap">{{ r.content }}</div>
-          </div>
+          <Card v-for="r in replyList" :key="r.id">
+            <CardContent class="pt-4">
+              <div class="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                <div class="flex items-center gap-1.5">
+                  <UserCircle class="h-3.5 w-3.5" />
+                  <span>{{ r.user?.name || r.user?.username || '用户' }}{{ r.is_staff ? '（客服）' : '' }}</span>
+                </div>
+                <span>{{ fmtTime(r.created_at) }}</span>
+              </div>
+              <div class="text-sm text-foreground whitespace-pre-wrap">{{ r.content }}</div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
       <!-- 回复输入 -->
-      <div class="bg-white border border-gray-200 rounded-lg p-4">
-        <h3 class="text-sm font-medium text-gray-700 mb-2">添加回复</h3>
-        <textarea v-model="replyContent" rows="4" placeholder="输入回复内容..." class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
-        <div class="mt-2 flex justify-end">
-          <AppButton :loading="replying" @click="submitReply">回复</AppButton>
-        </div>
-      </div>
+      <Card>
+        <CardContent class="pt-6">
+          <h3 class="text-sm font-medium text-foreground mb-2 flex items-center gap-1.5">
+            <MessageSquare class="h-4 w-4" />
+            添加回复
+          </h3>
+          <Textarea v-model="replyContent" rows="4" placeholder="输入回复内容..." class="mt-2" />
+          <div class="mt-2 flex justify-end">
+            <Button :loading="replying" @click="submitReply">
+              <Send class="mr-1 h-4 w-4" />
+              回复
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </template>
   </div>
 </template>

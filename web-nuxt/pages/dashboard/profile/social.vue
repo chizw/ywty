@@ -2,6 +2,8 @@
 // 个人资料 - 社交账号
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
+import { Link2, Unlink } from '@lucide/vue'
+
 const api = useApi()
 const message = useMessage()
 
@@ -58,58 +60,74 @@ async function unbind(provider: string) {
 
   try {
     await api.post(`/api/v1/oauth/${provider}/unbind`, {})
-    message.success('已解绑')
+    message.success('已解�?)
     await loadAccounts()
   } catch (err: any) {
     message.error(err?.statusMessage || '解绑失败')
   }
 }
+
+const navItems = [
+  { to: '/dashboard/profile', label: '基本信息' },
+  { to: '/dashboard/profile/email', label: '更换邮箱' },
+  { to: '/dashboard/profile/phone', label: '更换手机' },
+  { to: '/dashboard/profile/password', label: '修改密码' },
+  { to: '/dashboard/profile/social', label: '社交账号' },
+]
 </script>
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">社交账号</h1>
+    <h1 class="text-2xl font-bold text-foreground mb-4">社交账号</h1>
 
     <div class="mb-6 flex flex-wrap gap-2">
-      <NuxtLink to="/dashboard/profile" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">基本信息</NuxtLink>
-      <NuxtLink to="/dashboard/profile/email" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">更换邮箱</NuxtLink>
-      <NuxtLink to="/dashboard/profile/phone" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">更换手机</NuxtLink>
-      <NuxtLink to="/dashboard/profile/password" class="px-3 py-1.5 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">修改密码</NuxtLink>
-      <NuxtLink to="/dashboard/profile/social" class="px-3 py-1.5 text-sm rounded-md bg-primary-50 text-primary-700">社交账号</NuxtLink>
+      <NuxtLink
+        v-for="item in navItems"
+        :key="item.to"
+        :to="item.to"
+        class="px-3 py-1.5 text-sm rounded-md"
+        :class="item.to === '/dashboard/profile/social' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'"
+      >{{ item.label }}</NuxtLink>
     </div>
 
-    <div v-if="loading" class="text-center py-12 text-gray-500">加载中...</div>
+    <Skeleton v-if="loading" class="h-64 w-full max-w-2xl" />
 
-    <div v-else class="bg-white border border-gray-200 rounded-lg divide-y max-w-2xl">
-      <div v-for="p in providers" :key="p.key" class="p-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <span class="text-2xl">{{ p.icon }}</span>
-          <div>
-            <div class="text-sm font-medium text-gray-900">{{ p.name }}</div>
-            <div v-if="isBound(p.key)" class="text-xs text-gray-500">
-              已绑定：{{ getAccount(p.key)?.union_id }}
+    <Card v-else class="max-w-2xl">
+      <CardContent class="p-0 divide-y divide-border">
+        <div v-for="p in providers" :key="p.key" class="p-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">{{ p.icon }}</span>
+            <div>
+              <div class="text-sm font-medium text-foreground">{{ p.name }}</div>
+              <div v-if="isBound(p.key)" class="text-xs text-muted-foreground">
+                已绑定：{{ getAccount(p.key)?.union_id }}
+              </div>
+              <div v-else class="text-xs text-muted-foreground">未绑�?/div>
             </div>
-            <div v-else class="text-xs text-gray-400">未绑定</div>
+          </div>
+
+          <div>
+            <a
+              v-if="!isBound(p.key)"
+              :href="bindUrl(p.key)"
+            >
+              <Button size="sm">
+                <Link2 class="mr-1 h-3 w-3" />
+                绑定
+              </Button>
+            </a>
+            <Button
+              v-else
+              variant="outline"
+              size="sm"
+              @click="unbind(p.key)"
+            >
+              <Unlink class="mr-1 h-3 w-3" />
+              解绑
+            </Button>
           </div>
         </div>
-
-        <div>
-          <a
-            v-if="!isBound(p.key)"
-            :href="bindUrl(p.key)"
-            class="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700"
-          >
-            绑定
-          </a>
-          <button
-            v-else
-            class="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-            @click="unbind(p.key)"
-          >
-            解绑
-          </button>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   </div>
 </template>

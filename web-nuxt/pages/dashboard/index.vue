@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-import { RefreshCw, Image, FolderOpen, HardDrive } from 'lucide-vue-next'
+import { RefreshCw, Image, FolderOpen, HardDrive } from '@lucide/vue'
 
 const { user, fetchMe } = useAuth()
 const statsStore = useStatsStore()
@@ -21,8 +21,7 @@ const updatedLabel = computed(() => {
 })
 
 onMounted(() => {
-  // fetchMe 和 statsStore.refresh 并行执行，互不阻塞
-  fetchMe().catch(() => {})
+  // fetchMe �?statsStore.refresh 并行执行，互不阻�?  fetchMe().catch(() => {})
   statsStore.refresh()
   document.addEventListener('visibilitychange', onVisibility)
 })

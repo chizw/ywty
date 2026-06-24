@@ -2,6 +2,8 @@
 // 新建工单（前端骨架，后端 P7 完成后对接）
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
+import { ArrowLeft, Send } from '@lucide/vue'
+
 const api = useApi()
 const message = useMessage()
 const router = useRouter()
@@ -21,10 +23,10 @@ const typeOptions = [
   { value: 'other', label: '其他' },
 ]
 const priorityOptions = [
-  { value: 'low', label: '低' },
-  { value: 'medium', label: '中' },
-  { value: 'high', label: '高' },
-  { value: 'urgent', label: '紧急' },
+  { value: 'low', label: '�? },
+  { value: 'medium', label: '�? },
+  { value: 'high', label: '�? },
+  { value: 'urgent', label: '紧�? },
 ]
 
 async function submit() {
@@ -40,7 +42,7 @@ async function submit() {
       title: form.title,
       content: form.content,
     })
-    message.success('工单已提交')
+    message.success('工单已提�?)
     const id = (res as any)?.id || (res as any)?.data?.id
     if (id) {
       router.push(`/dashboard/tickets/${id}`)
@@ -58,37 +60,57 @@ async function submit() {
 <template>
   <div>
     <div class="mb-4">
-      <NuxtLink to="/dashboard/tickets" class="text-xs text-gray-500 hover:text-primary-600">← 返回工单列表</NuxtLink>
-      <h1 class="text-2xl font-bold text-gray-900 mt-1">新建工单</h1>
+      <NuxtLink to="/dashboard/tickets" class="text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
+        <ArrowLeft class="h-3 w-3" />
+        返回工单列表
+      </NuxtLink>
+      <h1 class="text-2xl font-bold text-foreground mt-1">新建工单</h1>
     </div>
 
-    <form class="max-w-2xl bg-white border border-gray-200 rounded-lg p-6 space-y-4" @submit.prevent="submit">
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm text-gray-700 mb-1">类型</label>
-          <select v-model="form.type" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-            <option v-for="o in typeOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm text-gray-700 mb-1">优先级</label>
-          <select v-model="form.priority" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-            <option v-for="o in priorityOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
-          </select>
-        </div>
-      </div>
-      <div>
-        <label class="block text-sm text-gray-700 mb-1">标题</label>
-        <input v-model="form.title" maxlength="100" placeholder="一句话描述你的问题" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
-      </div>
-      <div>
-        <label class="block text-sm text-gray-700 mb-1">内容</label>
-        <textarea v-model="form.content" rows="8" placeholder="详细描述问题、复现步骤或建议..." class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
-      </div>
-      <div class="flex items-center gap-3">
-        <AppButton type="submit" :loading="loading">提交工单</AppButton>
-        <NuxtLink to="/dashboard/tickets" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">取消</NuxtLink>
-      </div>
-    </form>
+    <Card class="max-w-2xl">
+      <form @submit.prevent="submit">
+        <CardContent class="pt-6 space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <Label>类型</Label>
+              <Select v-model="form.type">
+                <SelectTrigger class="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem v-for="o in typeOptions" :key="o.value" :value="o.value">{{ o.label }}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>优先�?/Label>
+              <Select v-model="form.priority">
+                <SelectTrigger class="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem v-for="o in priorityOptions" :key="o.value" :value="o.value">{{ o.label }}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div>
+            <Label>标题</Label>
+            <Input v-model="form.title" maxlength="100" placeholder="一句话描述你的问题" class="mt-1" />
+          </div>
+          <div>
+            <Label>内容</Label>
+            <Textarea v-model="form.content" rows="8" placeholder="详细描述问题、复现步骤或建议..." class="mt-1" />
+          </div>
+        </CardContent>
+        <CardFooter class="gap-3">
+          <Button type="submit" :loading="loading">
+            <Send class="mr-2 h-4 w-4" />
+            提交工单
+          </Button>
+          <NuxtLink to="/dashboard/tickets" class="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">取消</NuxtLink>
+        </CardFooter>
+      </form>
+    </Card>
   </div>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 探索页 - 相册列表
+// 探索�?- 相册列表
 const api = useApi()
 const { t } = useI18n()
 
@@ -26,7 +26,7 @@ useSeoMeta({
 
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <NuxtLink to="/explore" class="text-xs text-muted-foreground hover:text-primary">← {{ t('nav.explore') }}</NuxtLink>
+    <NuxtLink to="/explore" class="text-xs text-muted-foreground hover:text-primary">�?{{ t('nav.explore') }}</NuxtLink>
 
     <h1 class="mt-2 text-2xl font-bold text-foreground">{{ t('photo.albums') }}</h1>
     <p class="mt-1 text-sm text-muted-foreground">浏览公开相册</p>
