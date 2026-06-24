@@ -16,17 +16,21 @@ const query = computed(() => {
 })
 
 // 后端未就绪时容错：返回空列表
-const { data, refresh } = await useAsyncData('my-tickets', () =>
-  api.get<any>('/api/v1/tickets', { query: query.value }).catch(() => ({ data: [], meta: { total: 0 } }))
-)
+const rawData = ref<any>(null)
+
+async function fetchTickets() {
+  rawData.value = await api.get<any>('/api/v1/tickets', { query: query.value }).catch(() => ({ data: [], meta: { total: 0 } }))
+}
 
 const tickets = computed<any[]>(() => {
-  const d = data.value as any
+  const d = rawData.value
   if (Array.isArray(d)) return d
   if (d && Array.isArray(d.data)) return d.data
   return []
 })
-const total = computed(() => (data.value as any)?.meta?.total ?? tickets.value.length)
+const total = computed(() => (rawData.value as any)?.meta?.total ?? tickets.value.length)
+
+onMounted(() => fetchTickets())
 
 const statusMap: Record<string, { label: string; cls: string }> = {
   pending: { label: '待处理', cls: 'bg-gray-100 text-gray-700' },
@@ -49,7 +53,7 @@ const typeMap: Record<string, string> = {
 
 watch([statusFilter], () => {
   page.value = 1
-  refresh()
+  fetchTickets()
 })
 
 function fmtTime(t: any) {

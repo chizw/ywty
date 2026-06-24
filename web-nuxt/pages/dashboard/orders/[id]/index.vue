@@ -17,14 +17,18 @@ const paying = ref(false)
 const canceling = ref(false)
 const refreshing = ref(false)
 
-const { data, refresh } = await useAsyncData(`dashboard-order-${orderId.value}`, () =>
-  api.get<any>(`/api/v1/orders/${orderId.value}`).catch((err: any) => {
+const rawData = ref<any>(null)
+
+async function fetchOrder() {
+  rawData.value = await api.get<any>(`/api/v1/orders/${orderId.value}`).catch((err: any) => {
     message.error(err?.statusMessage || '获取订单详情失败')
     return null
   })
-)
+}
 
-const order = computed<any>(() => data.value || {})
+const order = computed<any>(() => rawData.value || {})
+
+onMounted(() => fetchOrder())
 
 const statusMap: Record<string, { label: string; type: 'warning' | 'success' | 'default' | 'error' }> = {
   unpaid: { label: '待支付', type: 'warning' },
@@ -93,7 +97,7 @@ async function pay() {
 async function refreshOrder() {
   refreshing.value = true
   try {
-    await refresh()
+    await fetchOrder()
     message.success('订单状态已刷新')
   } catch (err: any) {
     message.error(err?.statusMessage || '刷新失败')
@@ -108,7 +112,7 @@ async function cancelOrder() {
   try {
     await api.post(`/api/v1/orders/${orderId.value}/cancel`, {})
     message.success('订单已取消')
-    await refresh()
+    await fetchOrder()
   } catch (err: any) {
     message.error(err?.statusMessage || '取消失败')
   } finally {

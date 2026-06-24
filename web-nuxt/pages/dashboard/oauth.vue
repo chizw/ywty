@@ -3,17 +3,24 @@
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const api = useApi()
-const { data, refresh } = await useAsyncData('my-oauth', () => api.get<any[]>('/api/v1/oauth'))
+
+const rawData = ref<any>(null)
+
+async function fetchOauth() {
+  rawData.value = await api.get<any[]>('/api/v1/oauth').catch(() => [] as any[])
+}
 
 const oauths = computed<any[]>(() => {
-  const d = data.value
+  const d = rawData.value
   return Array.isArray(d) ? d : ((d as any)?.data ?? [])
 })
+
+onMounted(() => fetchOauth())
 
 async function unbind(id: number) {
   if (!confirm('确定解绑该三方账号？')) return
   await api.del(`/api/v1/oauth/${id}`)
-  refresh()
+  fetchOauth()
 }
 </script>
 

@@ -8,15 +8,18 @@ const api = useApi()
 const message = useMessage()
 
 // 后端未就绪时容错
-const { data: ticket, refresh: refreshTicket } = await useAsyncData(`ticket-${ticketId}`, () =>
-  api.get<any>(`/api/v1/tickets/${ticketId}`).catch(() => null)
-)
-const { data: repliesData, refresh: refreshReplies } = await useAsyncData(`ticket-replies-${ticketId}`, () =>
-  api.get<any>(`/api/v1/tickets/${ticketId}/replies`).catch(() => ({ data: [] }))
-)
+const ticket = ref<any>(null)
+const repliesRaw = ref<any>(null)
+
+async function fetchTicket() {
+  try { ticket.value = await api.get<any>(`/api/v1/tickets/${ticketId}`).catch(() => null) } catch { ticket.value = null }
+}
+async function fetchReplies() {
+  try { repliesRaw.value = await api.get<any>(`/api/v1/tickets/${ticketId}/replies`).catch(() => ({ data: [] })) } catch { repliesRaw.value = { data: [] } }
+}
 
 const replyList = computed<any[]>(() => {
-  const d = repliesData.value as any
+  const d = repliesRaw.value
   if (Array.isArray(d)) return d
   if (d && Array.isArray(d.data)) return d.data
   return []
@@ -25,6 +28,8 @@ const replyList = computed<any[]>(() => {
 const replyContent = ref('')
 const replying = ref(false)
 const notFound = computed(() => !ticket.value)
+
+onMounted(() => { fetchTicket(); fetchReplies() })
 
 const statusMap: Record<string, { label: string; cls: string }> = {
   pending: { label: '待处理', cls: 'bg-gray-100 text-gray-700' },
@@ -55,7 +60,7 @@ async function submitReply() {
     await api.post(`/api/v1/tickets/${ticketId}/replies`, { content: replyContent.value })
     replyContent.value = ''
     message.success('回复成功')
-    refreshReplies()
+    fetchReplies()
   } catch (err: any) {
     message.error(err?.statusMessage || '回复失败')
   } finally {
@@ -68,7 +73,7 @@ async function closeTicket() {
   try {
     await api.request(`/api/v1/tickets/${ticketId}`, { method: 'PATCH', body: { status: 'closed' } })
     message.success('工单已关闭')
-    refreshTicket()
+    fetchTicket()
   } catch (err: any) {
     message.error(err?.statusMessage || '操作失败')
   }

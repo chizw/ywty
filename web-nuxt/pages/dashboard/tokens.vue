@@ -3,14 +3,27 @@
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const api = useApi()
-const { data, refresh } = await useAsyncData('my-tokens', () =>
-  api.get<any[]>('/api/v1/tokens').catch(() => [] as any[])
-)
+
+const rawData = ref<any>(null)
+const loading = ref(false)
+
+async function fetchTokens() {
+  loading.value = true
+  try {
+    rawData.value = await api.get<any[]>('/api/v1/tokens').catch(() => [] as any[])
+  } catch {
+    rawData.value = []
+  } finally {
+    loading.value = false
+  }
+}
 
 const tokens = computed<any[]>(() => {
-  const d = data.value
+  const d = rawData.value
   return Array.isArray(d) ? d : ((d as any)?.data ?? [])
 })
+
+onMounted(() => fetchTokens())
 
 const showCreate = ref(false)
 const form = reactive({ name: '', ttl_days: 0, abilities: '*' })
@@ -34,7 +47,7 @@ async function create() {
     })
     created.value = { token: res.token || res.access_token, info: res.info }
     form.name = ''
-    refresh()
+    fetchTokens()
   } catch (err: any) {
     msg.value = err?.statusMessage || '创建失败'
   } finally {
@@ -45,7 +58,7 @@ async function create() {
 async function revoke(id: number) {
   if (!confirm('确定吊销该 Token？')) return
   await api.del(`/api/v1/tokens/${id}`)
-  refresh()
+  fetchTokens()
 }
 
 function copyToken() {

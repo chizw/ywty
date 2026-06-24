@@ -12,21 +12,25 @@ const page = ref(1)
 const perPage = 20
 const loading = ref(false)
 
-const { data, refresh } = await useAsyncData('dashboard-orders', () =>
-  api.get<any>('/api/v1/orders', { query: { page: page.value, per_page: perPage } }).catch((err: any) => {
+const rawData = ref<any>(null)
+
+async function fetchOrders() {
+  rawData.value = await api.get<any>('/api/v1/orders', { query: { page: page.value, per_page: perPage } }).catch((err: any) => {
     message.error(err?.statusMessage || '获取订单列表失败')
     return { data: [], meta: { total: 0, last_page: 1 } }
   })
-)
+}
 
 const orders = computed<any[]>(() => {
-  const d = data.value as any
+  const d = rawData.value
   if (Array.isArray(d)) return d
   if (d && Array.isArray(d.data)) return d.data
   return []
 })
-const total = computed(() => (data.value as any)?.meta?.total ?? orders.value.length)
-const lastPage = computed(() => (data.value as any)?.meta?.last_page ?? Math.max(1, Math.ceil(total.value / perPage)))
+const total = computed(() => (rawData.value as any)?.meta?.total ?? orders.value.length)
+const lastPage = computed(() => (rawData.value as any)?.meta?.last_page ?? Math.max(1, Math.ceil(total.value / perPage)))
+
+onMounted(() => fetchOrders())
 
 const statusMap: Record<string, { label: string; type: 'warning' | 'success' | 'default' | 'error' }> = {
   unpaid: { label: '待支付', type: 'warning' },
@@ -35,7 +39,7 @@ const statusMap: Record<string, { label: string; type: 'warning' | 'success' | '
   refunded: { label: '已退款', type: 'error' },
 }
 
-watch(page, () => refresh())
+watch(page, () => fetchOrders())
 
 function fmtTime(t: any) {
   if (!t) return '-'
@@ -58,7 +62,7 @@ async function cancelOrder(id: number) {
   try {
     await api.post(`/api/v1/orders/${id}/cancel`, {})
     message.success('订单已取消')
-    refresh()
+    fetchOrders()
   } catch (err: any) {
     message.error(err?.statusMessage || '取消失败')
   } finally {

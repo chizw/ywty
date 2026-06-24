@@ -11,16 +11,20 @@ const router = useRouter()
 
 const planId = computed(() => Number(route.params.id))
 
-const { data } = await useAsyncData(`dashboard-plan-${planId.value}`, () =>
-  api.get<any>(`/api/v1/plans/${planId.value}`).catch((err: any) => {
+const rawData = ref<any>(null)
+
+async function fetchPlan() {
+  rawData.value = await api.get<any>(`/api/v1/plans/${planId.value}`).catch((err: any) => {
     message.error(err?.statusMessage || '获取套餐详情失败')
     return null
   })
-)
+}
 
-const plan = computed<any>(() => (data.value as any)?.plan || {})
-const prices = computed<any[]>(() => (data.value as any)?.prices || [])
-const capacities = computed<number[]>(() => (data.value as any)?.capacities || [])
+const plan = computed<any>(() => (rawData.value as any)?.plan || {})
+const prices = computed<any[]>(() => (rawData.value as any)?.prices || [])
+const capacities = computed<number[]>(() => (rawData.value as any)?.capacities || [])
+
+onMounted(() => { fetchPlan() })
 
 const selectedPriceId = ref<number | null>(null)
 const couponCode = ref('')
@@ -44,6 +48,14 @@ onMounted(() => {
     selectedPriceId.value = initialPriceId || prices.value[0].id
   }
 })
+
+// 数据异步加载完成后，自动选中第一个价格方案
+watch(prices, (list) => {
+  if (list.length && selectedPriceId.value == null) {
+    const initialPriceId = route.query.price_id ? Number(route.query.price_id) : null
+    selectedPriceId.value = initialPriceId || list[0].id
+  }
+}, { immediate: true })
 
 const selectedPrice = computed(() => prices.value.find((p) => p.id === selectedPriceId.value))
 const discountAmount = computed(() => couponInfo.value?.discount || 0)

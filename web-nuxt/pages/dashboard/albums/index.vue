@@ -3,14 +3,27 @@
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const api = useApi()
-const { data, refresh } = await useAsyncData('my-albums', () =>
-  api.get<any[]>('/api/v1/albums').catch(() => [] as any[])
-)
+
+const rawData = ref<any>(null)
+const loading = ref(false)
+
+async function fetchAlbums() {
+  loading.value = true
+  try {
+    rawData.value = await api.get<any[]>('/api/v1/albums').catch(() => [] as any[])
+  } catch {
+    rawData.value = []
+  } finally {
+    loading.value = false
+  }
+}
 
 const albums = computed<any[]>(() => {
-  const d = data.value
+  const d = rawData.value
   return Array.isArray(d) ? d : ((d as any)?.data ?? [])
 })
+
+onMounted(() => fetchAlbums())
 
 const showCreate = ref(false)
 const newAlbum = reactive({ name: '', intro: '', is_public: false })
@@ -22,13 +35,13 @@ async function create() {
   newAlbum.intro = ''
   newAlbum.is_public = false
   showCreate.value = false
-  refresh()
+  fetchAlbums()
 }
 
 async function remove(id: number) {
   if (!confirm('确定删除该相册？')) return
   await api.del(`/api/v1/albums/${id}`)
-  refresh()
+  fetchAlbums()
 }
 </script>
 

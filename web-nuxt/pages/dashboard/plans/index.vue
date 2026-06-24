@@ -5,19 +5,23 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 const api = useApi()
 const message = useMessage()
 
-const { data } = await useAsyncData('dashboard-plans', () =>
-  api.get<any>('/api/v1/plans').catch((err: any) => {
+const rawData = ref<any>(null)
+
+async function fetchPlans() {
+  rawData.value = await api.get<any>('/api/v1/plans').catch((err: any) => {
     message.error(err?.statusMessage || '获取套餐列表失败')
     return { data: [] }
   })
-)
+}
 
 const plans = computed<any[]>(() => {
-  const d = data.value as any
+  const d = rawData.value
   if (Array.isArray(d)) return d
   if (d && Array.isArray(d.data)) return d.data
   return []
 })
+
+onMounted(() => fetchPlans())
 
 function formatPrice(price?: number) {
   if (typeof price !== 'number') return '-'

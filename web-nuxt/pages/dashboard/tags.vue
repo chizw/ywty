@@ -3,14 +3,27 @@
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const api = useApi()
-const { data, refresh } = await useAsyncData('my-tags', () =>
-  api.get<any[]>('/api/v1/tags').catch(() => [] as any[])
-)
+
+const rawData = ref<any>(null)
+const loading = ref(false)
+
+async function fetchTags() {
+  loading.value = true
+  try {
+    rawData.value = await api.get<any[]>('/api/v1/tags').catch(() => [] as any[])
+  } catch {
+    rawData.value = []
+  } finally {
+    loading.value = false
+  }
+}
 
 const tags = computed<any[]>(() => {
-  const d = data.value
+  const d = rawData.value
   return Array.isArray(d) ? d : ((d as any)?.data ?? [])
 })
+
+onMounted(() => fetchTags())
 
 const newName = ref('')
 const msg = ref('')
@@ -21,7 +34,7 @@ async function create() {
     await api.post('/api/v1/tags', { name: newName.value })
     newName.value = ''
     msg.value = '已添加'
-    refresh()
+    fetchTags()
   } catch (err: any) {
     msg.value = err?.statusMessage || '添加失败'
   }
@@ -30,7 +43,7 @@ async function create() {
 async function remove(id: number) {
   if (!confirm('确定删除该标签？')) return
   await api.del(`/api/v1/tags/${id}`)
-  refresh()
+  fetchTags()
 }
 </script>
 

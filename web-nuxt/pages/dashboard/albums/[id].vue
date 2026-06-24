@@ -7,17 +7,25 @@ const albumId = Number(route.params.id)
 const api = useApi()
 const message = useMessage()
 
-const { data: album, refresh: refreshAlbum } = await useAsyncData(`album-${albumId}`, () =>
-  api.get<any>(`/api/v1/albums/${albumId}`).catch(() => null)
-)
-const { data: photos, refresh: refreshPhotos } = await useAsyncData(`album-photos-${albumId}`, () =>
-  api.get<any>(`/api/v1/albums/${albumId}/photos`).catch(() => ({ data: [] }))
-)
+const album = ref<any>(null)
+const photosRaw = ref<any>(null)
+const loading = ref(false)
+
+async function fetchAlbum() {
+  try { album.value = await api.get<any>(`/api/v1/albums/${albumId}`).catch(() => null) } catch { album.value = null }
+}
+
+async function fetchPhotos() {
+  loading.value = true
+  try { photosRaw.value = await api.get<any>(`/api/v1/albums/${albumId}/photos`).catch(() => ({ data: [] })) } catch { photosRaw.value = { data: [] } } finally { loading.value = false }
+}
 
 const photoList = computed<any[]>(() => {
-  const d = photos.value
+  const d = photosRaw.value
   return Array.isArray(d) ? d : ((d as any)?.data ?? [])
 })
+
+onMounted(() => { fetchAlbum(); fetchPhotos() })
 
 const newPhotoId = ref('')
 
@@ -60,7 +68,7 @@ async function batchRemove() {
   if (fail === 0) message.success(`已移除 ${ok} 张`)
   else message.warning(`成功 ${ok} 张，失败 ${fail} 张`)
   selectedIds.value = []
-  refreshPhotos()
+  fetchPhotos()
 }
 
 async function moveIn() {
@@ -73,7 +81,7 @@ async function moveIn() {
     await api.post(`/api/v1/photos/${id}/move-to-album`, { album_id: albumId })
     message.success('已添加到相册')
     newPhotoId.value = ''
-    refreshPhotos()
+    fetchPhotos()
   } catch (err: any) {
     message.error(err?.statusMessage || '添加失败')
   }
@@ -83,7 +91,7 @@ async function removeFromAlbum(photoId: number) {
   try {
     await api.del(`/api/v1/albums/${albumId}/photos/${photoId}`)
     message.success('已移除')
-    refreshPhotos()
+    fetchPhotos()
   } catch (err: any) {
     message.error(err?.statusMessage || '移除失败')
   }
@@ -93,7 +101,7 @@ async function setCover(photoId: number) {
   try {
     await api.request(`/api/v1/albums/${albumId}`, { method: 'PATCH', body: { cover_photo_id: photoId } })
     message.success('已设为封面')
-    refreshAlbum()
+    fetchAlbum()
   } catch (err: any) {
     message.error(err?.statusMessage || '设置封面失败')
   }

@@ -3,23 +3,36 @@
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const api = useApi()
-const { data, refresh } = await useAsyncData('my-notices', () =>
-  api.get<any>('/api/v1/notices').catch(() => ({ data: [] }))
-)
+
+const rawData = ref<any>(null)
+const loading = ref(false)
+
+async function fetchNotices() {
+  loading.value = true
+  try {
+    rawData.value = await api.get<any>('/api/v1/notices').catch(() => ({ data: [] }))
+  } catch {
+    rawData.value = { data: [] }
+  } finally {
+    loading.value = false
+  }
+}
 
 const notices = computed<any[]>(() => {
-  const d = data.value
+  const d = rawData.value
   return Array.isArray(d) ? d : ((d as any)?.data ?? [])
 })
 
+onMounted(() => fetchNotices())
+
 async function markAsRead(id: number) {
   await api.put(`/api/v1/notices/${id}/read`)
-  refresh()
+  fetchNotices()
 }
 
 async function markAllAsRead() {
   await api.put('/api/v1/notices/read-all')
-  refresh()
+  fetchNotices()
 }
 </script>
 

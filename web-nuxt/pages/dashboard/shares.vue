@@ -3,14 +3,27 @@
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const api = useApi()
-const { data, refresh } = await useAsyncData('my-shares', () =>
-  api.get<any[]>('/api/v1/shares').catch(() => [] as any[])
-)
+
+const rawData = ref<any>(null)
+const loading = ref(false)
+
+async function fetchShares() {
+  loading.value = true
+  try {
+    rawData.value = await api.get<any[]>('/api/v1/shares').catch(() => [] as any[])
+  } catch {
+    rawData.value = []
+  } finally {
+    loading.value = false
+  }
+}
 
 const shares = computed<any[]>(() => {
-  const d = data.value
+  const d = rawData.value
   return Array.isArray(d) ? d : ((d as any)?.data ?? [])
 })
+
+onMounted(() => fetchShares())
 
 const showCreate = ref(false)
 const form = reactive({
@@ -40,7 +53,7 @@ async function create() {
     form.password = ''
     form.expire_minutes = 0
     showCreate.value = false
-    refresh()
+    fetchShares()
   } catch (err: any) {
     msg.value = err?.statusMessage || '创建失败'
   } finally {
@@ -51,7 +64,7 @@ async function create() {
 async function remove(id: number) {
   if (!confirm('确定删除该分享？')) return
   await api.del(`/api/v1/shares/${id}`)
-  refresh()
+  fetchShares()
 }
 
 function copyUrl(slug: string) {

@@ -43,49 +43,54 @@ const query = computed(() => {
   return q
 })
 
-const { data, refresh } = await useAsyncData('my-photos', () =>
-  api.get<any>('/api/v1/photos', { query: query.value, raw: true }).catch(() => null)
-)
+// 手动管理数据，不使用 useAsyncData（避免 setup 阶段 auth 未就绪导致请求失败）
+const rawData = ref<any>(null)
+const loading = ref(false)
 
-// 首次挂载时若数据为空则重试一次（应对 token 刷新延迟等场景）
-onMounted(() => {
-  const d = data.value as any
-  const list = Array.isArray(d) ? d : (d && Array.isArray(d.data) ? d.data : [])
-  if (list.length === 0) {
-    refresh()
+async function fetchPhotos() {
+  loading.value = true
+  try {
+    rawData.value = await api.get<any>('/api/v1/photos', { query: query.value, raw: true })
+  } catch {
+    rawData.value = null
+  } finally {
+    loading.value = false
   }
-})
+}
 
 const photos = computed<any[]>(() => {
-  const d = data.value as any
+  const d = rawData.value
   if (Array.isArray(d)) return d
   if (d && Array.isArray(d.data)) return d.data
   return []
 })
-const total = computed(() => Number((data.value as any)?.meta?.total ?? photos.value.length))
+const total = computed(() => Number(rawData.value?.meta?.total ?? photos.value.length))
 const lastPage = computed(() => {
-  const lp = (data.value as any)?.meta?.last_page
+  const lp = rawData.value?.meta?.last_page
   if (lp) return Number(lp)
   return Math.max(1, Math.ceil(total.value / perPage))
 })
 
-const { data: albumsData } = await useAsyncData('photos-filter-albums', () =>
-  api.get<any>('/api/v1/albums').catch(() => [])
-)
-const albumOptions = computed(() => {
-  const d = albumsData.value as any
-  const list = Array.isArray(d) ? d : ((d as any)?.data ?? [])
-  return list.map((a: any) => ({ label: a.name, value: a.id }))
+const albumOptions = ref<{ label: string; value: number }[]>([])
+const tagOptions = ref<{ label: string; value: string }[]>([])
+
+onMounted(async () => {
+  // 并行加载：图片列表 + 相册筛选项 + 标签筛选项
+  const [, albumsRes, tagsRes] = await Promise.all([
+    fetchPhotos(),
+    api.get<any>('/api/v1/albums').catch(() => []),
+    api.get<any>('/api/v1/tags').catch(() => []),
+  ])
+  const aList = Array.isArray(albumsRes) ? albumsRes : ((albumsRes as any)?.data ?? [])
+  albumOptions.value = aList.map((a: any) => ({ label: a.name, value: a.id }))
+  const tList = Array.isArray(tagsRes) ? tagsRes : ((tagsRes as any)?.data ?? [])
+  tagOptions.value = tList.map((t: any) => ({ label: t.name, value: t.name }))
 })
 
-const { data: tagsData } = await useAsyncData('photos-filter-tags', () =>
-  api.get<any>('/api/v1/tags').catch(() => [])
-)
-const tagOptions = computed(() => {
-  const d = tagsData.value as any
-  const list = Array.isArray(d) ? d : ((d as any)?.data ?? [])
-  return list.map((t: any) => ({ label: t.name, value: t.name }))
-})
+// refresh 供上传/删除后调用
+function refresh() {
+  fetchPhotos()
+}
 
 const allIds = computed(() => photos.value.map((p) => p.id))
 
