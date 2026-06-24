@@ -2,7 +2,7 @@
 // 订单详情 / 支付页：展示订单信息、发起支付、刷新状态、取消订单
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-import { ArrowLeft, CreditCard, RefreshCw, XCircle, Copy, Loader2, CheckCircle, QrCode } from 'lucide-vue-next'
+import { ArrowLeft, CreditCard, RefreshCw, XCircle, Copy, Loader2, CheckCircle, QrCode } from '@lucide/vue'
 
 const api = useApi()
 const message = useMessage()

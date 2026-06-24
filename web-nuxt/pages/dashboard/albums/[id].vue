@@ -2,7 +2,7 @@
 // 相册详情：批量移除照片 / 设置封面 / 添加图片
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-import { ArrowLeft, Plus, Check, Image as ImageIcon } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Check, Image as ImageIcon } from '@lucide/vue'
 
 const route = useRoute()
 const albumId = Number(route.params.id)

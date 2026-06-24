@@ -2,7 +2,7 @@
 // 工单详情 + 回复（前端骨架，后端 P7 完成后对接）
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-import { ArrowLeft, Send, XCircle, MessageSquare, UserCircle } from 'lucide-vue-next'
+import { ArrowLeft, Send, XCircle, MessageSquare, UserCircle } from '@lucide/vue'
 
 const route = useRoute()
 const ticketId = Number(route.params.id)

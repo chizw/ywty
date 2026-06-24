@@ -2,7 +2,7 @@
 // 套餐详情 / 下单页：选择价格、优惠券、支付方式并下单
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-import { ArrowLeft, Check, Tag, ShoppingCart, Info } from 'lucide-vue-next'
+import { ArrowLeft, Check, Tag, ShoppingCart, Info } from '@lucide/vue'
 
 const api = useApi()
 const message = useMessage()
