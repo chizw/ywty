@@ -8,10 +8,10 @@ const api = useApi()
 const message = useMessage()
 
 const { data: album, refresh: refreshAlbum } = await useAsyncData(`album-${albumId}`, () =>
-  api.get<any>(`/api/v1/albums/${albumId}`)
+  api.get<any>(`/api/v1/albums/${albumId}`).catch(() => null)
 )
 const { data: photos, refresh: refreshPhotos } = await useAsyncData(`album-photos-${albumId}`, () =>
-  api.get<any>(`/api/v1/albums/${albumId}/photos`)
+  api.get<any>(`/api/v1/albums/${albumId}/photos`).catch(() => ({ data: [] }))
 )
 
 const photoList = computed<any[]>(() => {

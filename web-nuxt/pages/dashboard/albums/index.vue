@@ -3,7 +3,9 @@
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const api = useApi()
-const { data, refresh } = await useAsyncData('my-albums', () => api.get<any[]>('/api/v1/albums'))
+const { data, refresh } = await useAsyncData('my-albums', () =>
+  api.get<any[]>('/api/v1/albums').catch(() => [] as any[])
+)
 
 const albums = computed<any[]>(() => {
   const d = data.value

@@ -44,8 +44,17 @@ const query = computed(() => {
 })
 
 const { data, refresh } = await useAsyncData('my-photos', () =>
-  api.get<any>('/api/v1/photos', { query: query.value, raw: true })
+  api.get<any>('/api/v1/photos', { query: query.value, raw: true }).catch(() => null)
 )
+
+// 首次挂载时若数据为空则重试一次（应对 token 刷新延迟等场景）
+onMounted(() => {
+  const d = data.value as any
+  const list = Array.isArray(d) ? d : (d && Array.isArray(d.data) ? d.data : [])
+  if (list.length === 0) {
+    refresh()
+  }
+})
 
 const photos = computed<any[]>(() => {
   const d = data.value as any

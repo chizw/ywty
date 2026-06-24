@@ -16,15 +16,22 @@ export const useStatsStore = defineStore('stats', {
       const api = useApi()
       this.loading = true
       try {
-        // raw: true 让 useApi 返回完整响应 {code, message, data, meta}
-        const photosRes = await api.get<any>('/api/v1/photos', { query: { page: 1, per_page: 1 }, raw: true })
-        this.photos = Number(photosRes?.meta?.total ?? (Array.isArray(photosRes?.data) ? photosRes.data.length : 0))
+        // 三个请求并行，互不阻塞
+        const [photosRes, albumsRes, cap] = await Promise.all([
+          api.get<any>('/api/v1/photos', { query: { page: 1, per_page: 1 }, raw: true }).catch(() => null),
+          api.get<any>('/api/v1/albums', { raw: true }).catch(() => null),
+          api.get<any>('/api/v1/capacity').catch(() => null),
+        ])
 
-        const albumsRes = await api.get<any>('/api/v1/albums', { raw: true }).catch(() => null)
-        const list: any[] = Array.isArray(albumsRes?.data) ? albumsRes.data : (Array.isArray(albumsRes) ? albumsRes : [])
-        this.albums = list.length
+        if (photosRes) {
+          this.photos = Number(photosRes?.meta?.total ?? (Array.isArray(photosRes?.data) ? photosRes.data.length : 0))
+        }
 
-        const cap = await api.get<any>('/api/v1/capacity').catch(() => null)
+        if (albumsRes) {
+          const list: any[] = Array.isArray(albumsRes?.data) ? albumsRes.data : (Array.isArray(albumsRes) ? albumsRes : [])
+          this.albums = list.length
+        }
+
         if (cap) {
           this.usedBytes = Number(cap.used ?? 0)
           this.capacityBytes = Number(cap.capacity ?? 0)

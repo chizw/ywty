@@ -18,8 +18,9 @@ const updatedLabel = computed(() => {
   return new Date(statsStore.lastUpdatedAt).toLocaleTimeString('zh-CN', { hour12: false })
 })
 
-onMounted(async () => {
-  await fetchMe()
+onMounted(() => {
+  // fetchMe 和 statsStore.refresh 并行执行，互不阻塞
+  fetchMe().catch(() => {})
   statsStore.refresh()
   document.addEventListener('visibilitychange', onVisibility)
 })

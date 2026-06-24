@@ -3,7 +3,9 @@
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const api = useApi()
-const { data, refresh } = await useAsyncData('my-tags', () => api.get<any[]>('/api/v1/tags'))
+const { data, refresh } = await useAsyncData('my-tags', () =>
+  api.get<any[]>('/api/v1/tags').catch(() => [] as any[])
+)
 
 const tags = computed<any[]>(() => {
   const d = data.value

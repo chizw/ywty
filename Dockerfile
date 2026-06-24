@@ -1,7 +1,4 @@
-﻿﻿﻿﻿﻿﻿# =========================================
-# ywty 鍚堝苟闀滃儚锛圙o API + Nuxt SSR锛?# 鍗曞鍣?路 鍗曠鍙ｏ紙3000锛?# =========================================
-
-# ---------- Stage 1: Go builder ----------
+﻿﻿# ---------- Stage 1: Go builder ----------
 FROM golang:1.25-alpine AS go-builder
 WORKDIR /src
 COPY server/go.mod server/go.sum* ./

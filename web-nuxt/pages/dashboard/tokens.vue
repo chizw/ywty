@@ -3,7 +3,9 @@
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const api = useApi()
-const { data, refresh } = await useAsyncData('my-tokens', () => api.get<any[]>('/api/v1/tokens'))
+const { data, refresh } = await useAsyncData('my-tokens', () =>
+  api.get<any[]>('/api/v1/tokens').catch(() => [] as any[])
+)
 
 const tokens = computed<any[]>(() => {
   const d = data.value

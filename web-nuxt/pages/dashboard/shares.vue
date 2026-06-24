@@ -3,7 +3,9 @@
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const api = useApi()
-const { data, refresh } = await useAsyncData('my-shares', () => api.get<any[]>('/api/v1/shares'))
+const { data, refresh } = await useAsyncData('my-shares', () =>
+  api.get<any[]>('/api/v1/shares').catch(() => [] as any[])
+)
 
 const shares = computed<any[]>(() => {
   const d = data.value
