@@ -141,7 +141,7 @@ func New(opt *Options) *gin.Engine {
 	ticketH := handler.NewTicketHandler(ticketSvc)
 	noticeH := handler.NewNoticeHandler(noticeSvc)
 	pageH := handler.NewPageHandler(pageSvc)
-	groupH := handler.NewGroupHandler(groupSvc)
+	_ = handler.NewGroupHandler(groupSvc) // 群组接口在 adminH 内部已挂载
 	licenseH := handler.NewLicenseHandler(licenseSvc)
 
 	// API 路由组
@@ -197,7 +197,6 @@ func New(opt *Options) *gin.Engine {
 		noticeH.Mount(v1, authCasbinMW) // 公开接口不挂 mw，管理接口内部叠加 AdminOnly
 		pageH.Mount(v1, authCasbinMW)   // 公开接口不挂 mw，管理接口内部叠加 AdminOnly
 		ticketH.Mount(v1, authCasbinMW) // 用户侧挂 mw，管理接口内部叠加 AdminOnly
-		groupH.Mount(v1, authCasbinMW)
 		licenseH.Mount(v1, authCasbinMW)
 	}
 

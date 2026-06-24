@@ -1,4 +1,4 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
+﻿// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: true },
@@ -19,7 +19,7 @@ export default defineNuxtConfig({
       { code: 'en-US', name: 'English', file: 'en-US.json' },
     ],
     langDir: 'locales',
-    detectBrowserLanguage: { useCookie: true, cookieKey: 'ywty_lang' },
+    detectBrowserLanguage: { useCookie: true, cookieKey: 'yunwu_lang' },
   },
 
   // useHead 由 Nuxt 内置的 unhead 提供，无需额外模块
@@ -32,7 +32,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     apiBase: process.env.NUXT_API_BASE || '',
     public: {
-      appName: 'ywty',
+      appName: '云雾图驿',
       appVersion: '0.1.0',
     },
   },
@@ -40,6 +40,10 @@ export default defineNuxtConfig({
   // Nitro 反代：将 API / 静态资源 / 健康检查转发到内部 Go 服务
   nitro: {
     routeRules: {
+      // 后台 / 用户中心 走 SPA 模式：避免 SSR 阶段空 token 渲染导致的
+      // 中间件 302、Pinia state 覆盖、useAsyncData 401 等问题
+      '/admin/**': { ssr: false },
+      '/dashboard/**': { ssr: false },
       '/api/**': { proxy: `${process.env.NUXT_API_INTERNAL || 'http://127.0.0.1:8080'}/api/**` },
       '/uploads/**': { proxy: `${process.env.NUXT_API_INTERNAL || 'http://127.0.0.1:8080'}/uploads/**` },
       '/i/**': { proxy: `${process.env.NUXT_API_INTERNAL || 'http://127.0.0.1:8080'}/i/**` },
@@ -51,14 +55,14 @@ export default defineNuxtConfig({
   // 主题
   app: {
     head: {
-      title: 'ywty',
-      titleTemplate: '%s · ywty',
+      title: '云雾图驿',
+      titleTemplate: '%s · 云雾图驿',
       htmlAttrs: { lang: 'zh-CN' },
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: '自托管图床 / 云相册' },
-        { property: 'og:site_name', content: 'ywty' },
+        { name: 'description', content: '云雾图驿 - 开箱即用的图床/相册系统' },
+        { property: 'og:site_name', content: '云雾图驿' },
         { property: 'og:type', content: 'website' },
         { name: 'twitter:card', content: 'summary_large_image' },
       ],

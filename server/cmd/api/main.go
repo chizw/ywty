@@ -32,7 +32,7 @@ func main() {
 	}
 	defer logger.Sync()
 
-	logger.L.Info("starting ywty api server",
+	logger.L.Info("starting 云雾图驿 api server",
 		zString("app", cfg.App.Name),
 		zString("env", cfg.App.Env),
 		zInt("port", cfg.App.Port),

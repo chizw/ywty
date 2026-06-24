@@ -1,6 +1,6 @@
 # 应用配置
 app:
-  name: "ywty"
+  name: "云雾图驿"
   env: "dev"             # dev | prod
   version: "0.1.0"
   host: "0.0.0.0"

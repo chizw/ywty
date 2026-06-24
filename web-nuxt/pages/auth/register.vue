@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'auth' })
+definePageMeta({ layout: 'auth', middleware: 'guest' })
 
 const { register } = useAuth()
 const router = useRouter()
@@ -30,7 +30,7 @@ async function onSubmit() {
 <template>
   <div>
     <h1 class="text-2xl font-bold text-gray-900 mb-1">注册</h1>
-    <p class="text-sm text-gray-500 mb-6">创建你的 ywty 账号</p>
+    <p class="text-sm text-gray-500 mb-6">创建你的 云雾图驿 账号</p>
     <form class="space-y-4" @submit.prevent="onSubmit">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>

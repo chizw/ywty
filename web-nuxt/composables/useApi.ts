@@ -11,11 +11,33 @@ interface RequestOptions {
   raw?: boolean
 }
 
+// 全局唯一的 refresh 任务：避免 401 时并发刷新把 refresh_token 旋转失效
+let refreshPromise: Promise<TokenPair | null> | null = null
+
+async function doRefresh(refreshToken: string): Promise<TokenPair | null> {
+  const config = useRuntimeConfig()
+  const baseURL = config.apiBase as string
+  try {
+    const refreshed = await $fetch<ApiResponse<TokenPair>>('/api/v1/auth/refresh', {
+      baseURL,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: { refresh_token: refreshToken },
+    })
+    if (refreshed.code === 0 && refreshed.data) {
+      return refreshed.data
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 export function useApi() {
   const config = useRuntimeConfig()
   const baseURL = config.apiBase as string
 
-  async function request<T = any>(url: string, opts: RequestOptions = {}): Promise<T> {
+  async function request<T = any>(url: string, opts: RequestOptions = {}, _retried = false): Promise<T> {
     const auth = useAuthStore()
     const headers: Record<string, string> = {
       Accept: 'application/json',
@@ -56,21 +78,23 @@ export function useApi() {
       }
       return res as unknown as T
     } catch (err: any) {
-      // 401 时尝试 refresh
-      if (err?.statusCode === 401 && auth.refreshToken) {
-        try {
-          const refreshed = await $fetch<ApiResponse<TokenPair>>('/api/v1/auth/refresh', {
-            baseURL,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: { refresh_token: auth.refreshToken },
+      // 401 时尝试 refresh（单飞：所有并发请求共享同一个 refresh）
+      if (err?.statusCode === 401 && auth.refreshToken && !_retried) {
+        if (!refreshPromise) {
+          refreshPromise = doRefresh(auth.refreshToken).finally(() => {
+            // 立刻清空，让下一次 401 走新流程
+            refreshPromise = null
           })
-          if (refreshed.code === 0 && refreshed.data) {
-            auth.setTokens(refreshed.data)
-            // 重试原请求
-            return await request<T>(url, opts)
-          }
-        } catch {
+        }
+        const pair = await refreshPromise
+        if (pair) {
+          auth.setTokens(pair)
+          // 重试原请求（标记 _retried 避免再次 401 时无限循环）
+          return await request<T>(url, opts, true)
+        }
+        // refresh 失败：仅在用户触发的真实请求上清空登录态；
+        // 后台轮询 / hydrate 期间的偶发失败不立即踢人，由上层组件显式处理
+        if (opts.method && opts.method !== 'GET') {
           auth.clear()
         }
       }

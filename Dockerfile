@@ -1,7 +1,5 @@
-# =========================================
-# ywty 合并镜像（Go API + Nuxt SSR）
-# 单容器 · 单端口（3000）
-# =========================================
+﻿# =========================================
+# ywty 鍚堝苟闀滃儚锛圙o API + Nuxt SSR锛?# 鍗曞鍣?路 鍗曠鍙ｏ紙3000锛?# =========================================
 
 # ---------- Stage 1: Go builder ----------
 FROM golang:1.25-alpine AS go-builder
@@ -35,26 +33,25 @@ RUN apk add --no-cache ca-certificates tzdata wget \
 
 WORKDIR /app
 
-# Go 二进制 + 配置
+# Go 浜岃繘鍒?+ 閰嶇疆
 COPY --from=go-builder /out/api /app/api
 COPY --from=go-builder /out/migrate /app/migrate
 COPY server/configs /app/configs
 
-# Nuxt 构建产物
+# Nuxt 鏋勫缓浜х墿
 COPY --from=web-builder /app/.output /app/.output
 
-# 入口脚本
+# 鍏ュ彛鑴氭湰
 COPY --chmod=0755 <<'EOF' /app/entrypoint.sh
 #!/bin/sh
 set -e
 
-# 运行数据库迁移
-/app/migrate up
+# 杩愯鏁版嵁搴撹縼绉?/app/migrate up
 
-# 后台启动 API
+# 鍚庡彴鍚姩 API
 /app/api &
 
-# 前台启动 Nuxt
+# 鍓嶅彴鍚姩 Nuxt
 exec node /app/.output/server/index.mjs
 EOF
 

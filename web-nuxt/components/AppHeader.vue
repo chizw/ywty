@@ -12,7 +12,7 @@ const navLinks = [
   <header class="border-b border-gray-200 bg-white sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
       <div class="flex items-center gap-8">
-        <NuxtLink to="/" class="text-lg font-semibold text-primary-600">ywty</NuxtLink>
+        <NuxtLink to="/" class="text-lg font-semibold text-primary-600">云雾图驿</NuxtLink>
         <nav class="hidden md:flex items-center gap-6 text-sm text-gray-600">
           <NuxtLink
             v-for="link in navLinks"

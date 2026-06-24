@@ -30,7 +30,7 @@ const navItems: NavItem[] = [
   <div class="min-h-screen flex bg-gray-100">
     <aside class="w-60 bg-gray-900 text-gray-200 flex flex-col">
       <NuxtLink to="/admin" class="h-14 flex items-center px-5 text-lg font-semibold text-white border-b border-gray-800">
-        ywty · 后台
+        云雾图驿 · 后台
       </NuxtLink>
       <nav class="flex-1 overflow-y-auto py-3 space-y-3">
         <template v-for="(group, gi) in [...new Set(navItems.map(i => i.group))]" :key="gi">

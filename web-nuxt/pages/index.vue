@@ -30,7 +30,7 @@ function openLightbox(idx: number) {
 useSeoMeta({
   title: t('nav.home'),
   description: '自托管图床 / 云相册 · 重构版',
-  ogTitle: 'ywty · 自托管图床 / 云相册',
+  ogTitle: '云雾图驿 · 自托管图床 / 云相册',
   ogDescription: '自托管图床 / 云相册 · 重构版',
   ogType: 'website',
 })
@@ -40,7 +40,7 @@ useSeoMeta({
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
     <!-- Hero 区域 -->
     <div class="text-center mb-12">
-      <h1 class="text-5xl font-bold text-gray-900">ywty</h1>
+      <h1 class="text-5xl font-bold text-gray-900">云雾图驿</h1>
       <p class="mt-3 text-lg text-gray-600">自托管图床 / 云相册 · 重构版</p>
       <div class="mt-8 flex items-center justify-center gap-4">
         <NuxtLink

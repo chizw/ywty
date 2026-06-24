@@ -60,7 +60,7 @@ async function testSMS() {
 }
 
 // 邮件测试发送
-const mailTest = reactive({ to: '', subject: '【测试】邮件通知', text: '这是一封来自 ywty 的测试邮件。' })
+const mailTest = reactive({ to: '', subject: '【测试】邮件通知', text: '这是一封来自 云雾图驿 的测试邮件。' })
 const mailBusy = ref(false)
 async function testMail() {
   if (!mailTest.to) {

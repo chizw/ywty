@@ -1,6 +1,6 @@
 <div align="center">
 
-# ywty
+# 云雾图驿
 
 **自托管图床 / 云相册 · Go + Nuxt 重构版**
 

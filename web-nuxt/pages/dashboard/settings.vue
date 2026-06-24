@@ -52,7 +52,7 @@ async function save() {
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-gray-900 mb-4">设置</h1>
+    <h1 class="text-2xl font-bold text-gray-900 mb-4">我的云雾图驿</h1>
 
     <div class="mb-6 flex flex-wrap gap-2">
       <NuxtLink to="/dashboard/settings" class="px-3 py-1.5 text-sm rounded-md bg-primary-50 text-primary-700">个人资料</NuxtLink>

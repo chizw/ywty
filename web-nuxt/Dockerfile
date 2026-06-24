@@ -1,5 +1,5 @@
 # =========================================
-# ywty Web (Nuxt 3) - Multi-stage Dockerfile
+# 云雾图驿 Web (Nuxt 3) - Multi-stage Dockerfile
 # Stage 1: deps    - 安装依赖（含 devDependencies）
 # Stage 2: builder - 构建（.output）
 # Stage 3: runner  - 仅 .output（更小更快）

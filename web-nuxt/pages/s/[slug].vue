@@ -30,7 +30,7 @@ useSeoMeta({
   <div class="min-h-screen bg-gray-50">
     <header class="bg-white border-b border-gray-200">
       <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-        <NuxtLink to="/" class="text-lg font-semibold text-primary-600">ywty</NuxtLink>
+        <NuxtLink to="/" class="text-lg font-semibold text-primary-600">云雾图驿</NuxtLink>
         <span class="text-sm text-gray-500">分享</span>
       </div>
     </header>

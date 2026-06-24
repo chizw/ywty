@@ -4,6 +4,7 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -82,6 +83,24 @@ func (i *Issuer) IssueRefresh(userID uint64) (string, time.Time, error) {
 	return signed, exp, nil
 }
 
+// ParseRefresh 解析 refresh token（只验证签名和有效期，返回 userID）
+func (i *Issuer) ParseRefresh(tokenStr string) (uint64, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &jwt.RegisteredClaims{}, func(t *jwt.Token) (any, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return i.secret, nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	claims, ok := token.Claims.(*jwt.RegisteredClaims)
+	if !ok || !token.Valid {
+		return 0, errors.New("invalid token")
+	}
+	// refresh token 的 userID 存在 Subject 中
+	return strconv.ParseUint(claims.Subject, 10, 64)
+}
 // Parse 解析并校验 access token
 func (i *Issuer) Parse(tokenStr string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (any, error) {

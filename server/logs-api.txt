@@ -1,0 +1,22 @@
+2026-06-24T12:11:31.150+0800	INFO	api/main.go:35	starting ywty api server	{"app": "ywty", "env": "dev", "port": 8080}
+2026-06-24T12:11:31.157+0800	INFO	api/main.go:51	database connected	{"driver": "sqlite"}
+2026-06-24T12:11:31.157+0800	INFO	api/main.go:62	storage driver ready	{"driver": "local"}
+2026-06-24T12:11:31.157+0800	INFO	api/main.go:67	queue client ready	{"addr": "127.0.0.1:6379"}
+2026-06-24T12:11:31.157+0800	INFO	router/router.go:313	local static mounted	{"url": "/uploads", "root": "D:\\projects\\ywty\\server\\storage\\uploads"}
+2026-06-24T12:11:31.158+0800	INFO	rbac/rbac.go:75	casbin policies seeded	{"count": 18}
+2026-06-24T12:11:31.159+0800	INFO	api/main.go:85	listening	{"addr": "0.0.0.0:8080"}
+
+2026/06/24 12:12:38 [35mD:/projects/ywty/server/internal/service/license.go:27
+[0m[31m[error] [0mfailed to parse field: Features, error: unsupported data type: &[]
+
+2026/06/24 12:12:38 [35mD:/projects/ywty/server/internal/service/license.go:27
+[0m[31m[error] [0mfailed to parse field: Features, error: unsupported data type: &[]
+
+2026/06/24 12:12:43 [35mD:/projects/ywty/server/internal/service/license.go:61
+[0m[31m[error] [0mfailed to parse field: Features, error: unsupported data type: &[]
+
+2026/06/24 12:12:45 [35mD:/projects/ywty/server/internal/service/license.go:61
+[0m[31m[error] [0mfailed to parse field: Features, error: unsupported data type: &[]
+
+2026/06/24 12:12:48 [35mD:/projects/ywty/server/internal/service/license.go:61
+[0m[31m[error] [0mfailed to parse field: Features, error: unsupported data type: &[]

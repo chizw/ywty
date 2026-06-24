@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // 重置密码（公开页）
-definePageMeta({ layout: 'auth' })
+definePageMeta({ layout: 'auth', middleware: 'guest' })
 
 const route = useRoute()
 const router = useRouter()

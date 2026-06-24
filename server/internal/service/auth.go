@@ -151,13 +151,13 @@ func (s *AuthService) Login(ctx context.Context, req LoginRequest) (*TokenRespon
 
 // Refresh 刷新 access token
 func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (*TokenResponse, error) {
-	// 简化：复用 Parse 解析 refresh；颁发新 access
-	claims, err := s.issuer.Parse(refreshToken)
+	// 使用专门的 refresh token 解析方法
+	userID, err := s.issuer.ParseRefresh(refreshToken)
 	if err != nil {
 		return nil, ErrInvalidCredentials
 	}
 	var user model.User
-	if err := s.db.WithContext(ctx).First(&user, claims.UserID).Error; err != nil {
+	if err := s.db.WithContext(ctx).First(&user, userID).Error; err != nil {
 		return nil, ErrInvalidCredentials
 	}
 	return s.issueTokens(&user)
