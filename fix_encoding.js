@@ -1,123 +1,205 @@
 const fs = require('fs');
 const path = require('path');
 
-const baseDir = 'd:\\projects\\ywty\\web-nuxt\\pages\\admin';
+const baseDir = path.join(__dirname, 'web-nuxt', 'pages', 'admin');
+const FFFD = '\ufffd';
 
-// Replacement map: each entry is [file, searchContext, replaceContext]
-// We find the corruption by looking for the ? character after Chinese text,
-// and use surrounding context to determine what to replace.
+// For remaining corruptions, we need different search patterns
+// because the raw byte corruption (XX YY 3F) loses the following byte
+const fixMap = {
+  'tickets.vue': [
+    // statusMap: the closing ' was lost, so search without it
+    ["'待处" + FFFD + "?,", "'待处理',"],
+    ["'处理" + FFFD + "?,", "'处理中',"],
+    ["'已解" + FFFD + "?,", "'已解决',"],
+    ["'已关" + FFFD + "?,", "'已关闭',"],
+    // levelMap: entire char replaced
+    ["low: '" + FFFD + "?,", "low: '低',"],
+    ["medium: '" + FFFD + "?,", "medium: '中',"],
+    ["high: '" + FFFD + "?,", "high: '高',"],
+    ["urgent: '紧" + FFFD + "?,", "urgent: '紧急',"],
+  ],
 
-const replacements = [
-  // index.vue
-  ['index.vue', '仪表\ufffd?/h1>', '仪表盘</h1>'],
-  ['index.vue', '处理举报?', '处理举报'],
-  ['index.vue', '总举报?', '总举报'],
-  
-  // users.vue
-  ['users.vue', '用户管理\ndefinePageMeta', '用户管理\ndefinePageMeta'],
-  ['users.vue', '已保存\n', '已保存\n'],
-  ['users.vue', '个用户</span>', '个用户</span>'],
-  ['users.vue', '搜索用户名/邮箱/姓名', '搜索用户名/邮箱/姓名'],
-  ['users.vue', '用户名</TableHead>', '用户名</TableHead>'],
-  ['users.vue', '状态</TableHead>', '状态</TableHead>'],
-  ['users.vue', "管理员</TableHead>", "管理员</TableHead>"],
-  ["users.vue", "'是' : '否'", "'是' : '否'"],
-  ['users.vue', '上一页</Button>', '上一页</Button>'],
-  ['users.vue', '第 {{ meta.current_page }} / {{ meta.last_page }} 页</span>', '第 {{ meta.current_page }} / {{ meta.last_page }} 页</span>'],
-  ['users.vue', '下一页</Button>', '下一页</Button>'],
-  ['users.vue', '状态</Label>', '状态</Label>'],
-  ['users.vue', '设为管理员</Label>', '设为管理员</Label>'],
-  ['users.vue', '角色组</Label>', '角色组</Label>'],
-  ['users.vue', "不修改 />", "不修改 />"],
-  ['users.vue', '不修改</SelectItem>', '不修改</SelectItem>'],
+  'drivers.vue': [
+    // providerLabel: closing ' was lost
+    ["'七牛" + FFFD + "?,", "'七牛云',"],
+    ["'又拍" + FFFD + "?,", "'又拍云',"],
+    ["'阿里云邮件推" + FFFD + "?,", "'阿里云邮件推送',"],
+    ["'阿里云短" + FFFD + "?,", "'阿里云短信',"],
+    ["'腾讯云短" + FFFD + "?,", "'腾讯云短信',"],
+    ["'阿里云内容安" + FFFD + "?,", "'阿里云内容安全',"],
+    ["'空操" + FFFD + "?,", "'空操作',"],
+    // comments and template: closing char lost
+    ["短信测试发" + FFFD + "\n", "短信测试发送\n"],
+    ["邮件测试发" + FFFD + "\n", "邮件测试发送\n"],
+    ["发送失" + FFFD + "')", "发送失败')"],
+    ["发送请求已提交（请查看日志/上游" + FFFD + ")", "发送请求已提交（请查看日志/上游）"],
+    ["邮件发送请求已提交" + FFFD + "", "邮件发送请求已提交"],  // may not exist
+    ["短信发送请求已提交" + FFFD + "", "短信发送请求已提交"],
+    // Template text with lost closing chars
+    ["存储策略</NuxtLink>。", "存储策略</NuxtLink>。"],  // keep as-is if correct
+    // Empty spans - the ? was the only content
+    ['text-muted-foreground">' + FFFD + '</span>', 'text-muted-foreground">无</span>'],
+    // SMS provider line
+    ["SMS provider" + FFFD + "/p>", "SMS provider）</p>"],
+    // 邮件发送 line
+    ["触发一次发" + FFFD + "/p>", "触发一次发送</p>"],
+    // 发送 button
+    ['@click="testSMS">' + FFFD + "/Button>", '@click="testSMS">发送</Button>'],
+    ['@click="testMail">' + FFFD + "/Button>", '@click="testMail">发送</Button>'],
+    // 这是一封来云雾图驿
+    ["一封来" + FFFD + "云雾图驿", "一封来自云雾图驿"],
+    ["测试邮件" + FFFD + "", "测试邮件。"],  // need to check exact context
+    // placeholder 手机号 收件人邮箱
+    ['placeholder="' + FFFD + '手机号" class', 'placeholder="手机号" class'],  // may not work
+    ['placeholder="' + FFFD + '收件人邮箱" class', 'placeholder="收件人邮箱" class'],
+    ['placeholder="手机' + FFFD + ' class', 'placeholder="手机号" class'],
+    ['placeholder="收件人邮' + FFFD + ' class', 'placeholder="收件人邮箱" class'],
+    // 短信测试标题
+    ['已配置 SMS provider' + FFFD + '/p>', '已配置 SMS provider）</p>'],
+  ],
 
-  // photos.vue
-  ['photos.vue', '图片管理', '图片管理'],
-  ['photos.vue', '搜索文件名/原始名', '搜索文件名/原始名'],
-  ['photos.vue', '张</span>', '张</span>'],
-  ['photos.vue', '上一页</Button>', '上一页</Button>'],
-  ['photos.vue', '第 {{ meta.current_page }} / {{ meta.last_page }} 页</span>', '第 {{ meta.current_page }} / {{ meta.last_page }} 页</span>'],
-  ['photos.vue', '下一页</Button>', '下一页</Button>'],
-  ['photos.vue', '不可恢复。', '不可恢复。'],
+  'storage.vue': [
+    // comment
+    ["增删改查" + FFFD + ")", "增删改查）"],
+    // providerLabel
+    ["'七牛" + FFFD + "?,", "'七牛云',"],
+    ["'又拍" + FFFD + "?,", "'又拍云',"],
+    ["'阿里" + FFFD + "?OSS", "'阿里云OSS"],
+    ["'腾讯" + FFFD + "?COS", "'腾讯云COS"],
+    // messages
+    ["'已更" + FFFD + "?,", "'已更新',"],
+    ["'已创" + FFFD + "?,", "'已创建',"],
+    ["'已删" + FFFD + "?,", "'已删除',"],
+    ["请填写名" + FFFD + "?)", "请填写名称')"],
+    ["options 必须是合" + FFFD + "?JSON", "options 必须是合法JSON"],
+    // Template
+    ["按策略 ID 调用" + FFFD + "   </p>", "按策略 ID 调用。    </p>"],
+    ["\u201c新建策略\u201d开始" + FFFD + "   </div>", "\u201c新建策略\u201d开始。    </div>"],
+    ["如：阿里" + FFFD + "?OSS 主站", "如：阿里云 OSS 主站"],
+    ["（{{ d }}" + FFFD + "/SelectItem>", "（{{ d }}）</SelectItem>"],
+    ["Options（JSON" + FFFD + "/Label>", "Options（JSON）</Label>"],
+    ["不同驱动" + FFFD + "?options", "不同驱动的 options"],
+    ["参考驱动文档填写" + FFFD + "/p>", "参考驱动文档填写。</p>"],
+  ],
 
-  // tickets.vue
-  ['tickets.vue', '工单管理', '工单管理'],
-  ['tickets.vue', '待处理', '待处理'],
-  ['tickets.vue', '处理中', '处理中'],
-  ['tickets.vue', '已解决', '已解决'],
-  ['tickets.vue', '已关闭', '已关闭'],
-  ['tickets.vue', '低', '低'],
-  ['tickets.vue', '中', '中'],
-  ['tickets.vue', '高', '高'],
-  ['tickets.vue', '紧急', '紧急'],
-  ['tickets.vue', '优先级</TableHead>', '优先级</TableHead>'],
-  ['tickets.vue', '状态</TableHead>', '状态</TableHead>'],
-];
+  'pages.vue': [
+    // comment
+    ["单页管" + FFFD + "\ndefinePageMeta", "单页管理\ndefinePageMeta"],
+    // placeholder
+    ['placeholder="' + FFFD + 'about"', 'placeholder="如 about"'],
+  ],
 
-// For each file, read as bytes, find corruption patterns, and fix
-const files = fs.readdirSync(baseDir).filter(f => f.endsWith('.vue'));
+  'photos.vue': [
+    // comment
+    ["图片管" + FFFD + "\ndefinePageMeta", "图片管理\ndefinePageMeta"],
+    // counter
+    ["}} " + FFFD + " </span>", "}} 张 </span>"],
+  ],
 
-for (const file of files) {
+  'reports.vue': [
+    // comment  
+    ["举报管" + FFFD + "\ndefinePageMeta", "举报管理\ndefinePageMeta"],
+    // 无说明
+    ["（无说明" + FFFD + ")", "（无说明）"],
+  ],
+
+  'groups.vue': [
+    // new group button text
+    ["新建角色" + FFFD + " }}", "新建角色组 }}"],
+    // register default label
+    ["注册时默认使" + FFFD + "/Label>", "注册时默认使用</Label>"],
+    // delete confirm
+    ["用户角色绑定也会被解除" + FFFD + "/p>", "用户角色绑定也会被解除。</p>"],
+  ],
+
+  'license.vue': [
+    // 免费版
+    ["免费" + FFFD + "' }}", "免费版' }}"],
+    // 已激活 已过期 未激活
+    ["'已激" + FFFD + " : ", "'已激活' : "],
+    ["'已过" + FFFD + " : ", "'已过期' : "],
+    ["'未激" + FFFD + "'", "'未激活'"],
+    // 无限制
+    ["无限制" + FFFD + "' }}", "无限制' }}"],  // hmm, check context
+    // 最大存储空间
+    ["最大存储空" + FFFD + "            </div>", "最大存储空间            </div>"],
+    // 已启用功能
+    ["已启用功" + FFFD + "          </div>", "已启用功能          </div>"],
+    // 激活按钮
+    ["? '激" + FFFD + "License' : '激" + FFFD + "License'", "? '激活 License' : '激活 License'"],
+    // 请输入 License Key
+    ['placeholder="请输' + FFFD + 'License Key"', 'placeholder="请输入 License Key"'],
+    // 激活按钮  
+    ['@click="activate">' + FFFD + "/Button>", '@click="activate">激活</Button>'],
+    // 状态 label
+    ["状" + FFFD + "            </div>", "状态            </div>"],
+  ],
+
+  'violations.vue': [
+    // comment
+    ["违规记录管" + FFFD + "\ndefinePageMeta", "违规记录管理\ndefinePageMeta"],
+    // statusMap
+    ["'待处" + FFFD + "?,", "'待处理',"],
+    ["'已处" + FFFD + "?,", "'已处理',"],
+    ["'已忽" + FFFD + "?,", "'已忽略',"],
+  ],
+
+  'users.vue': [
+    // remaining: 共 X 个用户 label
+    [FFFD + "{{ meta?.total ?? users.length }} 个用户", "共 {{ meta?.total ?? users.length }} 个用户"],
+    // 是/否
+    ["{{ u.is_admin ? '" + FFFD + " : '" + FFFD + " }}", "{{ u.is_admin ? '是' : '否' }}"],
+  ],
+
+  'index.vue': [
+    // remaining: P2 corruptions (extra ? after 报)
+    ['举报?          </div>', '举报          </div>'],
+  ],
+
+  'feedbacks.vue': [
+    ["意见管" + FFFD + "\ndefinePageMeta", "意见管理\ndefinePageMeta"],
+    ["反馈管" + FFFD + "\ndefinePageMeta", "反馈管理\ndefinePageMeta"],
+  ],
+
+  'notices.vue': [
+    // remaining
+    ["确定删除该通知" + FFFD + "/p>", "确定删除该通知？</p>"],
+  ],
+};
+
+let totalFixed = 0;
+
+for (const [file, fixes] of Object.entries(fixMap)) {
   const filePath = path.join(baseDir, file);
-  let bytes = fs.readFileSync(filePath);
-  let modified = false;
-  
-  // Strategy: find all occurrences of 0xEF 0xBF 0xBD 0x3F and replace with appropriate char
-  // Also find standalone 0x3F that comes after valid Chinese chars (the extra ? pattern)
-  
-  // For the EF BF BD 3F pattern, we need to know what character it should be
-  // We'll collect all positions and then use context to determine replacements
-  
-  const results = [];
-  let i = 0;
-  while (i < bytes.length - 3) {
-    // Pattern 1: EF BF BD 3F
-    if (bytes[i] === 0xEF && bytes[i+1] === 0xBF && bytes[i+2] === 0xBD && bytes[i+3] === 0x3F) {
-      // Get context before
-      const beforeStart = Math.max(0, i - 30);
-      const before = bytes.slice(beforeStart, i).toString('utf8');
-      const afterStart = Math.min(bytes.length, i + 4);
-      const afterEnd = Math.min(bytes.length, i + 10);
-      const after = bytes.slice(afterStart, afterEnd).toString('utf8');
-      results.push({ pos: i, type: 'FFFD', before, after });
-    }
-    i++;
+  if (!fs.existsSync(filePath)) {
+    console.log(`SKIP ${file}: not found`);
+    continue;
   }
   
-  // Now scan for standalone ? (0x3F) that appear after Chinese characters
-  // A Chinese character in UTF-8 has bytes in range E0-EF xx xx
-  // Look for: [valid 3-byte Chinese char] followed by 0x3F
-  i = 0;
-  while (i < bytes.length - 3) {
-    if (bytes[i] >= 0xE0 && bytes[i] <= 0xEF && 
-        bytes[i+1] >= 0x80 && bytes[i+1] <= 0xBF &&
-        bytes[i+2] >= 0x80 && bytes[i+2] <= 0xBF) {
-      // Valid 3-byte Chinese char at i..i+2
-      if (i + 3 < bytes.length && bytes[i+3] === 0x3F) {
-        const charBuf = Buffer.from([bytes[i], bytes[i+1], bytes[i+2]]);
-        const char = charBuf.toString('utf8');
-        const beforeStart = Math.max(0, i - 30);
-        const before = bytes.slice(beforeStart, i).toString('utf8');
-        const afterStart = Math.min(bytes.length, i + 4);
-        const afterEnd = Math.min(bytes.length, i + 10);
-        const after = bytes.slice(afterStart, afterEnd).toString('utf8');
-        
-        // Only count if this ? isn't part of valid code (like ?? in JS)
-        // Check if the next byte after ? is also a valid continuation
-        const isCodeContext = (after.startsWith("'") || after.startsWith('"') || after.startsWith('}') || after.startsWith('('));
-        
-        // We need to check if this ? is part of a ?? operator or ternary or similar
-        // Chinese chars are typically followed by Chinese chars, not ?, in templates
-        results.push({ pos: i, type: 'EXTRA_?', char, before, after, nextByte: i + 4 < bytes.length ? bytes[i+4] : null });
-      }
+  let content = fs.readFileSync(filePath, 'utf8');
+  const original = content;
+  let fileFixCount = 0;
+  let missed = [];
+  
+  for (const [search, replace] of fixes) {
+    if (content.includes(search)) {
+      content = content.split(search).join(replace);
+      fileFixCount++;
+    } else {
+      missed.push(search.substring(0, 30).replace(/\ufffd/g, 'FFFD'));
     }
-    i++;
   }
   
-  if (results.length > 0) {
-    console.log(`\n${file}: Found ${results.length} potential corruptions`);
-    for (const r of results) {
-      console.log(`  ${r.type} at byte ${r.pos}: char=${r.char || 'FFFD'} before=[${r.before.slice(-15)}] after=[${r.after}]`);
-    }
+  if (content !== original) {
+    fs.writeFileSync(filePath, content, 'utf8');
+    console.log(`${file}: ${fileFixCount} applied`);
+    if (missed.length > 0) console.log(`  missed: ${missed.join('; ')}`);
+    totalFixed += fileFixCount;
+  } else {
+    console.log(`${file}: no changes (${missed.length} patterns not found)`);
+    if (missed.length > 0) console.log(`  missed: ${missed.join('; ')}`);
   }
 }
+
+console.log(`\nTotal: ${totalFixed} replacements`);

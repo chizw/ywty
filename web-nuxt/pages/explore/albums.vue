@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 探索�?- 相册列表
+// 探索页 - 相册列表
 const api = useApi()
 const { t } = useI18n()
 

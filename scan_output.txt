@@ -1,0 +1,44 @@
+=== Scanning for corruptions ===
+
+P1 index.vue@867: [foreground">仪表]???[/h1>
+    <p cl]
+P2 index.vue@2466: [      待处理举]报?[          </di]
+P2 index.vue@2806: [            总举]报?[          </di]
+P1 users.vue@55: [后台：用户管]???[definePageMeta]
+P1 users.vue@1455: [sg.value = '已保]???[
+    closeEdit]
+P1 users.vue@1967: [muted-foreground">]???[{{ meta?.total]
+P1 users.vue@2011: [s.length }} 个用]???[/span>
+    </d]
+P1 users.vue@2140: [lder="搜索用户]???[邮箱/姓名"]
+P1 users.vue@2426: [ <TableHead>用户]???[/TableHead>
+  ]
+P1 users.vue@2552: [    <TableHead>状]???[/TableHead>
+  ]
+P1 users.vue@2597: [ <TableHead>管理]???[/TableHead>
+  ]
+P1 users.vue@3444: [ {{ u.is_admin ? ']???[ : '�? }}
+  ]
+P1 users.vue@3452: [_admin ? '�? : ']???[ }}
+          ]
+P1 users.vue@4023: [ refresh()">上一]???[/Button>
+     ]
+P1 users.vue@4086: [muted-foreground">]???[{{ meta.curren]
+P1 users.vue@4137: [meta.last_page }} ]???[/span>
+      <]
+P1 users.vue@4258: [ refresh()">下一]???[/Button>
+    <]
+P1 users.vue@4628: ["mb-1.5 block">状]???[/Label>
+      ]
+P1 users.vue@5249: [Label>设为管理]???[/Label>
+      ]
+P1 users.vue@5340: [-1.5 block">角色]???[/Label>
+      ]
+P1 users.vue@5553: [laceholder="不修]???[ />
+          ]
+P1 users.vue@5666: [m value="0">不修]???[/SelectItem>
+ ]
+
+=== Summary ===
+P1 (FFFD+? replacing character): 20
+P2 (extra ? after character): 2

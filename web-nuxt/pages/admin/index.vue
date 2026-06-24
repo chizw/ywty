@@ -26,7 +26,7 @@ function onVis() {
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-foreground">仪表�?/h1>
+    <h1 class="text-2xl font-bold text-foreground">仪表盘</h1>
     <p class="mt-1 text-sm text-muted-foreground">管理后台概览</p>
 
     <div class="mt-6 grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -70,7 +70,7 @@ function onVis() {
         <CardContent class="p-4">
           <div class="flex items-center gap-2 text-xs text-muted-foreground">
             <AlertTriangle class="h-4 w-4" />
-            待处理举报?          </div>
+            待处理举报          </div>
           <div class="mt-1 text-2xl font-semibold text-yellow-600">{{ s.pending_reports ?? 0 }}</div>
         </CardContent>
       </Card>
@@ -78,7 +78,7 @@ function onVis() {
         <CardContent class="p-4">
           <div class="flex items-center gap-2 text-xs text-muted-foreground">
             <Flag class="h-4 w-4" />
-            总举报?          </div>
+            总举报          </div>
           <div class="mt-1 text-2xl font-semibold">{{ s.reports ?? 0 }}</div>
         </CardContent>
       </Card>

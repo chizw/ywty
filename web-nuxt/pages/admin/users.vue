@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
-// 管理后台：用户管�?definePageMeta({ layout: 'admin', middleware: 'admin' })
+// 管理后台：用户管理
+definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 const api = useApi()
 const page = ref(1)
@@ -53,7 +54,7 @@ async function save() {
         group_id: form.group_id || undefined,
       },
     })
-    msg.value = '已保�?
+    msg.value = '已保存
     closeEdit()
     refresh()
   } catch (err: any) {
@@ -74,13 +75,13 @@ function fmtTime(s: any) {
   <div>
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-2xl font-bold text-foreground">用户管理</h1>
-      <span class="text-sm text-muted-foreground">�?{{ meta?.total ?? users.length }} 个用�?/span>
+      <span class="text-sm text-muted-foreground">�?{{ meta?.total ?? users.length }} 个用户</span>
     </div>
 
     <div class="mb-4 flex gap-2">
       <Input
         v-model="keyword"
-        placeholder="搜索用户�?邮箱/姓名"
+        placeholder="搜索用户名/邮箱/姓名"
         class="max-w-sm"
         @keyup.enter="() => refresh()"
       />
@@ -92,11 +93,11 @@ function fmtTime(s: any) {
         <TableHeader>
           <TableRow>
             <TableHead>ID</TableHead>
-            <TableHead>用户�?/TableHead>
+            <TableHead>用户名</TableHead>
             <TableHead>邮箱</TableHead>
             <TableHead>姓名</TableHead>
-            <TableHead>状�?/TableHead>
-            <TableHead>管理�?/TableHead>
+            <TableHead>状态</TableHead>
+            <TableHead>管理员</TableHead>
             <TableHead>注册时间</TableHead>
             <TableHead class="text-right">操作</TableHead>
           </TableRow>
@@ -127,9 +128,9 @@ function fmtTime(s: any) {
     </Card>
 
     <div v-if="meta && meta.last_page > 1" class="mt-4 flex items-center justify-end gap-2">
-      <Button variant="outline" size="sm" :disabled="page <= 1" @click="page--; refresh()">上一�?/Button>
-      <span class="text-sm text-muted-foreground">�?{{ meta.current_page }} / {{ meta.last_page }} �?/span>
-      <Button variant="outline" size="sm" :disabled="page >= meta.last_page" @click="page++; refresh()">下一�?/Button>
+      <Button variant="outline" size="sm" :disabled="page <= 1" @click="page--; refresh()">上一页</Button>
+      <span class="text-sm text-muted-foreground">第 {{ meta.current_page }} / {{ meta.last_page }} 页</span>
+      <Button variant="outline" size="sm" :disabled="page >= meta.last_page" @click="page++; refresh()">下一页</Button>
     </div>
 
     <!-- 编辑弹窗 -->
@@ -140,7 +141,7 @@ function fmtTime(s: any) {
         </DialogHeader>
         <div class="space-y-4">
           <div>
-            <Label class="mb-1.5 block">状�?/Label>
+            <Label class="mb-1.5 block">状态</Label>
             <Select :modelValue="form.status" @update:modelValue="(val: string) => form.status = val">
               <SelectTrigger>
                 <SelectValue />
@@ -153,16 +154,16 @@ function fmtTime(s: any) {
           </div>
           <div class="flex items-center gap-2">
             <Checkbox :checked="form.is_admin" @update:checked="(val: boolean) => form.is_admin = val" />
-            <Label>设为管理�?/Label>
+            <Label>设为管理员</Label>
           </div>
           <div>
-            <Label class="mb-1.5 block">角色�?/Label>
+            <Label class="mb-1.5 block">角色组</Label>
             <Select :modelValue="String(form.group_id)" @update:modelValue="(val: string) => form.group_id = Number(val)">
               <SelectTrigger>
-                <SelectValue placeholder="不修�? />
+                <SelectValue placeholder="不修改 />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="0">不修�?/SelectItem>
+                <SelectItem value="0">不修改</SelectItem>
                 <SelectItem v-for="g in groups" :key="g.id" :value="String(g.id)">{{ g.name }}</SelectItem>
               </SelectContent>
             </Select>

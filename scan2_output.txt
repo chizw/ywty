@@ -1,0 +1,85 @@
+
+=== drivers.vue ===
+  L20: qiniu: '七牛�?,
+  L21: upyun: '又拍�?,
+  L26: aliyun_directmail: '阿里云邮件推�?,
+  L28: aliyun: '阿里云短�?,
+  L29: tencent: '腾讯云短�?,
+  L38: aliyun_green: '阿里云内容安�?,
+  L41: noop: '空操�?,
+  L45: // 短信测试发�?const smsTest = reactive({ to: '', body: '【测试】您的验证码�?123456' })
+  L57: message.error(err?.statusMessage || '发送失�?)
+  L63: // 邮件测试发�?const mailTest = reactive({ to: '', subject: '【测试】邮件通知', text: '这是一封来�?云雾图驿 的测试邮件�? })
+  L75: message.error(err?.statusMessage || '发送失�?)
+  L97: 系统所有可用的扩展驱动列表。存储策略详情见 <NuxtLink to="/admin/storage" class="text-primary underline">存储策略</NuxtLink>�?
+  L111: <span v-if="!(drivers.storage ?? []).length" class="text-xs text-muted-foreground">�?/span>
+  L127: <span v-if="!(drivers.sms ?? []).length" class="text-xs text-muted-foreground">�?/span>
+  L143: <span v-if="!(drivers.mail ?? []).length" class="text-xs text-muted-foreground">�?/span>
+  L159: <span v-if="!(drivers.social ?? []).length" class="text-xs text-muted-foreground">�?/span>
+  L175: <span v-if="!(drivers.scan ?? []).length" class="text-xs text-muted-foreground">�?/span>
+  L191: <span v-if="!(drivers.process ?? []).length" class="text-xs text-muted-foreground">�?/span>
+  L201: <p class="text-xs text-muted-foreground mb-3">通过短信验证码接口触发一次发送（请确保已配置 SMS provider�?/p>
+  L211: <p class="text-xs text-muted-foreground mb-3">通过邮件验证码接口触发一次发�?/p>
+  L214: <Button :loading="mailBusy" @click="testMail">发�?/Button>
+
+=== feedbacks.vue ===
+  L2: // 管理后台：意见反馈管�?definePageMeta({ layout: 'admin', middleware: 'admin' })
+
+=== groups.vue ===
+  L92: {{ showCreate ? '取消' : '新建角色�? }}
+  L142: <Label>注册时默认使�?/Label>
+  L159: <p class="text-sm text-muted-foreground">确定删除该角色组？相关用户角色绑定也会被解除�?/p>
+
+=== license.vue ===
+  L52: <div class="text-lg font-semibold">{{ license.type || '免费�? }}</div>
+  L59: {{ license.status === 'active' ? '已激�? : license.status === 'expired' ? '已过�? : '未激�? }}
+  L67: <div class="text-lg font-semibold">{{ license.max_users || '无限�? }}</div>
+  L73: <div class="text-lg font-semibold">{{ license.max_storage ? `${(license.max_storage / 1024 / 1024 / 
+  L108: <Input v-model="form.key" class="font-mono" placeholder="请输�?License Key" />
+
+=== pages.vue ===
+  L2: // 管理后台：单页管�?definePageMeta({ layout: 'admin', middleware: 'admin' })
+  L78: <Input v-model="form.slug" placeholder="�?about" />
+
+=== photos.vue ===
+  L2: // 管理后台：图片管�?definePageMeta({ layout: 'admin', middleware: 'admin' })
+  L46: <span class="text-sm text-muted-foreground">共 {{ meta?.total ?? photos.length }} �?/span>
+
+=== reports.vue ===
+  L2: // 管理后台：举报管�?definePageMeta({ layout: 'admin', middleware: 'admin' })
+  L77: <div class="mt-1 text-sm text-foreground">{{ r.content || '（无说明�? }}</div>
+
+=== storage.vue ===
+  L2: // 管理后台：存储策略管理（增删改查�?definePageMeta({ layout: 'admin', middleware: 'admin' })
+  L75: message.success('已更�?)
+  L78: message.success('已创�?)
+  L98: message.success('已删�?)
+  L112: qiniu: '七牛�?,
+  L113: upyun: '又拍�?,
+  L134: 供用户上传、跨存储复制等场景按策略 ID 调用�?    </p>
+  L137: 暂无存储策略，点击右上角"新建策略"开始�?    </div>
+  L181: <Input v-model="form.name" placeholder="如：阿里�?OSS 主站" />
+  L190: <SelectItem v-for="d in drivers" :key="d" :value="d">{{ providerLabel(d) }}（{{ d }}�?/SelectItem>
+  L203: <Label class="mb-1.5 block">Options（JSON�?/Label>
+  L210: <p class="mt-1 text-xs text-muted-foreground">不同驱动�?options 字段不同，参考驱动文档填写�?/p>
+
+=== tickets.vue ===
+  L2: // 管理后台：工单管�?definePageMeta({ layout: 'admin', middleware: 'admin' })
+  L13: pending: '待处�?,
+  L14: processing: '处理�?,
+  L15: resolved: '已解�?,
+  L16: closed: '已关�?,
+  L20: low: '�?,
+  L21: medium: '�?,
+  L22: high: '�?,
+  L23: urgent: '紧�?,
+
+=== users.vue ===
+  L78: <span class="text-sm text-muted-foreground">�?{{ meta?.total ?? users.length }} 个用户</span>
+  L118: {{ u.is_admin ? '�? : '�? }}
+
+=== violations.vue ===
+  L2: // 管理后台：违规记录管�?definePageMeta({ layout: 'admin', middleware: 'admin' })
+  L15: pending: '待处�?,
+  L16: processed: '已处�?,
+  L17: ignored: '已忽�?,
