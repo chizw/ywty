@@ -15,7 +15,6 @@ require (
 	golang.org/x/crypto v0.48.0
 	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8
 	gorm.io/driver/mysql v1.6.0
-	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )
 
@@ -84,6 +83,7 @@ require (
 	golang.org/x/text v0.34.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
+	gorm.io/driver/postgres v1.5.9 // indirect
 	gorm.io/driver/sqlserver v1.6.3 // indirect
 	gorm.io/plugin/dbresolver v1.6.2 // indirect
 	modernc.org/libc v1.67.4 // indirect

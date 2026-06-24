@@ -1,4 +1,4 @@
-// Package database 多驱动 DB 工厂（MySQL / PostgreSQL / SQLite）
+// Package database 多驱动 DB 工厂（MySQL / SQLite）
 package database
 
 import (
@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
@@ -34,14 +33,6 @@ func New(cfg config.Database) (*gorm.DB, error) {
 		db, err := gorm.Open(mysql.Open(dsn), gormCfg)
 		if err != nil {
 			return nil, fmt.Errorf("open mysql: %w", err)
-		}
-		return db, nil
-
-	case "postgres":
-		dsn := cfg.DSN()
-		db, err := gorm.Open(postgres.Open(dsn), gormCfg)
-		if err != nil {
-			return nil, fmt.Errorf("open postgres: %w", err)
 		}
 		return db, nil
 

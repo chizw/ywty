@@ -66,7 +66,7 @@ Local · **S3** · 阿里云 **OSS** · 腾讯云 **COS** · 七牛云 · 又拍
 
 ### 🗃️ 数据库
 - 一套 GORM 模型覆盖 **30+ 张业务表**
-- 同时支持 **MySQL 8** / **PostgreSQL 15** / **SQLite**
+- 默认 **SQLite** 轻量化，深度支持 **MySQL**（推荐 MariaDB 10.6.20+）
 - 迁移 CLI：`migrate up / down / status / seed`
 
 ## 🏗️ 技术栈
@@ -167,7 +167,7 @@ cp deploy/supervisor.conf /etc/supervisor/conf.d/ywty.conf
 ./deploy/backup-db.sh mysql
 ```
 
-详细的部署配置和参数说明见 [deploy/README.md](./deploy/README.md) 和 [REFACTOR_PLAN.md](./REFACTOR_PLAN.md)。
+详细的部署配置和参数说明见 [deploy/README.md](./deploy/README.md)。
 
 ## 🛠️ 开发
 
@@ -226,8 +226,6 @@ ywty/
 ├── docker-compose.yml
 ├── .env.example
 ├── Dockerfile                # 合并镜像（API + Web）
-├── REFACTOR_PLAN.md          # 重构方案详细任务
-├── CHANGELOG.md
 └── README.md
 ```
 
@@ -326,13 +324,9 @@ npm run test
 | v1.0 | 正式版 | 🎯 2026 Q4 |
 | 未来 | 移动端 App / 多租户 / 联邦 | 💭 |
 
-详见 [REFACTOR_PLAN.md](./REFACTOR_PLAN.md)
-
 ## 📜 许可证
 
 本项目采用 [MIT License](./LICENSE.md) 开源。
-
-> 历史背景：本项目从 ywty (ywty) 2.x 完全重写而来。ywty 的历史版本更新日志保留在 [CHANGELOG.md](./CHANGELOG.md) 中以供溯源。
 
 ## 🙏 致谢
 

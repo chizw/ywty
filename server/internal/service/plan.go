@@ -36,7 +36,7 @@ type AdminPlanReq struct {
 		Duration int    `json:"duration" binding:"required"`
 		Price    int    `json:"price" binding:"required,min=0"`
 	} `json:"prices"`
-	Capacities []float64 `json:"capacities"` // 容量 KB
+	Capacities []int64 `json:"capacities"` // 容量(字节)
 	GroupIDs   []uint64  `json:"group_ids"`  // 空=全部可用
 }
 
@@ -44,7 +44,7 @@ type AdminPlanReq struct {
 type PlanDetail struct {
 	Plan       model.Plan
 	Prices     []model.PlanPrice
-	Capacities []float64
+	Capacities []int64
 	GroupIDs   []uint64
 }
 

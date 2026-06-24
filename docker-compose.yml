@@ -1,4 +1,4 @@
-﻿# =========================================
+# =========================================
 # ywty Docker Compose
 # 榛樿锛歽wty + MySQL + Redis锛堝唴缃級
 #   docker compose up -d
@@ -51,9 +51,10 @@ services:
       retries: 5
       start_period: 15s
 
-  # ============== MySQL锛堥粯璁ゅ惎鍔級 ==============
-  # 绂佺敤鍐呯疆 MySQL锛?-scale mysql=0锛屽苟璁?DB_HOST 鎸囧悜瀹夸富鏈?  mysql:
-    image: mysql:8.0
+  # ============== MySQL（默认启动；推荐 MariaDB 10.6.20） ==============
+  # 禁用内置 MySQL：--scale mysql=0，并设 DB_HOST 指向宿主机
+  mysql:
+    image: mariadb:10.6.20
     container_name: yunwu-mysql
     restart: unless-stopped
     environment:

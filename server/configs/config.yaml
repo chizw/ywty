@@ -8,9 +8,9 @@ app:
   timezone: "Asia/Shanghai"
   base_url: "http://localhost:8080"
 
-# 数据库（支持 mysql / postgres / sqlite）
+# 数据库（支持 mysql / sqlite，默认 sqlite；MySQL 推荐 MariaDB 10.6.20+）
 database:
-  driver: "sqlite"       # mysql | postgres | sqlite
+  driver: "sqlite"       # mysql | sqlite
   # MySQL
   host: "127.0.0.1"
   port: 3306
@@ -20,8 +20,6 @@ database:
   charset: "utf8mb4"
   parse_time: true
   loc: "Local"
-  # PostgreSQL
-  sslmode: "disable"
   # SQLite
   path: "storage/dev.db"
   # 连接池

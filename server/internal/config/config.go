@@ -30,7 +30,6 @@ type Database struct {
 	Charset         string `mapstructure:"charset"`
 	ParseTime       bool   `mapstructure:"parse_time"`
 	Loc             string `mapstructure:"loc"`
-	SSLMode         string `mapstructure:"sslmode"`
 	Path            string `mapstructure:"path"`
 	MaxOpenConns    int    `mapstructure:"max_open_conns"`
 	MaxIdleConns    int    `mapstructure:"max_idle_conns"`
@@ -160,15 +159,12 @@ type Config struct {
 	Payment   Payment   `mapstructure:"payment"`
 }
 
-// DSN 构造各驱动 DSN
+// DSN 构造 MySQL DSN（兼容 MariaDB 10.6.20+）
 func (d Database) DSN() string {
 	switch d.Driver {
 	case "mysql":
-		return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s",
+		return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%t&loc=%s&timeout=10s&readTimeout=30s&writeTimeout=30s&interpolateParams=true",
 			d.Username, d.Password, d.Host, d.Port, d.DBName, d.Charset, d.ParseTime, d.Loc)
-	case "postgres":
-		return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-			d.Host, d.Port, d.Username, d.Password, d.DBName, d.SSLMode)
 	default:
 		return ""
 	}

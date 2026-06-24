@@ -56,20 +56,38 @@ func main() {
 		fmt.Printf("  id=%d user_id=%d name=%s size=%v pub=%v\n", r.ID, r.UserID, r.Name, r.Size, r.Pub)
 	}
 
-	// schema
-	type colInfo struct {
-		Cid       int
-		Name      string
-		Type      string
-		Notnull   int
-		DfltValue any
-		Pk        int
-	}
-	var cols []colInfo
-	db.Raw("PRAGMA table_info(photos)").Scan(&cols)
-	fmt.Println("=== photos schema ===")
-	for _, c := range cols {
-		fmt.Printf("  %d: %s %s notnull=%d default=%v pk=%d\n", c.Cid, c.Name, c.Type, c.Notnull, c.DfltValue, c.Pk)
+	// schema（兼容 SQLite / MySQL）
+	switch cfg.Database.Driver {
+	case "sqlite":
+		type colInfo struct {
+			Cid       int
+			Name      string
+			Type      string
+			Notnull   int
+			DfltValue any
+			Pk        int
+		}
+		var cols []colInfo
+		db.Raw("PRAGMA table_info(photos)").Scan(&cols)
+		fmt.Println("=== photos schema (sqlite) ===")
+		for _, c := range cols {
+			fmt.Printf("  %d: %s %s notnull=%d default=%v pk=%d\n", c.Cid, c.Name, c.Type, c.Notnull, c.DfltValue, c.Pk)
+		}
+	case "mysql":
+		type colInfo struct {
+			Field   string
+			Type    string
+			Null    string
+			Key     string
+			Default any
+			Extra   string
+		}
+		var cols []colInfo
+		db.Raw("SHOW COLUMNS FROM photos").Scan(&cols)
+		fmt.Println("=== photos schema (mysql) ===")
+		for _, c := range cols {
+			fmt.Printf("  %s %s null=%s key=%s default=%v extra=%s\n", c.Field, c.Type, c.Null, c.Key, c.Default, c.Extra)
+		}
 	}
 
 	var photos []model.Photo
