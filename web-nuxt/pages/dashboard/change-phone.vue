@@ -61,8 +61,8 @@ async function submit() {
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-foreground mb-4">更换手机�?/h1>
-    <p class="text-sm text-muted-foreground mb-4">当前手机：{{ (user as any)?.phone || '未绑�? }}</p>
+    <h1 class="text-2xl font-bold text-foreground mb-4">更换手机号</h1>
+    <p class="text-sm text-muted-foreground mb-4">当前手机：{{ (user as any)?.phone || '未绑定' }}</p>
     <Card class="max-w-md">
       <form @submit.prevent="submit">
         <CardContent class="pt-6 space-y-4">

@@ -36,7 +36,7 @@ async function submit() {
   <Card>
     <CardHeader>
       <CardTitle>找回密码</CardTitle>
-      <CardDescription>通过 {{ mode === 'email' ? '邮箱' : '手机' }} 验证后重�?/CardDescription>
+      <CardDescription>通过 {{ mode === 'email' ? '邮箱' : '手机' }} 验证后重置</CardDescription>
     </CardHeader>
     <CardContent>
       <Tabs v-model="mode" class="w-full">
@@ -48,11 +48,11 @@ async function submit() {
 
       <form class="mt-4 space-y-4" @submit.prevent="submit">
         <div class="space-y-2">
-          <Label for="reset-account">{{ mode === 'email' ? '邮箱' : '手机�? }}</Label>
+          <Label for="reset-account">{{ mode === 'email' ? '邮箱' : '手机号' }}</Label>
           <Input
             id="reset-account"
             v-model="form.account"
-            :placeholder="mode === 'email' ? '邮箱' : '手机�?"
+            :placeholder="mode === 'email' ? '邮箱' : '手机号'"
           />
         </div>
         <VerifyCodeInput
@@ -61,15 +61,15 @@ async function submit() {
           :event="'reset_password'"
         />
         <div class="space-y-2">
-          <Label for="reset-code">验证�?/Label>
+          <Label for="reset-code">验证码</Label>
           <Input
             id="reset-code"
             v-model="form.code"
-            placeholder="验证码（自动填充，或手动输入�?
+            placeholder="验证码（自动填充，或手动输入）"
           />
         </div>
         <div class="space-y-2">
-          <Label for="reset-password">新密�?/Label>
+          <Label for="reset-password">新密码</Label>
           <Input
             id="reset-password"
             v-model="form.password"
@@ -86,7 +86,7 @@ async function submit() {
     </CardContent>
     <CardFooter class="justify-center">
       <p class="text-sm text-muted-foreground">
-        记起密码了？<NuxtLink to="/auth/login" class="text-primary hover:underline">去登�?/NuxtLink>
+        记起密码了？<NuxtLink to="/auth/login" class="text-primary hover:underline">去登录</NuxtLink>
       </p>
     </CardFooter>
   </Card>

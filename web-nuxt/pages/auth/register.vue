@@ -36,7 +36,7 @@ async function onSubmit() {
     <CardContent>
       <form class="space-y-4" @submit.prevent="onSubmit">
         <div class="space-y-2">
-          <Label for="reg-username">用户�?/Label>
+          <Label for="reg-username">用户名</Label>
           <Input id="reg-username" v-model="form.username" required minlength="3" maxlength="32" />
         </div>
         <div class="space-y-2">

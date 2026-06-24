@@ -33,10 +33,10 @@ const lastPage = computed(() => (rawData.value as any)?.meta?.last_page ?? Math.
 onMounted(() => fetchOrders())
 
 const statusMap: Record<string, { label: string; variant: 'warning' | 'success' | 'secondary' | 'destructive' }> = {
-  unpaid: { label: '待支�?, variant: 'warning' },
-  paid: { label: '已支�?, variant: 'success' },
-  canceled: { label: '已取�?, variant: 'secondary' },
-  refunded: { label: '已退�?, variant: 'destructive' },
+  unpaid: { label: '待支付', variant: 'warning' },
+  paid: { label: '已支付', variant: 'success' },
+  canceled: { label: '已取消', variant: 'secondary' },
+  refunded: { label: '已退款', variant: 'destructive' },
 }
 
 watch(page, () => fetchOrders())
@@ -61,7 +61,7 @@ async function cancelOrder(id: number) {
   loading.value = true
   try {
     await api.post(`/api/v1/orders/${id}/cancel`, {})
-    message.success('订单已取�?)
+    message.success('订单已取消')
     fetchOrders()
   } catch (err: any) {
     message.error(err?.statusMessage || '取消失败')
@@ -82,10 +82,10 @@ function goNext() {
   <div>
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-2xl font-bold text-foreground">我的订单</h1>
-      <span class="text-sm text-muted-foreground">�?{{ total }} �?/span>
+      <span class="text-sm text-muted-foreground">共 {{ total }} 条</span>
     </div>
 
-    <AppEmpty v-if="orders.length === 0" title="还没有订�? description="去套餐列表选购一个套餐吧">
+    <AppEmpty v-if="orders.length === 0" title="还没有订单" description="去套餐列表选购一个套餐吧">
       <NuxtLink to="/dashboard/plans">
         <Button>浏览套餐</Button>
       </NuxtLink>
@@ -110,14 +110,16 @@ function goNext() {
               <div class="text-sm font-semibold text-destructive">
                 {{ formatPrice(order.amount) }}
                 <span v-if="order.deduct_amount > 0" class="text-xs text-green-600 font-normal">
-                  （已抵扣 {{ formatPrice(order.deduct_amount) }}�?                </span>
+                  （已抵扣 {{ formatPrice(order.deduct_amount) }}）
+                </span>
               </div>
             </div>
 
             <div class="flex gap-2">
               <Button v-if="order.status === 'unpaid'" size="sm" @click="router.push(`/dashboard/orders/${order.id}`)">
                 <CreditCard class="mr-1 h-3 w-3" />
-                去支�?              </Button>
+                去支付
+              </Button>
               <Button v-if="order.status === 'unpaid'" variant="destructive" size="sm" :loading="loading" @click="cancelOrder(order.id)">
                 取消
               </Button>
@@ -131,9 +133,9 @@ function goNext() {
 
       <!-- 分页 -->
       <div v-if="lastPage > 1" class="mt-6 flex items-center justify-center gap-3 text-sm">
-        <Button variant="outline" size="sm" :disabled="page <= 1" @click="goPrev">上一�?/Button>
-        <span class="text-muted-foreground">�?{{ page }} / {{ lastPage }} �?/span>
-        <Button variant="outline" size="sm" :disabled="page >= lastPage" @click="goNext">下一�?/Button>
+        <Button variant="outline" size="sm" :disabled="page <= 1" @click="goPrev">上一页</Button>
+        <span class="text-muted-foreground">第 {{ page }} / {{ lastPage }} 页</span>
+        <Button variant="outline" size="sm" :disabled="page >= lastPage" @click="goNext">下一页</Button>
       </div>
     </div>
   </div>

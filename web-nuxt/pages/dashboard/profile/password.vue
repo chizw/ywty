@@ -17,15 +17,15 @@ const changing = ref(false)
 
 async function changePassword() {
   if (!form.old_password || !form.password || !form.password_confirmation) {
-    message.error('请填写完�?)
+    message.error('请填写完整')
     return
   }
   if (form.password !== form.password_confirmation) {
-    message.error('两次密码不一�?)
+    message.error('两次密码不一致')
     return
   }
   if (form.password.length < 6) {
-    message.error('密码至少 6 �?)
+    message.error('密码至少 6 位')
     return
   }
 

@@ -23,10 +23,10 @@ const typeOptions = [
   { value: 'other', label: '其他' },
 ]
 const priorityOptions = [
-  { value: 'low', label: '�? },
-  { value: 'medium', label: '�? },
-  { value: 'high', label: '�? },
-  { value: 'urgent', label: '紧�? },
+  { value: 'low', label: '低' },
+  { value: 'medium', label: '中' },
+  { value: 'high', label: '高' },
+  { value: 'urgent', label: '紧急' },
 ]
 
 async function submit() {
@@ -42,7 +42,7 @@ async function submit() {
       title: form.title,
       content: form.content,
     })
-    message.success('工单已提�?)
+    message.success('工单已提交')
     const id = (res as any)?.id || (res as any)?.data?.id
     if (id) {
       router.push(`/dashboard/tickets/${id}`)
@@ -83,7 +83,7 @@ async function submit() {
               </Select>
             </div>
             <div>
-              <Label>优先�?/Label>
+              <Label>优先级</Label>
               <Select v-model="form.priority">
                 <SelectTrigger class="mt-1">
                   <SelectValue />

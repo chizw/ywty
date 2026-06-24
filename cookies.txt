@@ -1,1 +1,1 @@
-﻿127.0.0.1	FALSE	/	FALSE	604800	.auth	%7b%22expires_at%22%3anull%2c%22refresh_token%22%3anull%2c%22user%22%3anull%2c%22access_token%22%3anull%7d
+127.0.0.1	FALSE	/	FALSE	604800	.auth	%7b%22expires_at%22%3anull%2c%22refresh_token%22%3anull%2c%22user%22%3anull%2c%22access_token%22%3anull%7d
