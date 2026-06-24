@@ -1,0 +1,114 @@
+# =========================================
+# ywty .gitignore
+# =========================================
+
+# ---------- 部署 / 构建产物 ----------
+deploy/
+bin/
+dist/
+build/
+.output/
+.next/
+.nuxt/
+.turbo/
+
+# ---------- 日志 ----------
+*.log
+logs/
+
+# ---------- 数据库 ----------
+*.db
+*.sqlite
+*.sqlite3
+storage/
+!server/storage/.gitkeep
+
+# ---------- 环境配置 ----------
+.env
+.env.local
+.env.*.local
+.env.production
+
+# ---------- IDE / 编辑器 ----------
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+._*
+
+# ---------- 依赖目录 ----------
+node_modules/
+vendor/
+jspm_packages/
+bower_components/
+
+# ---------- 前端缓存 ----------
+.npm/
+.yarn/
+.pnp.*
+.pnpm-store/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# ---------- Go 产物 ----------
+# 可执行文件
+*.exe
+*.exe~
+*.dll
+*.dylib
+*.so
+*.dll
+*.test
+*.out
+# 允许提交的二进制
+!server/bin/.gitkeep
+
+# 覆盖率
+coverage.out
+coverage.html
+coverage.xml
+*.coverprofile
+
+# ---------- Laravel 残留（重构过程保留兼容） ----------
+/bootstrap/cache/*
+!/bootstrap/cache/.gitkeep
+/public/build/
+/public/hot
+/public/storage
+/storage/*.key
+/storage/logs
+.phpunit.result.cache
+.phpunit.cache/
+
+# ---------- OS / 杂项 ----------
+*.tmp
+*.bak
+*.orig
+*.rej
+*.patch
+*.diff
+.cache/
+.tmp/
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.iso
+*.dmg
+*.pkg
+
+# ---------- 测试 / 临时文件 ----------
+tmp/
+temp/
+test-output/
+playwright-report/
+playwright/.cache/
+.vitest/
+__snapshots__/
+*.snap.local

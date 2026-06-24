@@ -1,0 +1,78 @@
+# =========================================
+# ywty .dockerignore
+# =========================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# CI / IDE
+.idea
+.vscode
+.fleet
+*.iml
+*.swp
+.DS_Store
+Thumbs.db
+
+# 环境
+.env
+.env.local
+.env.*.local
+
+# 日志
+*.log
+logs/
+
+# Laravel 历史产物（重构后已无意义）
+/bootstrap/cache/*
+/storage/*.key
+/storage/logs
+
+# 本地数据
+/data
+/storage
+*.db
+*.sqlite
+*.sqlite3
+
+# 部署
+/deploy
+/node_modules
+/web/node_modules
+/web-nuxt/node_modules
+/web-nuxt/.output
+/web-nuxt/dist
+/web-nuxt/.nuxt
+/server/bin
+/server/dist
+/public/hot
+/public/storage
+/public/uploads
+/public/i
+
+# 文档 / 测试
+*.md.local
+test-output/
+playwright-report/
+playwright/.cache/
+.vitest/
+coverage/
+coverage.html
+coverage.out
+coverage.xml
+
+# 其他
+.upgrading.lock
+.installed.lock
+upgrade.zip
+hashes.json
+auth.json
+composer.json
+composer.lock
+package.json
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

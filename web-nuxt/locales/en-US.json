@@ -1,0 +1,67 @@
+{
+  "nav": {
+    "home": "Home",
+    "explore": "Explore",
+    "login": "Login",
+    "register": "Register",
+    "dashboard": "Dashboard",
+    "logout": "Logout"
+  },
+  "common": {
+    "loading": "Loading...",
+    "empty": "No data",
+    "error": "Error occurred",
+    "success": "Success",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "reset": "Reset"
+  },
+  "photo": {
+    "upload": "Upload",
+    "photos": "Photos",
+    "albums": "Albums",
+    "public": "Public",
+    "private": "Private",
+    "likes": "Likes",
+    "views": "Views",
+    "downloads": "Downloads",
+    "share": "Share",
+    "report": "Report"
+  },
+  "album": {
+    "create": "Create Album",
+    "name": "Album Name",
+    "description": "Description",
+    "photos": "photos"
+  },
+  "user": {
+    "profile": "Profile",
+    "settings": "Settings",
+    "password": "Password",
+    "email": "Email",
+    "phone": "Phone"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "forgot": "Forgot Password",
+    "reset": "Reset Password",
+    "username": "Username",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "email": "Email",
+    "phone": "Phone"
+  },
+  "time": {
+    "justNow": "just now",
+    "minutesAgo": "{n} minutes ago",
+    "hoursAgo": "{n} hours ago",
+    "daysAgo": "{n} days ago"
+  }
+}

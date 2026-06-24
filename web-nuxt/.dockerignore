@@ -1,0 +1,39 @@
+.git
+.gitignore
+.idea
+.vscode
+*.iml
+*.swp
+*.log
+
+# Node
+node_modules/
+.npm/
+.yarn/
+.output/
+.nuxt/
+dist/
+
+# 缓存
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+.stylelintcache
+
+# 测试
+coverage/
+playwright-report/
+test-output/
+.vitest/
+*.snap.local
+
+# CI / Docker
+.github
+.gitattributes
+.gitignore
+.dockerignore
+Dockerfile
+
+# Docs
+*.md

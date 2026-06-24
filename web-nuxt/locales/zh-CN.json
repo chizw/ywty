@@ -1,0 +1,67 @@
+{
+  "nav": {
+    "home": "首页",
+    "explore": "探索",
+    "login": "登录",
+    "register": "注册",
+    "dashboard": "控制台",
+    "logout": "退出"
+  },
+  "common": {
+    "loading": "加载中...",
+    "empty": "暂无数据",
+    "error": "出错了",
+    "success": "操作成功",
+    "confirm": "确认",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "search": "搜索",
+    "filter": "筛选",
+    "reset": "重置"
+  },
+  "photo": {
+    "upload": "上传图片",
+    "photos": "图片",
+    "albums": "相册",
+    "public": "公开",
+    "private": "私有",
+    "likes": "点赞",
+    "views": "浏览",
+    "downloads": "下载",
+    "share": "分享",
+    "report": "举报"
+  },
+  "album": {
+    "create": "创建相册",
+    "name": "相册名称",
+    "description": "相册描述",
+    "photos": "张图片"
+  },
+  "user": {
+    "profile": "个人资料",
+    "settings": "设置",
+    "password": "修改密码",
+    "email": "邮箱",
+    "phone": "手机号"
+  },
+  "auth": {
+    "login": "登录",
+    "register": "注册",
+    "forgot": "忘记密码",
+    "reset": "重置密码",
+    "username": "用户名",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "email": "邮箱",
+    "phone": "手机号"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "minutesAgo": "{n}分钟前",
+    "hoursAgo": "{n}小时前",
+    "daysAgo": "{n}天前"
+  }
+}

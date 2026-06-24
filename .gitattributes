@@ -1,0 +1,15 @@
+# ywty
+*/*
+
+# Go
+*.go diff=go
+
+# Frontend
+*.vue diff=html
+*.ts diff=typescript
+*.tsx diff=tsx
+*.js diff=javascript
+*.css diff=css
+
+# Docs
+*.md diff=markdown

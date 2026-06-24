@@ -1,0 +1,29 @@
+{
+  "nav": {
+    "home": "Home",
+    "explore": "Explore",
+    "login": "Login",
+    "register": "Register",
+    "dashboard": "Dashboard",
+    "logout": "Logout"
+  },
+  "common": {
+    "loading": "Loading…",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "back": "Back"
+  },
+  "photo": {
+    "upload": "Upload Photo",
+    "delete": "Delete Photo"
+  },
+  "album": {
+    "create": "Create Album"
+  },
+  "share": {
+    "copy_link": "Copy Link"
+  }
+}

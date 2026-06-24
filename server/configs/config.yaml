@@ -1,0 +1,126 @@
+# 应用配置
+app:
+  name: "ywty"
+  env: "dev"             # dev | prod
+  version: "0.1.0"
+  host: "0.0.0.0"
+  port: 8080
+  timezone: "Asia/Shanghai"
+  base_url: "http://localhost:8080"
+
+# 数据库（支持 mysql / postgres / sqlite）
+database:
+  driver: "sqlite"       # mysql | postgres | sqlite
+  # MySQL
+  host: "127.0.0.1"
+  port: 3306
+  username: "ywty"
+  password: "secret"
+  dbname: "ywty"
+  charset: "utf8mb4"
+  parse_time: true
+  loc: "Local"
+  # PostgreSQL
+  sslmode: "disable"
+  # SQLite
+  path: "storage/dev.db"
+  # 连接池
+  max_open_conns: 100
+  max_idle_conns: 10
+  conn_max_lifetime: 3600    # 秒
+  conn_max_idle_time: 600    # 秒
+
+# Redis（队列 / 缓存共用）
+redis:
+  addr: "127.0.0.1:6379"
+  password: ""
+  db: 0
+
+# 队列（Asynq）
+queue:
+  concurrency: 10
+  queues:
+    - "critical"
+    - "default"
+    - "low"
+
+# 日志
+log:
+  level: "debug"            # debug | info | warn | error
+  format: "console"         # console | json
+  output: "stdout"          # stdout | file
+  file_path: "storage/logs/app.log"
+  max_size: 100             # MB
+  max_age: 7                # 天
+  max_backups: 10
+  compress: true
+
+# CORS
+cors:
+  allow_origins:
+    - "http://localhost:3000"
+    - "http://localhost:8080"
+  allow_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "PATCH"
+    - "OPTIONS"
+  allow_headers:
+    - "Origin"
+    - "Content-Type"
+    - "Authorization"
+    - "X-Token"
+  expose_headers:
+    - "Content-Length"
+  allow_credentials: true
+  max_age: 86400
+
+# 鉴权
+auth:
+  jwt:
+    secret: "please-change-me-in-production"
+    issuer: "ywty"
+    access_expire: 7200       # 秒
+    refresh_expire: 2592000   # 秒
+  admin_session:
+    name: "ywty_admin_session"
+    secret: "please-change-me-too"
+    expire: 7200
+  captcha:
+    enable: true
+    expire: 300
+
+# 限流
+ratelimit:
+  enable: true
+  upload_per_minute: 60
+  api_per_minute: 300
+
+# 存储（P3 阶段：先实现 local，后续按需加 s3/oss/cos/qiniu）
+storage:
+  driver:
+    provider: "local"            # local | s3 | oss | cos | qiniu | ...
+    root: "storage/uploads"      # 本地磁盘根目录
+    public_url: "http://localhost:8080/uploads"
+    visibility: "public"         # public | private
+    extra: {}
+
+# 邮件（默认 log，开发期打印到 stdout；生产建议 smtp）
+mail:
+  provider: "log"                # log | smtp
+  host: "smtp.example.com"
+  port: 587
+  username: ""
+  password: ""
+  from: "no-reply@example.com"
+  from_name: "ywty"
+
+# 短信（默认 log，生产按需扩展 aliyun / tencent）
+sms:
+  provider: "log"                # log | aliyun | tencent
+  access_key: ""
+  secret_key: ""
+  sign: "ywty"
+  region: "cn-hangzhou"

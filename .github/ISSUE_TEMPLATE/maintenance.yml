@@ -1,0 +1,35 @@
+name: 🛠️ Maintenance / Refactor
+description: 重构、依赖升级、CI/部署优化
+labels: ["maintenance"]
+assignees: []
+
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 简述
+      description: 用一句话描述本次维护
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: 动机 / 背景
+    validations:
+      required: true
+
+  - type: textarea
+    id: plan
+    attributes:
+      label: 实施计划
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: 影响范围
+      description: 哪些模块 / 用户 / 部署可能受影响
+    validations:
+      required: false

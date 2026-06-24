@@ -1,0 +1,108 @@
+name: 🐛 Bug Report
+description: 报告 Bug 帮助我们改进
+labels: ["bug", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你报告 Bug！请尽量提供详细的信息，以便快速定位和修复。
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 问题简述
+      description: 用一两句话描述清楚发生了什么
+      placeholder: 上传图片后没有生成缩略图
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      description: 列出从启动到出问题的完整步骤
+      placeholder: |
+        1. 登录管理员
+        2. 访问 `/admin/photos`
+        3. 上传一张 1MB 的 JPG
+        4. 查看缩略图
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      description: 描述你期望的正确行为
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 描述实际发生了什么（包含错误信息、截图、链接）
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 严重程度
+      options:
+        - 阻塞（核心功能不可用）
+        - 严重（重要功能异常但有 workaround）
+        - 一般（不影响主要功能）
+        - 轻微（UI/小问题）
+    validations:
+      required: true
+
+  - type: dropdown
+    id: env-os
+    attributes:
+      label: 操作系统
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Docker
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: ywty 版本
+      description: 在页面底部 / 启动日志 / `git describe` 中可找到
+      placeholder: v3.0.0 / commit abc1234
+    validations:
+      required: true
+
+  - type: input
+    id: db
+    attributes:
+      label: 数据库
+      description: MySQL 8.0 / PostgreSQL 15 / SQLite
+      placeholder: SQLite 3.46
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 关键日志
+      description: API / Worker / Docker 容器相关错误日志（请使用 ` ``` ` 代码块）
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 自检
+      options:
+        - label: 我已经搜索过现有 Issue，确认这是新问题
+        - label: 我尝试过重启服务 / 清理浏览器缓存
+        - label: 我可以提供复现所需的最小配置

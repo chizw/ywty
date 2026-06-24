@@ -1,0 +1,155 @@
+<script setup lang="ts">
+// 验证码输入组件（封装发送+验证）
+// - 支持邮箱 / 短信验证码发送
+// - 支持图形验证码（可选，captcha=true 时显示）
+// - 60 秒倒计时
+// - 验证码输入框（4-6 位）
+const props = withDefaults(defineProps<{
+  // 兼容 'phone'：内部归一化为 'sms'
+  channel: 'email' | 'sms' | 'phone'
+  account: string
+  event: string
+  /** 是否需要图形验证码 */
+  captcha?: boolean
+  /** 验证码长度（默认 6） */
+  length?: number
+}>(), {
+  captcha: false,
+  length: 6,
+})
+
+const emit = defineEmits<{
+  verified: [code: string]
+}>()
+
+const api = useApi()
+const code = ref('')
+const countdown = ref(0)
+const sending = ref(false)
+const error = ref('')
+
+// 图形验证码
+const captchaImage = ref('')
+const captchaKey = ref('')
+const captchaCode = ref('')
+const captchaLoading = ref(false)
+
+function normalizeChannel(c: string): 'email' | 'sms' {
+  return c === 'email' ? 'email' : 'sms'
+}
+
+async function loadCaptcha() {
+  if (!props.captcha) return
+  captchaLoading.value = true
+  try {
+    const res = await api.get<any>('/api/v1/captcha')
+    const d = res as any
+    const img = d?.image || d?.data?.image || d?.img || ''
+    const key = d?.key || d?.data?.key || d?.captcha_id || ''
+    captchaImage.value = img.startsWith('data:') ? img : (img ? `data:image/png;base64,${img}` : '')
+    captchaKey.value = key
+  } catch {
+    captchaImage.value = ''
+    captchaKey.value = ''
+  } finally {
+    captchaLoading.value = false
+  }
+}
+
+onMounted(() => {
+  if (props.captcha) loadCaptcha()
+})
+
+watch(() => props.captcha, (v) => {
+  if (v) loadCaptcha()
+})
+
+async function send() {
+  if (countdown.value > 0 || sending.value) return
+  if (!props.account) {
+    error.value = '请先填写账号'
+    return
+  }
+  if (props.captcha && !captchaCode.value) {
+    error.value = '请先输入图形验证码'
+    return
+  }
+  sending.value = true
+  error.value = ''
+  try {
+    const body: any = {
+      channel: normalizeChannel(props.channel),
+      account: props.account,
+      event: props.event,
+    }
+    if (props.captcha) {
+      body.captcha_key = captchaKey.value
+      body.captcha_code = captchaCode.value
+    }
+    await api.post('/api/v1/verify-codes', body)
+    countdown.value = 60
+    const t = setInterval(() => {
+      countdown.value--
+      if (countdown.value <= 0) clearInterval(t)
+    }, 1000)
+    captchaCode.value = ''
+  } catch (err: any) {
+    error.value = err?.statusMessage || '发送失败'
+    // 发送失败时刷新图形验证码
+    if (props.captcha) loadCaptcha()
+  } finally {
+    sending.value = false
+  }
+}
+
+function commit() {
+  if (code.value.length >= Math.min(4, props.length)) emit('verified', code.value)
+}
+
+defineExpose({ code, captchaCode })
+</script>
+
+<template>
+  <div class="space-y-2">
+    <!-- 图形验证码 -->
+    <div v-if="captcha" class="flex items-center gap-2">
+      <input
+        v-model="captchaCode"
+        type="text"
+        maxlength="6"
+        placeholder="图形验证码"
+        class="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+      />
+      <button
+        type="button"
+        class="h-[38px] w-[100px] flex-shrink-0 border border-gray-300 rounded-md overflow-hidden bg-gray-50 flex items-center justify-center text-xs text-gray-400"
+        :disabled="captchaLoading"
+        @click="loadCaptcha"
+      >
+        <img v-if="captchaImage" :src="captchaImage" alt="captcha" class="w-full h-full object-cover" />
+        <span v-else>{{ captchaLoading ? '加载中...' : '点击获取' }}</span>
+      </button>
+    </div>
+
+    <!-- 验证码 + 发送按钮 -->
+    <div class="flex gap-2">
+      <input
+        v-model="code"
+        type="text"
+        :maxlength="length"
+        placeholder="验证码"
+        class="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+        @input="commit"
+      />
+      <button
+        type="button"
+        class="px-4 py-2 border border-gray-300 text-sm rounded-md disabled:opacity-50 whitespace-nowrap"
+        :disabled="countdown > 0 || sending"
+        @click="send"
+      >
+        {{ countdown > 0 ? `${countdown}s` : '发送验证码' }}
+      </button>
+    </div>
+    <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+  </div>
+</template>

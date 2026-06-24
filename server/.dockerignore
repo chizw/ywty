@@ -1,0 +1,52 @@
+.git
+.gitignore
+.idea
+.vscode
+*.iml
+*.swp
+*.log
+
+# Go
+bin/
+*.exe
+*.test
+*.out
+coverage.*
+
+# 构建产物
+dist/
+
+# 本地数据
+storage/
+*.db
+*.sqlite
+
+# Laravel 历史残留
+app/
+bootstrap/
+config/
+database/
+public/
+routes/
+storage/
+artisan
+composer.json
+composer.lock
+.phpunit.result.cache
+.phpunit.cache/
+
+# Docs（构建时不需要）
+*.md
+CHANGELOG.md
+README.md
+LICENSE.md
+CONTRIBUTING.md
+SECURITY.md
+REFACTOR_PLAN.md
+
+# CI
+.github
+.gitattributes
+.gitignore
+.dockerignore
+Dockerfile
