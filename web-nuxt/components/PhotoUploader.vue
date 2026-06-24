@@ -4,22 +4,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { NUpload, NProgress, NButton } from 'naive-ui'
 import type { UploadCustomRequestOptions } from 'naive-ui'
 import { useAuthStore } from '~/stores/auth'
-
-interface PhotoData {
-  id: number
-  name: string
-  pathname: string
-  mimetype: string
-  size: number
-  is_public: boolean
-}
-
-interface UploadResult {
-  photo: PhotoData
-  url: string
-  markdown: string
-  html: string
-}
+import type { UploadResult } from '~/types/api'
 
 const props = withDefaults(defineProps<{
   multiple?: boolean

@@ -7,6 +7,7 @@ export interface UserInfo {
   avatar: string
   is_admin: boolean
   status: string
+  phone?: string
 }
 
 export interface TokenPair {
@@ -15,6 +16,38 @@ export interface TokenPair {
   token_type: string
   expires_at: string
   user: UserInfo
+}
+
+export interface PhotoData {
+  id: number
+  name: string
+  pathname: string
+  mimetype: string
+  size: number
+  is_public: boolean
+}
+
+export interface UploadResult {
+  photo: PhotoData
+  url: string
+  markdown: string
+  html: string
+}
+
+export interface PhotoData {
+  id: number
+  name: string
+  pathname: string
+  mimetype: string
+  size: number
+  is_public: boolean
+}
+
+export interface UploadResult {
+  photo: PhotoData
+  url: string
+  markdown: string
+  html: string
 }
 
 export interface ApiResponse<T = unknown> {

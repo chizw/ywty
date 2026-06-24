@@ -11,6 +11,25 @@ const share = computed<any>(() => (data.value as any)?.data?.share)
 const items = computed<any[]>(() => (data.value as any)?.data?.items ?? [])
 const needPwd = computed(() => (data.value as any)?.data?.need_pwd === true)
 
+const password = ref('')
+const unlocking = ref(false)
+
+async function unlock() {
+  if (!password.value) return
+  unlocking.value = true
+  try {
+    const res = await $fetch<any>(`/s/${slug}`, {
+      query: { password: password.value },
+      baseURL: useRuntimeConfig().apiBase as string,
+    })
+    data.value = res
+  } catch (e: any) {
+    alert(e?.statusMessage || e?.message || '密码错误')
+  } finally {
+    unlocking.value = false
+  }
+}
+
 const ogImage = computed(() => {
   const first = items.value[0]
   return first?.pathname ? `/uploads/${first.pathname}` : undefined
@@ -39,9 +58,9 @@ useSeoMeta({
       <div v-else-if="needPwd" class="max-w-md mx-auto bg-white border border-gray-200 rounded-lg p-6">
         <h1 class="text-lg font-medium mb-2">{{ share?.type === 'photo' ? '图片分享' : '相册分享' }}</h1>
         <p class="text-sm text-gray-500">该分享需要密码访问</p>
-        <form class="mt-4" @submit.prevent="() => $fetch(`/s/${slug}?password=${(($event.target as HTMLFormElement).querySelector('input') as HTMLInputElement).value}`).then((r) => data = r)">
-          <input type="password" placeholder="密码" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
-          <AppButton type="submit" block class="mt-3">解锁</AppButton>
+        <form class="mt-4" @submit.prevent="unlock">
+          <input v-model="password" type="password" placeholder="密码" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
+          <AppButton type="submit" :loading="unlocking" block class="mt-3">解锁</AppButton>
         </form>
       </div>
       <div v-else>
