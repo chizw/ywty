@@ -1,5 +1,8 @@
 <script setup lang="ts">
 // 全屏图片查看器：上一张/下一张、键盘控制、缩略图导航、点击关闭
+import { Button } from '~/components/ui/button'
+import { X, ChevronLeft, ChevronRight } from '@lucide/vue'
+
 interface Photo {
   id: number | string
   pathname: string
@@ -68,25 +71,29 @@ watch(
       <!-- 顶部栏 -->
       <div class="flex items-center justify-between px-4 py-3 text-white/80 text-sm">
         <span>{{ index + 1 }} / {{ photos.length }}</span>
-        <button
-          class="px-2 py-1 rounded hover:bg-white/10"
+        <Button
+          variant="ghost"
+          size="icon"
+          class="text-white hover:bg-white/10 hover:text-white h-8 w-8"
           aria-label="关闭"
           @click="close"
         >
-          ✕
-        </button>
+          <X class="h-4 w-4" />
+        </Button>
       </div>
 
       <!-- 主图区 -->
       <div class="flex-1 relative flex items-center justify-center px-12 min-h-0">
-        <button
+        <Button
           v-if="photos.length > 1"
-          class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white text-xl flex items-center justify-center"
+          variant="ghost"
+          size="icon"
+          class="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white"
           aria-label="上一张"
           @click.stop="prev"
         >
-          ‹
-        </button>
+          <ChevronLeft class="h-6 w-6" />
+        </Button>
 
         <img
           :src="`/uploads/${current.pathname}`"
@@ -95,14 +102,16 @@ watch(
           @click.stop
         />
 
-        <button
+        <Button
           v-if="photos.length > 1"
-          class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white text-xl flex items-center justify-center"
+          variant="ghost"
+          size="icon"
+          class="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white"
           aria-label="下一张"
           @click.stop="next"
         >
-          ›
-        </button>
+          <ChevronRight class="h-6 w-6" />
+        </Button>
       </div>
 
       <!-- 标题 -->
@@ -120,7 +129,7 @@ watch(
           v-for="(p, i) in photos"
           :key="p.id"
           class="flex-shrink-0 w-14 h-14 rounded overflow-hidden border-2 transition"
-          :class="i === index ? 'border-primary-500' : 'border-transparent opacity-60 hover:opacity-100'"
+          :class="i === index ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'"
           @click="select(i)"
         >
           <img :src="`/uploads/${p.pathname}`" :alt="p.name || ''" class="w-full h-full object-cover" />

@@ -1,6 +1,15 @@
 <script setup lang="ts">
 // AppToaster 全局消息提示渲染器（配合 useMessage 使用）
+import { cn } from '~/lib/utils'
+
 const { toasts } = useMessage()
+
+const kindClasses: Record<string, string> = {
+  success: 'border-green-500 bg-green-500 text-white',
+  error: 'border-destructive bg-destructive text-destructive-foreground',
+  warning: 'border-yellow-500 bg-yellow-500 text-white',
+  info: 'border-foreground bg-foreground text-background',
+}
 </script>
 
 <template>
@@ -9,13 +18,8 @@ const { toasts } = useMessage()
       <div
         v-for="t in toasts"
         :key="t.id"
-        class="pointer-events-auto px-4 py-2 rounded-md shadow-lg text-sm text-white"
-        :class="{
-          'bg-emerald-500': t.kind === 'success',
-          'bg-red-500': t.kind === 'error',
-          'bg-amber-500': t.kind === 'warning',
-          'bg-gray-700': t.kind === 'info',
-        }"
+        class="pointer-events-auto px-4 py-3 rounded-md shadow-lg text-sm border"
+        :class="cn(kindClasses[t.kind] || kindClasses.info)"
       >
         {{ t.text }}
       </div>

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 // 公开端顶部导航
+import { Button } from '~/components/ui/button'
+import { Avatar, AvatarFallback } from '~/components/ui/avatar'
+
 const { user, isLoggedIn, logout } = useAuth()
 
 const navLinks = [
@@ -9,43 +12,41 @@ const navLinks = [
 </script>
 
 <template>
-  <header class="border-b border-gray-200 bg-white sticky top-0 z-30">
+  <header class="border-b border-border bg-card sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
       <div class="flex items-center gap-8">
-        <NuxtLink to="/" class="text-lg font-semibold text-primary-600">云雾图驿</NuxtLink>
-        <nav class="hidden md:flex items-center gap-6 text-sm text-gray-600">
+        <NuxtLink to="/" class="text-lg font-semibold text-primary">云雾图驿</NuxtLink>
+        <nav class="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
           <NuxtLink
             v-for="link in navLinks"
             :key="link.to"
             :to="link.to"
-            class="hover:text-primary-600"
-            active-class="text-primary-600"
+            class="hover:text-foreground transition-colors"
+            active-class="text-foreground font-medium"
           >
             {{ link.label }}
           </NuxtLink>
         </nav>
       </div>
 
-      <div class="flex items-center gap-3 text-sm">
+      <div class="flex items-center gap-3">
         <template v-if="isLoggedIn">
-          <NuxtLink to="/dashboard" class="text-gray-600 hover:text-primary-600">
-            {{ user?.name || user?.username }}
-          </NuxtLink>
-          <button
-            class="text-gray-500 hover:text-red-500"
-            @click="logout"
-          >
+          <Button as-child variant="ghost" size="sm">
+            <NuxtLink to="/dashboard">
+              {{ user?.name || user?.username }}
+            </NuxtLink>
+          </Button>
+          <Button variant="ghost" size="sm" class="text-muted-foreground hover:text-destructive" @click="logout">
             退出
-          </button>
+          </Button>
         </template>
         <template v-else>
-          <NuxtLink to="/auth/login" class="text-gray-600 hover:text-primary-600">登录</NuxtLink>
-          <NuxtLink
-            to="/auth/register"
-            class="px-3 py-1.5 bg-primary-600 text-white rounded-md hover:bg-primary-700"
-          >
-            注册
-          </NuxtLink>
+          <Button as-child variant="ghost" size="sm">
+            <NuxtLink to="/auth/login">登录</NuxtLink>
+          </Button>
+          <Button as-child size="sm">
+            <NuxtLink to="/auth/register">注册</NuxtLink>
+          </Button>
         </template>
       </div>
     </div>

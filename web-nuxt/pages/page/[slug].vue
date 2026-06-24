@@ -24,8 +24,8 @@ useSeoMeta({
 <template>
   <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
     <template v-if="page">
-      <h1 class="text-3xl font-bold text-gray-900">{{ page.title }}</h1>
-      <p v-if="page.updated_at" class="mt-2 text-xs text-gray-400">更新于 {{ page.updated_at }}</p>
+      <h1 class="text-3xl font-bold text-foreground">{{ page.title }}</h1>
+      <p v-if="page.updated_at" class="mt-2 text-xs text-muted-foreground">更新于 {{ page.updated_at }}</p>
       <div
         class="prose prose-sm sm:prose lg:prose-lg max-w-none mt-6 cms-content"
         v-html="page.content || ''"
@@ -41,7 +41,7 @@ useSeoMeta({
   height: auto;
 }
 .cms-content :deep(a) {
-  color: #2563eb;
+  color: hsl(var(--primary));
   text-decoration: underline;
 }
 </style>

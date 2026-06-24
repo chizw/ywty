@@ -1,6 +1,23 @@
 <script setup lang="ts">
 // 照片批量操作组件：批量删除 / 移入相册 / 移出相册 / 公开 / 私有 / 分享 / 全选
-import { NButtonGroup, NButton, NModal, NSelect, NInput, NInputNumber } from 'naive-ui'
+import { Button } from '~/components/ui/button'
+import { Input } from '~/components/ui/input'
+import { Label } from '~/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '~/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select'
 
 const props = defineProps<{
   selectedIds: number[]
@@ -19,8 +36,8 @@ const loading = ref(false)
 const showMoveModal = ref(false)
 const showShareModal = ref(false)
 const showPublicModal = ref(false)
-const albumId = ref<number | null>(null)
-const albumOptions = ref<{ label: string; value: number }[]>([])
+const albumId = ref<string>('')
+const albumOptions = ref<{ label: string; value: string }[]>([])
 const sharePassword = ref('')
 const shareExpire = ref(0)
 const publicTarget = ref<boolean>(true)
@@ -53,7 +70,7 @@ async function loadAlbums() {
   try {
     const res = await api.get<any>('/api/v1/albums')
     const list = Array.isArray(res) ? res : ((res as any)?.data ?? [])
-    albumOptions.value = list.map((a: any) => ({ label: a.name, value: a.id }))
+    albumOptions.value = list.map((a: any) => ({ label: a.name, value: String(a.id) }))
   } catch {
     albumOptions.value = []
   }
@@ -93,7 +110,7 @@ async function batchDelete() {
 function openMoveModal() {
   if (!hasSelection.value) return
   loadAlbums()
-  albumId.value = null
+  albumId.value = ''
   showMoveModal.value = true
 }
 
@@ -108,7 +125,7 @@ async function confirmMove() {
   try {
     for (const id of props.selectedIds) {
       try {
-        await api.post(`/api/v1/photos/${id}/move-to-album`, { album_id: albumId.value })
+        await api.post(`/api/v1/photos/${id}/move-to-album`, { album_id: Number(albumId.value) })
         ok++
       } catch {
         fail++
@@ -206,106 +223,100 @@ async function confirmShare() {
 
 <template>
   <ClientOnly>
-    <div class="flex flex-wrap items-center gap-2 bg-primary-50 border border-primary-200 rounded-lg p-2">
-      <span class="text-sm text-gray-700 px-2">
-        已选 <b class="text-primary-600">{{ selectedIds.length }}</b> 项
+    <div class="flex flex-wrap items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg p-2">
+      <span class="text-sm text-foreground px-2">
+        已选 <b class="text-primary">{{ selectedIds.length }}</b> 项
       </span>
 
       <div class="flex-1" />
 
-      <NButtonGroup size="small">
-        <NButton @click="toggleSelectAll" :disabled="allIds.length === 0">
+      <div class="flex items-center gap-1">
+        <Button variant="outline" size="sm" :disabled="allIds.length === 0" @click="toggleSelectAll">
           {{ allSelected ? '取消全选' : '全选' }}
-        </NButton>
-        <NButton :disabled="!hasSelection" @click="clearSelection">清空</NButton>
-      </NButtonGroup>
+        </Button>
+        <Button variant="outline" size="sm" :disabled="!hasSelection" @click="clearSelection">清空</Button>
+      </div>
 
-      <NButtonGroup size="small">
-        <NButton :disabled="!hasSelection" @click="openPublicModal(true)">批量公开</NButton>
-        <NButton :disabled="!hasSelection" @click="openPublicModal(false)">批量私有</NButton>
-        <NButton :disabled="!hasSelection" @click="openMoveModal">移入相册</NButton>
-        <NButton :disabled="!hasSelection" :loading="loading" @click="batchRemoveFromAlbum">移出相册</NButton>
-      </NButtonGroup>
+      <div class="flex items-center gap-1">
+        <Button variant="outline" size="sm" :disabled="!hasSelection" @click="openPublicModal(true)">批量公开</Button>
+        <Button variant="outline" size="sm" :disabled="!hasSelection" @click="openPublicModal(false)">批量私有</Button>
+        <Button variant="outline" size="sm" :disabled="!hasSelection" @click="openMoveModal">移入相册</Button>
+        <Button variant="outline" size="sm" :disabled="!hasSelection" :loading="loading" @click="batchRemoveFromAlbum">移出相册</Button>
+      </div>
 
-      <NButtonGroup size="small">
-        <NButton type="primary" :disabled="!hasSelection" @click="openShareModal">批量分享</NButton>
-        <NButton type="error" :disabled="!hasSelection" :loading="loading" @click="batchDelete">
+      <div class="flex items-center gap-1">
+        <Button size="sm" :disabled="!hasSelection" @click="openShareModal">批量分享</Button>
+        <Button variant="destructive" size="sm" :disabled="!hasSelection" :loading="loading" @click="batchDelete">
           批量删除
-        </NButton>
-      </NButtonGroup>
+        </Button>
+      </div>
     </div>
 
     <!-- 移入相册弹窗 -->
-    <NModal
-      v-model:show="showMoveModal"
-      preset="card"
-      title="移入相册"
-      style="max-width: 420px"
-      :mask-closable="false"
-    >
-      <div class="space-y-3">
-        <p class="text-sm text-gray-500">将选中的 {{ selectedIds.length }} 张图片移入以下相册：</p>
-        <NSelect
-          v-model:value="albumId"
-          :options="albumOptions"
-          placeholder="选择目标相册"
-          clearable
-          filterable
-        />
-      </div>
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <NButton @click="showMoveModal = false">取消</NButton>
-          <NButton type="primary" :loading="loading" @click="confirmMove">确定</NButton>
+    <Dialog :open="showMoveModal" @update:open="showMoveModal = $event">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>移入相册</DialogTitle>
+        </DialogHeader>
+        <div class="space-y-3">
+          <p class="text-sm text-muted-foreground">将选中的 {{ selectedIds.length }} 张图片移入以下相册：</p>
+          <Select v-model="albumId">
+            <SelectTrigger>
+              <SelectValue placeholder="选择目标相册" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="opt in albumOptions" :key="opt.value" :value="opt.value">
+                {{ opt.label }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      </template>
-    </NModal>
+        <DialogFooter>
+          <Button variant="outline" @click="showMoveModal = false">取消</Button>
+          <Button :loading="loading" @click="confirmMove">确定</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- 公开/私有弹窗 -->
-    <NModal
-      v-model:show="showPublicModal"
-      preset="card"
-      :title="publicTarget ? '批量公开' : '批量转私有'"
-      style="max-width: 380px"
-      :mask-closable="false"
-    >
-      <p class="text-sm text-gray-500">
-        确定将选中的 {{ selectedIds.length }} 张图片{{ publicTarget ? '设为公开' : '设为私有' }}？
-      </p>
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <NButton @click="showPublicModal = false">取消</NButton>
-          <NButton type="primary" :loading="loading" @click="confirmPublic">确定</NButton>
-        </div>
-      </template>
-    </NModal>
+    <Dialog :open="showPublicModal" @update:open="showPublicModal = $event">
+      <DialogContent class="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{{ publicTarget ? '批量公开' : '批量转私有' }}</DialogTitle>
+        </DialogHeader>
+        <p class="text-sm text-muted-foreground">
+          确定将选中的 {{ selectedIds.length }} 张图片{{ publicTarget ? '设为公开' : '设为私有' }}？
+        </p>
+        <DialogFooter>
+          <Button variant="outline" @click="showPublicModal = false">取消</Button>
+          <Button :loading="loading" @click="confirmPublic">确定</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- 批量分享弹窗 -->
-    <NModal
-      v-model:show="showShareModal"
-      preset="card"
-      title="批量分享"
-      style="max-width: 420px"
-      :mask-closable="false"
-    >
-      <div class="space-y-3">
-        <p class="text-sm text-gray-500">为选中的 {{ selectedIds.length }} 张图片创建分享链接：</p>
-        <div>
-          <label class="block text-sm text-gray-700 mb-1">访问密码（可选）</label>
-          <NInput v-model:value="sharePassword" placeholder="留空则公开访问" />
+    <Dialog :open="showShareModal" @update:open="showShareModal = $event">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>批量分享</DialogTitle>
+        </DialogHeader>
+        <div class="space-y-3">
+          <p class="text-sm text-muted-foreground">为选中的 {{ selectedIds.length }} 张图片创建分享链接：</p>
+          <div class="space-y-1">
+            <Label>访问密码（可选）</Label>
+            <Input v-model="sharePassword" placeholder="留空则公开访问" />
+          </div>
+          <div class="space-y-1">
+            <Label>过期分钟数（0 = 永不过期）</Label>
+            <Input v-model="shareExpire" type="number" :min="0" />
+          </div>
         </div>
-        <div>
-          <label class="block text-sm text-gray-700 mb-1">过期分钟数（0 = 永不过期）</label>
-          <NInputNumber v-model:value="shareExpire" :min="0" class="w-full" />
-        </div>
-      </div>
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <NButton @click="showShareModal = false">取消</NButton>
-          <NButton type="primary" :loading="loading" @click="confirmShare">创建分享</NButton>
-        </div>
-      </template>
-    </NModal>
+        <DialogFooter>
+          <Button variant="outline" @click="showShareModal = false">取消</Button>
+          <Button :loading="loading" @click="confirmShare">创建分享</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- 自定义确认弹窗 -->
     <AppConfirm
@@ -320,7 +331,7 @@ async function confirmShare() {
     />
 
     <template #fallback>
-      <div class="text-sm text-gray-400">已选 {{ selectedIds.length }} 项</div>
+      <div class="text-sm text-muted-foreground">已选 {{ selectedIds.length }} 项</div>
     </template>
   </ClientOnly>
 </template>

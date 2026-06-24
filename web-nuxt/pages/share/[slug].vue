@@ -74,7 +74,7 @@ onMounted(() => {
 <template>
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- 加载中 -->
-    <div v-if="loading" class="text-center py-24 text-gray-500">
+    <div v-if="loading" class="text-center py-24 text-muted-foreground">
       加载中...
     </div>
 
@@ -83,32 +83,45 @@ onMounted(() => {
 
     <!-- 需要密码 -->
     <div v-else-if="showPasswordForm" class="max-w-md mx-auto py-16">
-      <h1 class="text-2xl font-bold text-gray-900 mb-4 text-center">此分享需要密码</h1>
-      <form class="space-y-4" @submit.prevent="submitPassword">
-        <input
-          v-model="form.password"
-          type="password"
-          placeholder="请输入访问密码"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md"
-          autofocus
-        />
-        <p v-if="errorMsg" class="text-sm text-red-500">{{ errorMsg }}</p>
-        <AppButton type="submit" :loading="loading" block>确认</AppButton>
-      </form>
+      <Card>
+        <CardHeader>
+          <CardTitle class="text-center">此分享需要密码</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form class="space-y-4" @submit.prevent="submitPassword">
+            <div class="space-y-2">
+              <Label for="share-password">访问密码</Label>
+              <Input
+                id="share-password"
+                v-model="form.password"
+                type="password"
+                placeholder="请输入访问密码"
+                autofocus
+              />
+            </div>
+            <Alert v-if="errorMsg" variant="destructive">
+              <AlertDescription>{{ errorMsg }}</AlertDescription>
+            </Alert>
+            <Button type="submit" :loading="loading" class="w-full">确认</Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
 
     <!-- 分享内容 -->
     <template v-else-if="share">
       <!-- 分享信息 -->
-      <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">{{ share.title || '分享' }}</h1>
-        <p v-if="share.description" class="mt-2 text-sm text-gray-600">{{ share.description }}</p>
-        <div class="mt-4 flex flex-wrap gap-4 text-xs text-gray-500">
-          <span>由 {{ share.user?.name || share.user?.username || '匿名' }} 分享</span>
-          <span v-if="share.expire_at">有效期至 {{ new Date(share.expire_at).toLocaleString() }}</span>
-          <span>共 {{ photos.length }} 项</span>
-        </div>
-      </div>
+      <Card class="mb-6">
+        <CardContent class="p-6">
+          <h1 class="text-2xl font-bold text-foreground">{{ share.title || '分享' }}</h1>
+          <p v-if="share.description" class="mt-2 text-sm text-muted-foreground">{{ share.description }}</p>
+          <div class="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
+            <span>由 {{ share.user?.name || share.user?.username || '匿名' }} 分享</span>
+            <span v-if="share.expire_at">有效期至 {{ new Date(share.expire_at).toLocaleString() }}</span>
+            <span>共 {{ photos.length }} 项</span>
+          </div>
+        </CardContent>
+      </Card>
 
       <!-- 照片列表 -->
       <AppEmpty v-if="photos.length === 0" title="分享内容为空" />

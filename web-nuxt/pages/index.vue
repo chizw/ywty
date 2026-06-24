@@ -47,29 +47,23 @@ useSeoMeta({
   >
     <!-- Hero 区域 -->
     <div class="text-center w-full">
-      <h1 class="text-5xl font-bold text-gray-900">云雾图驿</h1>
-      <p class="mt-3 text-lg text-gray-600">自托管图床 / 云相册 · 重构版</p>
+      <h1 class="text-5xl font-bold text-foreground">云雾图驿</h1>
+      <p class="mt-3 text-lg text-muted-foreground">自托管图床 / 云相册 · 重构版</p>
       <div class="mt-8 flex items-center justify-center gap-4">
-        <NuxtLink
-          to="/explore"
-          class="px-6 py-2.5 bg-primary-600 text-white rounded-md hover:bg-primary-700"
-        >
+        <Button as="NuxtLink" to="/explore" size="lg">
           {{ t('nav.explore') }}
-        </NuxtLink>
-        <NuxtLink
-          to="/auth/login"
-          class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-        >
+        </Button>
+        <Button as="NuxtLink" to="/auth/login" variant="outline" size="lg">
           {{ t('nav.login') }}
-        </NuxtLink>
+        </Button>
       </div>
     </div>
 
     <!-- 最新图片 -->
     <section v-if="latestPhotos.length > 0" class="mt-16">
       <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-gray-900">最新图片</h2>
-        <NuxtLink to="/explore" class="text-sm text-primary-600 hover:underline">
+        <h2 class="text-2xl font-bold text-foreground">最新图片</h2>
+        <NuxtLink to="/explore" class="text-sm text-primary hover:underline">
           查看全部 →
         </NuxtLink>
       </div>

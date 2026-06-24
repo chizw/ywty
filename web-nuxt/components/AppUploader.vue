@@ -1,5 +1,8 @@
 <script setup lang="ts">
 // 通用文件上传组件
+import { Button } from '~/components/ui/button'
+import { Card, CardContent } from '~/components/ui/card'
+import { Upload, X } from '@lucide/vue'
 import type { UploadResult } from '~/types/api'
 
 const props = withDefaults(defineProps<{
@@ -122,8 +125,8 @@ onBeforeUnmount(() => {
 <template>
   <div>
     <div
-      class="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition"
-      :class="dragOver ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400'"
+      class="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors"
+      :class="dragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'"
       @click="pickFiles"
       @drop="onDrop"
       @dragover="onDragOver"
@@ -137,9 +140,9 @@ onBeforeUnmount(() => {
         :multiple="multiple"
         @change="onFileChange"
       />
-      <div class="text-4xl mb-2">⬆️</div>
-      <p class="text-sm text-gray-700">拖拽文件到此处，或点击选择</p>
-      <p class="mt-1 text-xs text-gray-500">
+      <Upload class="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+      <p class="text-sm text-foreground">拖拽文件到此处，或点击选择</p>
+      <p class="mt-1 text-xs text-muted-foreground">
         支持 {{ accept }}，单文件不超过 {{ maxSizeMB }}MB（也可 Ctrl+V 粘贴图片）
       </p>
     </div>
@@ -148,23 +151,25 @@ onBeforeUnmount(() => {
       <div
         v-for="(f, i) in files"
         :key="i"
-        class="flex items-center justify-between bg-gray-50 px-3 py-2 rounded text-sm"
+        class="flex items-center justify-between bg-muted px-3 py-2 rounded-md text-sm"
       >
-        <span class="truncate">{{ f.name }}</span>
-        <span class="text-gray-500 ml-3 shrink-0">{{ (f.size / 1024).toFixed(1) }} KB</span>
-        <button class="ml-3 text-red-500 text-xs" @click.stop="removeFile(i)">删除</button>
+        <span class="truncate text-foreground">{{ f.name }}</span>
+        <span class="text-muted-foreground ml-3 shrink-0">{{ (f.size / 1024).toFixed(1) }} KB</span>
+        <Button variant="ghost" size="sm" class="ml-3 h-6 w-6 p-0 text-destructive" @click.stop="removeFile(i)">
+          <X class="h-3 w-3" />
+        </Button>
       </div>
     </div>
 
     <div v-if="results.length > 0" class="mt-4">
-      <h4 class="text-sm font-medium text-gray-700 mb-2">已上传 {{ results.length }} 张</h4>
+      <h4 class="text-sm font-medium text-foreground mb-2">已上传 {{ results.length }} 张</h4>
       <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
         <a
           v-for="r in results"
           :key="r.photo.id"
           :href="r.url"
           target="_blank"
-          class="block aspect-square bg-gray-100 rounded overflow-hidden"
+          class="block aspect-square bg-muted rounded-md overflow-hidden"
         >
           <img :src="r.url" :alt="r.photo.name" class="w-full h-full object-cover" />
         </a>
@@ -172,7 +177,7 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-if="errors.length > 0" class="mt-3 space-y-1">
-      <p v-for="(e, i) in errors" :key="i" class="text-xs text-red-500">{{ e }}</p>
+      <p v-for="(e, i) in errors" :key="i" class="text-xs text-destructive">{{ e }}</p>
     </div>
   </div>
 </template>

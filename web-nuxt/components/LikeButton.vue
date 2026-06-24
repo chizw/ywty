@@ -1,5 +1,8 @@
 <script setup lang="ts">
 // 点赞按钮（通用：支持任意 target_type + target_id）
+import { Button } from '~/components/ui/button'
+import { Heart } from '@lucide/vue'
+
 const props = defineProps<{
   targetType: string // 'photo' | 'album' | ...
   targetId: number | string
@@ -54,26 +57,23 @@ async function toggle() {
     loading.value = false
   }
 }
-
-const sizeClass = computed(() =>
-  props.size === 'sm' ? 'text-xs px-2 py-0.5' : 'text-sm px-3 py-1'
-)
 </script>
 
 <template>
-  <button
+  <Button
     type="button"
+    :variant="liked ? 'outline' : 'outline'"
+    :size="size === 'sm' ? 'sm' : 'default'"
     :disabled="loading"
     :class="[
-      'inline-flex items-center gap-1 rounded-md border transition',
+      'gap-1',
       liked
-        ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
-        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50',
-      sizeClass,
+        ? 'text-red-600 border-red-200 bg-red-50 hover:bg-red-100 hover:text-red-700'
+        : 'text-muted-foreground',
     ]"
     @click.stop.prevent="toggle"
   >
-    <span aria-hidden="true">{{ liked ? '♥' : '♡' }}</span>
+    <Heart class="h-4 w-4" :class="liked ? 'fill-red-600' : ''" />
     <span>{{ count }}</span>
-  </button>
+  </Button>
 </template>

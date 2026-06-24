@@ -26,10 +26,10 @@ useSeoMeta({
 
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <NuxtLink to="/explore" class="text-xs text-gray-500 hover:text-primary-600">← {{ t('nav.explore') }}</NuxtLink>
+    <NuxtLink to="/explore" class="text-xs text-muted-foreground hover:text-primary">← {{ t('nav.explore') }}</NuxtLink>
 
-    <h1 class="mt-2 text-2xl font-bold text-gray-900">{{ t('photo.albums') }}</h1>
-    <p class="mt-1 text-sm text-gray-500">浏览公开相册</p>
+    <h1 class="mt-2 text-2xl font-bold text-foreground">{{ t('photo.albums') }}</h1>
+    <p class="mt-1 text-sm text-muted-foreground">浏览公开相册</p>
 
     <AppEmpty v-if="albums.length === 0" title="暂无公开相册" />
 
@@ -38,27 +38,29 @@ useSeoMeta({
         v-for="album in albums"
         :key="album.id"
         :to="`/explore/album/${album.id}`"
-        class="group block bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition"
+        class="group block"
       >
-        <div class="aspect-square bg-gray-100 relative overflow-hidden">
-          <img
-            v-if="album.cover"
-            :src="`/uploads/${album.cover}`"
-            :alt="album.name"
-            class="w-full h-full object-cover group-hover:scale-105 transition"
-            loading="lazy"
-          />
-          <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
-            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+        <Card class="overflow-hidden transition hover:shadow-md">
+          <div class="aspect-square bg-muted relative overflow-hidden">
+            <img
+              v-if="album.cover"
+              :src="`/uploads/${album.cover}`"
+              :alt="album.name"
+              class="w-full h-full object-cover group-hover:scale-105 transition"
+              loading="lazy"
+            />
+            <div v-else class="w-full h-full flex items-center justify-center text-muted-foreground/50">
+              <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
           </div>
-        </div>
-        <div class="p-3">
-          <h3 class="text-sm font-medium text-gray-900 truncate">{{ album.name }}</h3>
-          <p v-if="album.intro" class="mt-1 text-xs text-gray-500 truncate">{{ album.intro }}</p>
-          <p class="mt-2 text-xs text-gray-400">{{ album.photos_count || 0 }} {{ t('album.photos') }}</p>
-        </div>
+          <CardContent class="p-3">
+            <h3 class="text-sm font-medium text-foreground truncate">{{ album.name }}</h3>
+            <p v-if="album.intro" class="mt-1 text-xs text-muted-foreground truncate">{{ album.intro }}</p>
+            <p class="mt-2 text-xs text-muted-foreground/70">{{ album.photos_count || 0 }} {{ t('album.photos') }}</p>
+          </CardContent>
+        </Card>
       </NuxtLink>
     </div>
   </div>

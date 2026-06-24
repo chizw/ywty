@@ -2,6 +2,8 @@
 // 管理后台：驱动管理（只读列表 + 短信/邮件测试发送）
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
+import { RefreshCw, HardDrive, MessageSquare, Mail, Users, ScanLine, Cpu } from '@lucide/vue'
+
 const api = useApi()
 const message = useMessage()
 
@@ -86,150 +88,137 @@ function prettyName(name: string) {
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-bold text-gray-900">驱动管理</h1>
-      <AppButton size="sm" @click="refresh">刷新</AppButton>
+      <h1 class="text-2xl font-bold text-foreground">驱动管理</h1>
+      <Button size="sm" variant="outline" @click="refresh">
+        <RefreshCw class="h-4 w-4 mr-2" />
+        刷新
+      </Button>
     </div>
 
-    <p class="text-sm text-gray-500 mb-6">
-      系统所有可用的扩展驱动列表。存储策略详情见 <NuxtLink to="/admin/storage" class="text-primary-600">存储策略</NuxtLink>。
-      驱动实际配置来自 <code>configs/config.yaml</code> 或环境变量（<code>YWTY_*</code>）。
+    <p class="text-sm text-muted-foreground mb-6">
+      系统所有可用的扩展驱动列表。存储策略详情见 <NuxtLink to="/admin/storage" class="text-primary underline">存储策略</NuxtLink>。
+      驱动实际配置来自 <code class="text-xs bg-muted px-1 py-0.5 rounded">configs/config.yaml</code> 或环境变量（<code class="text-xs bg-muted px-1 py-0.5 rounded">YWTY_*</code>）。
     </p>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div class="bg-white rounded-md border border-gray-200 p-4">
-        <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
-          <span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-          存储驱动
-          <span class="ml-auto text-xs text-gray-400">{{ (drivers.storage ?? []).length }}</span>
-        </h3>
-        <div class="flex flex-wrap gap-2">
-          <span
-            v-for="d in (drivers.storage ?? [])"
-            :key="`s-${d}`"
-            class="px-2 py-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded"
-          >
-            {{ prettyName(d) }}
-          </span>
-          <span v-if="!(drivers.storage ?? []).length" class="text-xs text-gray-400">无</span>
-        </div>
-      </div>
+      <Card>
+        <CardContent class="p-4">
+          <h3 class="font-semibold text-foreground mb-3 flex items-center">
+            <HardDrive class="h-4 w-4 text-blue-500 mr-2" />
+            存储驱动
+            <Badge variant="secondary" class="ml-auto">{{ (drivers.storage ?? []).length }}</Badge>
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            <Badge v-for="d in (drivers.storage ?? [])" :key="`s-${d}`" variant="outline">
+              {{ prettyName(d) }}
+            </Badge>
+            <span v-if="!(drivers.storage ?? []).length" class="text-xs text-muted-foreground">无</span>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div class="bg-white rounded-md border border-gray-200 p-4">
-        <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
-          短信驱动
-          <span class="ml-auto text-xs text-gray-400">{{ (drivers.sms ?? []).length }}</span>
-        </h3>
-        <div class="flex flex-wrap gap-2">
-          <span
-            v-for="d in (drivers.sms ?? [])"
-            :key="`sms-${d}`"
-            class="px-2 py-1 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 rounded"
-          >
-            {{ prettyName(d) }}
-          </span>
-          <span v-if="!(drivers.sms ?? []).length" class="text-xs text-gray-400">无</span>
-        </div>
-      </div>
+      <Card>
+        <CardContent class="p-4">
+          <h3 class="font-semibold text-foreground mb-3 flex items-center">
+            <MessageSquare class="h-4 w-4 text-emerald-500 mr-2" />
+            短信驱动
+            <Badge variant="secondary" class="ml-auto">{{ (drivers.sms ?? []).length }}</Badge>
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            <Badge v-for="d in (drivers.sms ?? [])" :key="`sms-${d}`" variant="outline">
+              {{ prettyName(d) }}
+            </Badge>
+            <span v-if="!(drivers.sms ?? []).length" class="text-xs text-muted-foreground">无</span>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div class="bg-white rounded-md border border-gray-200 p-4">
-        <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
-          <span class="w-2 h-2 rounded-full bg-amber-500 mr-2"></span>
-          邮件驱动
-          <span class="ml-auto text-xs text-gray-400">{{ (drivers.mail ?? []).length }}</span>
-        </h3>
-        <div class="flex flex-wrap gap-2">
-          <span
-            v-for="d in (drivers.mail ?? [])"
-            :key="`mail-${d}`"
-            class="px-2 py-1 text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded"
-          >
-            {{ prettyName(d) }}
-          </span>
-          <span v-if="!(drivers.mail ?? []).length" class="text-xs text-gray-400">无</span>
-        </div>
-      </div>
+      <Card>
+        <CardContent class="p-4">
+          <h3 class="font-semibold text-foreground mb-3 flex items-center">
+            <Mail class="h-4 w-4 text-amber-500 mr-2" />
+            邮件驱动
+            <Badge variant="secondary" class="ml-auto">{{ (drivers.mail ?? []).length }}</Badge>
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            <Badge v-for="d in (drivers.mail ?? [])" :key="`mail-${d}`" variant="outline">
+              {{ prettyName(d) }}
+            </Badge>
+            <span v-if="!(drivers.mail ?? []).length" class="text-xs text-muted-foreground">无</span>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div class="bg-white rounded-md border border-gray-200 p-4">
-        <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
-          <span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
-          社交登录
-          <span class="ml-auto text-xs text-gray-400">{{ (drivers.social ?? []).length }}</span>
-        </h3>
-        <div class="flex flex-wrap gap-2">
-          <span
-            v-for="d in (drivers.social ?? [])"
-            :key="`so-${d}`"
-            class="px-2 py-1 text-xs bg-purple-50 text-purple-700 border border-purple-200 rounded"
-          >
-            {{ prettyName(d) }}
-          </span>
-          <span v-if="!(drivers.social ?? []).length" class="text-xs text-gray-400">无</span>
-        </div>
-      </div>
+      <Card>
+        <CardContent class="p-4">
+          <h3 class="font-semibold text-foreground mb-3 flex items-center">
+            <Users class="h-4 w-4 text-purple-500 mr-2" />
+            社交登录
+            <Badge variant="secondary" class="ml-auto">{{ (drivers.social ?? []).length }}</Badge>
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            <Badge v-for="d in (drivers.social ?? [])" :key="`so-${d}`" variant="outline">
+              {{ prettyName(d) }}
+            </Badge>
+            <span v-if="!(drivers.social ?? []).length" class="text-xs text-muted-foreground">无</span>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div class="bg-white rounded-md border border-gray-200 p-4">
-        <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
-          <span class="w-2 h-2 rounded-full bg-rose-500 mr-2"></span>
-          图片扫描
-          <span class="ml-auto text-xs text-gray-400">{{ (drivers.scan ?? []).length }}</span>
-        </h3>
-        <div class="flex flex-wrap gap-2">
-          <span
-            v-for="d in (drivers.scan ?? [])"
-            :key="`sc-${d}`"
-            class="px-2 py-1 text-xs bg-rose-50 text-rose-700 border border-rose-200 rounded"
-          >
-            {{ prettyName(d) }}
-          </span>
-          <span v-if="!(drivers.scan ?? []).length" class="text-xs text-gray-400">无</span>
-        </div>
-      </div>
+      <Card>
+        <CardContent class="p-4">
+          <h3 class="font-semibold text-foreground mb-3 flex items-center">
+            <ScanLine class="h-4 w-4 text-rose-500 mr-2" />
+            图片扫描
+            <Badge variant="secondary" class="ml-auto">{{ (drivers.scan ?? []).length }}</Badge>
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            <Badge v-for="d in (drivers.scan ?? [])" :key="`sc-${d}`" variant="outline">
+              {{ prettyName(d) }}
+            </Badge>
+            <span v-if="!(drivers.scan ?? []).length" class="text-xs text-muted-foreground">无</span>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div class="bg-white rounded-md border border-gray-200 p-4">
-        <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
-          <span class="w-2 h-2 rounded-full bg-cyan-500 mr-2"></span>
-          图片处理
-          <span class="ml-auto text-xs text-gray-400">{{ (drivers.process ?? []).length }}</span>
-        </h3>
-        <div class="flex flex-wrap gap-2">
-          <span
-            v-for="d in (drivers.process ?? [])"
-            :key="`pr-${d}`"
-            class="px-2 py-1 text-xs bg-cyan-50 text-cyan-700 border border-cyan-200 rounded"
-          >
-            {{ prettyName(d) }}
-          </span>
-          <span v-if="!(drivers.process ?? []).length" class="text-xs text-gray-400">无</span>
-        </div>
-      </div>
+      <Card>
+        <CardContent class="p-4">
+          <h3 class="font-semibold text-foreground mb-3 flex items-center">
+            <Cpu class="h-4 w-4 text-cyan-500 mr-2" />
+            图片处理
+            <Badge variant="secondary" class="ml-auto">{{ (drivers.process ?? []).length }}</Badge>
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            <Badge v-for="d in (drivers.process ?? [])" :key="`pr-${d}`" variant="outline">
+              {{ prettyName(d) }}
+            </Badge>
+            <span v-if="!(drivers.process ?? []).length" class="text-xs text-muted-foreground">无</span>
+          </div>
+        </CardContent>
+      </Card>
     </div>
 
     <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="bg-white rounded-md border border-gray-200 p-4">
-        <h3 class="font-semibold text-gray-800 mb-3">短信测试</h3>
-        <p class="text-xs text-gray-500 mb-3">通过短信验证码接口触发一次发送（请确保已配置 SMS provider）</p>
-        <div class="flex gap-2">
-          <input
-            v-model="smsTest.to"
-            placeholder="手机号"
-            class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-          />
-          <AppButton :loading="smsBusy" @click="testSMS">发送</AppButton>
-        </div>
-      </div>
-      <div class="bg-white rounded-md border border-gray-200 p-4">
-        <h3 class="font-semibold text-gray-800 mb-3">邮件测试</h3>
-        <p class="text-xs text-gray-500 mb-3">通过邮件验证码接口触发一次发送</p>
-        <div class="flex gap-2">
-          <input
-            v-model="mailTest.to"
-            placeholder="收件人邮箱"
-            class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-          />
-          <AppButton :loading="mailBusy" @click="testMail">发送</AppButton>
-        </div>
-      </div>
+      <Card>
+        <CardContent class="p-4">
+          <h3 class="font-semibold text-foreground mb-3">短信测试</h3>
+          <p class="text-xs text-muted-foreground mb-3">通过短信验证码接口触发一次发送（请确保已配置 SMS provider）</p>
+          <div class="flex gap-2">
+            <Input v-model="smsTest.to" placeholder="手机号" class="flex-1" />
+            <Button :loading="smsBusy" @click="testSMS">发送</Button>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent class="p-4">
+          <h3 class="font-semibold text-foreground mb-3">邮件测试</h3>
+          <p class="text-xs text-muted-foreground mb-3">通过邮件验证码接口触发一次发送</p>
+          <div class="flex gap-2">
+            <Input v-model="mailTest.to" placeholder="收件人邮箱" class="flex-1" />
+            <Button :loading="mailBusy" @click="testMail">发送</Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   </div>
 </template>

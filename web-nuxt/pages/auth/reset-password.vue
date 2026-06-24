@@ -33,54 +33,61 @@ async function submit() {
 </script>
 
 <template>
-  <div>
-    <h1 class="text-2xl font-bold text-gray-900 mb-1">找回密码</h1>
-    <p class="text-sm text-gray-500 mb-6">通过 {{ mode === 'email' ? '邮箱' : '手机' }} 验证后重置</p>
+  <Card>
+    <CardHeader>
+      <CardTitle>找回密码</CardTitle>
+      <CardDescription>通过 {{ mode === 'email' ? '邮箱' : '手机' }} 验证后重置</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <Tabs v-model="mode" class="w-full">
+        <TabsList class="w-full">
+          <TabsTrigger value="email" class="flex-1">邮箱验证</TabsTrigger>
+          <TabsTrigger value="phone" class="flex-1">手机验证</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
-    <div class="flex gap-2 mb-4">
-      <button
-        type="button"
-        class="flex-1 py-2 text-sm rounded-md"
-        :class="mode === 'email' ? 'bg-primary-50 text-primary-700' : 'bg-gray-50 text-gray-600'"
-        @click="mode = 'email'"
-      >邮箱验证</button>
-      <button
-        type="button"
-        class="flex-1 py-2 text-sm rounded-md"
-        :class="mode === 'phone' ? 'bg-primary-50 text-primary-700' : 'bg-gray-50 text-gray-600'"
-        @click="mode = 'phone'"
-      >手机验证</button>
-    </div>
-
-    <form class="space-y-4" @submit.prevent="submit">
-      <input
-        v-model="form.account"
-        :placeholder="mode === 'email' ? '邮箱' : '手机号'"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md"
-      />
-      <VerifyCodeInput
-        :channel="mode"
-        :account="form.account"
-        :event="'reset_password'"
-      />
-      <input
-        v-model="form.code"
-        placeholder="验证码（自动填充，或手动输入）"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md"
-      />
-      <input
-        v-model="form.password"
-        type="password"
-        minlength="6"
-        placeholder="新密码（至少 6 位）"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md"
-      />
-      <p v-if="msg" class="text-sm text-center" :class="msg.includes('成功') ? 'text-primary-600' : 'text-red-500'">{{ msg }}</p>
-      <AppButton type="submit" :loading="loading" block>重置密码</AppButton>
-    </form>
-
-    <p class="mt-6 text-center text-sm text-gray-500">
-      记起密码了？<NuxtLink to="/auth/login" class="text-primary-600 hover:underline">去登录</NuxtLink>
-    </p>
-  </div>
+      <form class="mt-4 space-y-4" @submit.prevent="submit">
+        <div class="space-y-2">
+          <Label for="reset-account">{{ mode === 'email' ? '邮箱' : '手机号' }}</Label>
+          <Input
+            id="reset-account"
+            v-model="form.account"
+            :placeholder="mode === 'email' ? '邮箱' : '手机号'"
+          />
+        </div>
+        <VerifyCodeInput
+          :channel="mode"
+          :account="form.account"
+          :event="'reset_password'"
+        />
+        <div class="space-y-2">
+          <Label for="reset-code">验证码</Label>
+          <Input
+            id="reset-code"
+            v-model="form.code"
+            placeholder="验证码（自动填充，或手动输入）"
+          />
+        </div>
+        <div class="space-y-2">
+          <Label for="reset-password">新密码</Label>
+          <Input
+            id="reset-password"
+            v-model="form.password"
+            type="password"
+            minlength="6"
+            placeholder="新密码（至少 6 位）"
+          />
+        </div>
+        <Alert v-if="msg" :variant="msg.includes('成功') ? 'success' : 'destructive'">
+          <AlertDescription>{{ msg }}</AlertDescription>
+        </Alert>
+        <Button type="submit" :loading="loading" class="w-full">重置密码</Button>
+      </form>
+    </CardContent>
+    <CardFooter class="justify-center">
+      <p class="text-sm text-muted-foreground">
+        记起密码了？<NuxtLink to="/auth/login" class="text-primary hover:underline">去登录</NuxtLink>
+      </p>
+    </CardFooter>
+  </Card>
 </template>

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-// 通用加载占位
+// 通用加载占位 — 使用 shadcn Skeleton
+import { Skeleton } from '~/components/ui/skeleton'
+
 withDefaults(defineProps<{
   rows?: number
   block?: boolean
@@ -10,12 +12,12 @@ withDefaults(defineProps<{
 </script>
 
 <template>
-  <div :class="block ? 'w-full' : 'inline-block'">
-    <div
+  <div :class="block ? 'w-full space-y-2' : 'space-y-2'">
+    <Skeleton
       v-for="i in rows"
       :key="i"
-      class="bg-gray-200 rounded animate-pulse mb-2 last:mb-0"
-      :class="block ? 'h-4 w-full' : 'h-4'"
+      class="h-4"
+      :class="block ? 'w-full' : ''"
       :style="!block ? `width: ${100 - i * 8}%` : ''"
     />
   </div>

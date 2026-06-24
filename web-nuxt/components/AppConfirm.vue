@@ -1,7 +1,15 @@
 <script setup lang="ts">
 // 通用确认弹窗：替代浏览器原生 confirm()
 // 通过 v-model 打开关闭，resolve() 返回 true/false
-import { NModal, NButton } from 'naive-ui'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '~/components/ui/dialog'
+import { Button } from '~/components/ui/button'
 
 const props = withDefaults(defineProps<{
   show: boolean
@@ -26,25 +34,28 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
+function onOpenChange(val: boolean) {
+  emit('update:show', val)
+  if (!val) emit('cancel')
+}
+
 function close() { emit('update:show', false); emit('cancel') }
 function ok() { emit('update:show', false); emit('confirm') }
 </script>
 
 <template>
-  <NModal
-    :show="show"
-    preset="card"
-    :title="title"
-    :style="{ maxWidth: width + 'px' }"
-    :mask-closable="false"
-    @update:show="(v) => emit('update:show', v)"
-  >
-    <div class="text-sm text-gray-700 whitespace-pre-line">{{ message }}</div>
-    <template #footer>
-      <div class="flex justify-end gap-2">
-        <NButton @click="close">{{ cancelText }}</NButton>
-        <NButton :type="danger ? 'error' : 'primary'" @click="ok">{{ okText }}</NButton>
-      </div>
-    </template>
-  </NModal>
+  <Dialog :open="show" @update:open="onOpenChange">
+    <DialogContent :style="{ maxWidth: width + 'px' }">
+      <DialogHeader>
+        <DialogTitle>{{ title }}</DialogTitle>
+      </DialogHeader>
+      <DialogDescription class="whitespace-pre-line">
+        {{ message }}
+      </DialogDescription>
+      <DialogFooter>
+        <Button variant="outline" @click="close">{{ cancelText }}</Button>
+        <Button :variant="danger ? 'destructive' : 'default'" @click="ok">{{ okText }}</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>

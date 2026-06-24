@@ -1,5 +1,17 @@
 <script setup lang="ts">
 // 举报弹窗
+import { Button } from '~/components/ui/button'
+import { Textarea } from '~/components/ui/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '~/components/ui/dialog'
+import { Flag } from '@lucide/vue'
+
 const props = defineProps<{
   targetType: string
   targetId: number | string
@@ -38,44 +50,39 @@ async function submit() {
     submitting.value = false
   }
 }
-
-const sizeClass = computed(() =>
-  props.size === 'sm' ? 'text-xs px-2 py-0.5' : 'text-sm px-3 py-1'
-)
 </script>
 
 <template>
   <span class="inline-block">
-    <button
+    <Button
       type="button"
-      :class="[
-        'inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50',
-        sizeClass,
-      ]"
+      variant="outline"
+      :size="size === 'sm' ? 'sm' : 'default'"
+      class="gap-1"
       @click.stop.prevent="open = true"
-    >举报</button>
-
-    <div
-      v-if="open"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      @click.self="open = false"
     >
-      <div class="w-full max-w-md bg-white rounded-lg shadow-lg p-5">
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">举报内容</h3>
-        <p class="text-xs text-gray-500 mb-3">请简要说明原因（可选）</p>
-        <textarea
+      <Flag class="h-3 w-3" />
+      举报
+    </Button>
+
+    <Dialog :open="open" @update:open="open = $event">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>举报内容</DialogTitle>
+          <DialogDescription>请简要说明原因（可选）</DialogDescription>
+        </DialogHeader>
+        <Textarea
           v-model="reason"
-          rows="3"
-          maxlength="200"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+          :rows="3"
+          :maxlength="200"
           placeholder="如：违规、色情、侵权…"
         />
-        <p v-if="msg" class="mt-2 text-sm" :class="msg.includes('失败') ? 'text-red-500' : 'text-primary-600'">{{ msg }}</p>
-        <div class="mt-4 flex justify-end gap-2">
-          <button class="px-3 py-1.5 text-sm border border-gray-300 rounded-md" @click="open = false">取消</button>
-          <AppButton size="sm" :loading="submitting" @click="submit">提交</AppButton>
-        </div>
-      </div>
-    </div>
+        <p v-if="msg" class="text-sm" :class="msg.includes('失败') ? 'text-destructive' : 'text-primary'">{{ msg }}</p>
+        <DialogFooter>
+          <Button variant="outline" @click="open = false">取消</Button>
+          <Button :loading="submitting" @click="submit">提交</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </span>
 </template>

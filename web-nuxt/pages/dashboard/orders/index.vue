@@ -2,7 +2,7 @@
 // 订单列表页：展示我的订单，支持去支付、取消和分页
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-import { NCard, NTag, NButton, NSpace } from 'naive-ui'
+import { CreditCard } from 'lucide-vue-next'
 
 const api = useApi()
 const message = useMessage()
@@ -32,11 +32,11 @@ const lastPage = computed(() => (rawData.value as any)?.meta?.last_page ?? Math.
 
 onMounted(() => fetchOrders())
 
-const statusMap: Record<string, { label: string; type: 'warning' | 'success' | 'default' | 'error' }> = {
-  unpaid: { label: '待支付', type: 'warning' },
-  paid: { label: '已支付', type: 'success' },
-  canceled: { label: '已取消', type: 'default' },
-  refunded: { label: '已退款', type: 'error' },
+const statusMap: Record<string, { label: string; variant: 'warning' | 'success' | 'secondary' | 'destructive' }> = {
+  unpaid: { label: '待支付', variant: 'warning' },
+  paid: { label: '已支付', variant: 'success' },
+  canceled: { label: '已取消', variant: 'secondary' },
+  refunded: { label: '已退款', variant: 'destructive' },
 }
 
 watch(page, () => fetchOrders())
@@ -81,66 +81,61 @@ function goNext() {
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-bold text-gray-900">我的订单</h1>
-      <span class="text-sm text-gray-500">共 {{ total }} 条</span>
+      <h1 class="text-2xl font-bold text-foreground">我的订单</h1>
+      <span class="text-sm text-muted-foreground">共 {{ total }} 条</span>
     </div>
 
     <AppEmpty v-if="orders.length === 0" title="还没有订单" description="去套餐列表选购一个套餐吧">
       <NuxtLink to="/dashboard/plans">
-        <NButton type="primary">浏览套餐</NButton>
+        <Button>浏览套餐</Button>
       </NuxtLink>
     </AppEmpty>
 
     <div v-else class="space-y-3">
-      <NCard v-for="order in orders" :key="order.id" class="relative">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div class="min-w-0 flex-1 space-y-1">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="font-medium text-gray-900">{{ planName(order) }}</span>
-              <NTag :type="statusMap[order.status]?.type || 'default'" size="small">
-                {{ statusMap[order.status]?.label || order.status }}
-              </NTag>
+      <Card v-for="order in orders" :key="order.id">
+        <CardContent class="p-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="min-w-0 flex-1 space-y-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-medium text-foreground">{{ planName(order) }}</span>
+                <Badge :variant="statusMap[order.status]?.variant || 'secondary'">
+                  {{ statusMap[order.status]?.label || order.status }}
+                </Badge>
+              </div>
+              <div class="text-xs text-muted-foreground space-x-2">
+                <span>订单号：{{ order.trade_no }}</span>
+                <span>·</span>
+                <span>创建时间：{{ fmtTime(order.created_at) }}</span>
+              </div>
+              <div class="text-sm font-semibold text-destructive">
+                {{ formatPrice(order.amount) }}
+                <span v-if="order.deduct_amount > 0" class="text-xs text-green-600 font-normal">
+                  （已抵扣 {{ formatPrice(order.deduct_amount) }}）
+                </span>
+              </div>
             </div>
-            <div class="text-xs text-gray-500 space-x-2">
-              <span>订单号：{{ order.trade_no }}</span>
-              <span>·</span>
-              <span>创建时间：{{ fmtTime(order.created_at) }}</span>
-            </div>
-            <div class="text-sm font-semibold text-red-500">
-              {{ formatPrice(order.amount) }}
-              <span v-if="order.deduct_amount > 0" class="text-xs text-green-600 font-normal">
-                （已抵扣 {{ formatPrice(order.deduct_amount) }}）
-              </span>
+
+            <div class="flex gap-2">
+              <Button v-if="order.status === 'unpaid'" size="sm" @click="router.push(`/dashboard/orders/${order.id}`)">
+                <CreditCard class="mr-1 h-3 w-3" />
+                去支付
+              </Button>
+              <Button v-if="order.status === 'unpaid'" variant="destructive" size="sm" :loading="loading" @click="cancelOrder(order.id)">
+                取消
+              </Button>
+              <Button v-else variant="outline" size="sm" @click="router.push(`/dashboard/orders/${order.id}`)">
+                详情
+              </Button>
             </div>
           </div>
-
-          <NSpace>
-            <NButton v-if="order.status === 'unpaid'" type="primary" size="small" @click="router.push(`/dashboard/orders/${order.id}`)">
-              去支付
-            </NButton>
-            <NButton v-if="order.status === 'unpaid'" type="error" size="small" :loading="loading" @click="cancelOrder(order.id)">
-              取消
-            </NButton>
-            <NButton v-else size="small" @click="router.push(`/dashboard/orders/${order.id}`)">
-              详情
-            </NButton>
-          </NSpace>
-        </div>
-      </NCard>
+        </CardContent>
+      </Card>
 
       <!-- 分页 -->
       <div v-if="lastPage > 1" class="mt-6 flex items-center justify-center gap-3 text-sm">
-        <button
-          class="px-3 py-1.5 border border-gray-300 rounded-md disabled:opacity-40"
-          :disabled="page <= 1"
-          @click="goPrev"
-        >上一页</button>
-        <span class="text-gray-600">第 {{ page }} / {{ lastPage }} 页</span>
-        <button
-          class="px-3 py-1.5 border border-gray-300 rounded-md disabled:opacity-40"
-          :disabled="page >= lastPage"
-          @click="goNext"
-        >下一页</button>
+        <Button variant="outline" size="sm" :disabled="page <= 1" @click="goPrev">上一页</Button>
+        <span class="text-muted-foreground">第 {{ page }} / {{ lastPage }} 页</span>
+        <Button variant="outline" size="sm" :disabled="page >= lastPage" @click="goNext">下一页</Button>
       </div>
     </div>
   </div>

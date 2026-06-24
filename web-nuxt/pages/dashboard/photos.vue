@@ -2,6 +2,8 @@
 // 我的图片列表：多选 + 拖动框选 + 批量操作 + 筛选 + 排序 + 分页
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
+import { MousePointerClick, X } from 'lucide-vue-next'
+
 const api = useApi()
 const message = useMessage()
 const statsStore = useStatsStore()
@@ -284,75 +286,98 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
     <!-- 顶部操作栏 -->
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-3">
-        <h1 class="text-2xl font-bold text-gray-900">我的图片</h1>
-        <span class="text-sm text-gray-500">共 {{ total }} 张</span>
-        <span
-          v-if="selectMode"
-          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium bg-primary-50 text-primary-700 border border-primary-200"
-        >
-          已选 <strong class="text-primary-700">{{ selectedIds.length }}</strong> 项
-        </span>
+        <h1 class="text-2xl font-bold text-foreground">我的图片</h1>
+        <span class="text-sm text-muted-foreground">共 {{ total }} 张</span>
+        <Badge v-if="selectMode" variant="default">
+          已选 <strong class="ml-1">{{ selectedIds.length }}</strong> 项
+        </Badge>
       </div>
       <div class="flex items-center gap-2">
-        <button
+        <Button
           v-if="selectMode"
-          class="px-3 py-1.5 text-sm rounded-md bg-gray-100 border border-gray-300 text-gray-700 hover:bg-gray-200"
+          variant="outline"
+          size="sm"
           @click="exitSelectMode"
-        >取消选择</button>
+        >
+          <X class="mr-1 h-3 w-3" />
+          取消选择
+        </Button>
       </div>
     </div>
 
     <!-- 多选使用提示 -->
-    <div v-if="!selectMode" class="mb-3 text-xs text-gray-500 flex items-center gap-1.5">
-      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM15 15h6v6h-6z" stroke-dasharray="2 2" />
-      </svg>
+    <div v-if="!selectMode" class="mb-3 text-xs text-muted-foreground flex items-center gap-1.5">
+      <MousePointerClick class="w-3.5 h-3.5" />
       提示：在图片网格的空白处<strong class="font-semibold mx-0.5">按住鼠标左键拖动</strong>可框选多张图片
     </div>
 
     <PhotoUploader class="mb-6" @uploaded="onUploaded" @error="(m) => message.error(m)" />
 
     <!-- 筛选 / 排序 -->
-    <div class="bg-white border border-gray-200 rounded-lg p-3 mb-4 flex flex-wrap items-end gap-3">
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">相册</label>
-        <select v-model="filterAlbumId" class="px-2 py-1.5 border border-gray-300 rounded-md text-sm min-w-[120px]">
-          <option :value="null">全部</option>
-          <option v-for="a in albumOptions" :key="a.value" :value="a.value">{{ a.label }}</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">标签</label>
-        <select v-model="filterTag" class="px-2 py-1.5 border border-gray-300 rounded-md text-sm min-w-[120px]">
-          <option value="">全部</option>
-          <option v-for="t in tagOptions" :key="t.value" :value="t.value">{{ t.label }}</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">开始日期</label>
-        <input v-model="startDate" type="date" class="px-2 py-1.5 border border-gray-300 rounded-md text-sm" />
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">结束日期</label>
-        <input v-model="endDate" type="date" class="px-2 py-1.5 border border-gray-300 rounded-md text-sm" />
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">排序</label>
-        <select v-model="sortBy" class="px-2 py-1.5 border border-gray-300 rounded-md text-sm">
-          <option value="created_at">按时间</option>
-          <option value="size">按大小</option>
-          <option value="name">按名称</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">方向</label>
-        <select v-model="sortOrder" class="px-2 py-1.5 border border-gray-300 rounded-md text-sm">
-          <option value="desc">降序</option>
-          <option value="asc">升序</option>
-        </select>
-      </div>
-      <button class="px-3 py-1.5 text-sm border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50" @click="resetFilters">重置</button>
-    </div>
+    <Card class="mb-4">
+      <CardContent class="p-3">
+        <div class="flex flex-wrap items-end gap-3">
+          <div>
+            <Label class="text-xs text-muted-foreground mb-1">相册</Label>
+            <Select v-model="filterAlbumId">
+              <SelectTrigger class="w-[140px]">
+                <SelectValue placeholder="全部" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem :value="null as any">全部</SelectItem>
+                <SelectItem v-for="a in albumOptions" :key="a.value" :value="a.value">{{ a.label }}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label class="text-xs text-muted-foreground mb-1">标签</Label>
+            <Select v-model="filterTag">
+              <SelectTrigger class="w-[140px]">
+                <SelectValue placeholder="全部" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">全部</SelectItem>
+                <SelectItem v-for="t in tagOptions" :key="t.value" :value="t.value">{{ t.label }}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label class="text-xs text-muted-foreground mb-1">开始日期</Label>
+            <Input v-model="startDate" type="date" class="w-[150px]" />
+          </div>
+          <div>
+            <Label class="text-xs text-muted-foreground mb-1">结束日期</Label>
+            <Input v-model="endDate" type="date" class="w-[150px]" />
+          </div>
+          <div>
+            <Label class="text-xs text-muted-foreground mb-1">排序</Label>
+            <Select v-model="sortBy">
+              <SelectTrigger class="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="created_at">按时间</SelectItem>
+                <SelectItem value="size">按大小</SelectItem>
+                <SelectItem value="name">按名称</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label class="text-xs text-muted-foreground mb-1">方向</Label>
+            <Select v-model="sortOrder">
+              <SelectTrigger class="w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="desc">降序</SelectItem>
+                <SelectItem value="asc">升序</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button variant="outline" size="sm" @click="resetFilters">重置</Button>
+        </div>
+      </CardContent>
+    </Card>
 
     <!-- 批量操作栏 -->
     <div v-if="selectMode" class="mb-4">
@@ -380,10 +405,10 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
         :ref="(el) => { if (el) itemRefs[idx] = el as HTMLElement }"
         :data-photo-item="p.id"
         :data-photo-id="p.id"
-        class="group relative bg-gray-100 rounded overflow-hidden aspect-square"
+        class="group relative bg-muted rounded overflow-hidden aspect-square"
         :class="{
           'cursor-pointer': !selectMode,
-          'ring-2 ring-primary-500': selectMode && isSelected(p.id),
+          'ring-2 ring-primary': selectMode && isSelected(p.id),
         }"
         @pointerdown="(e) => onItemPointerDown(e, p.id)"
       >
@@ -393,7 +418,7 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
         <div v-if="selectMode" class="absolute top-1 left-1 z-10 pointer-events-none">
           <span
             class="inline-flex items-center justify-center w-5 h-5 rounded border-2 text-white text-xs"
-            :class="isSelected(p.id) ? 'bg-primary-600 border-primary-600' : 'bg-black/30 border-white'"
+            :class="isSelected(p.id) ? 'bg-primary border-primary' : 'bg-black/30 border-white'"
           >{{ isSelected(p.id) ? '✓' : '' }}</span>
         </div>
 
@@ -403,14 +428,14 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
           class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition flex flex-col justify-between p-2 opacity-0 group-hover:opacity-100"
         >
           <div class="flex justify-end">
-            <span v-if="p.is_public" class="px-1.5 py-0.5 bg-primary-500 text-white text-[10px] rounded">公开</span>
+            <Badge v-if="p.is_public" variant="default" class="text-[10px]">公开</Badge>
           </div>
           <div class="flex gap-1 w-full justify-end items-center flex-wrap">
             <LikeButton size="sm" target-type="photo" :target-id="p.id" />
             <ReportButton size="sm" target-type="photo" :target-id="p.id" />
-            <button class="px-2 py-1 bg-white text-xs rounded hover:bg-gray-100" @click.stop="togglePublic(p)">{{ p.is_public ? '转私有' : '转公开' }}</button>
-            <button class="px-2 py-1 bg-white text-xs rounded hover:bg-gray-100" @click.stop="copy(p.id)">复制</button>
-            <button class="px-2 py-1 bg-red-500 text-white text-xs rounded" @click.stop="remove(p.id)">删除</button>
+            <Button variant="secondary" size="sm" class="h-6 px-2 text-[10px]" @click.stop="togglePublic(p)">{{ p.is_public ? '转私有' : '转公开' }}</Button>
+            <Button variant="secondary" size="sm" class="h-6 px-2 text-[10px]" @click.stop="copy(p.id)">复制</Button>
+            <Button variant="destructive" size="sm" class="h-6 px-2 text-[10px]" @click.stop="remove(p.id)">删除</Button>
           </div>
         </div>
       </div>
@@ -418,7 +443,7 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
       <!-- 拖动选区框 -->
       <div
         v-if="dragBox"
-        class="fixed pointer-events-none z-50 border-2 border-primary-500 bg-primary-200/20"
+        class="fixed pointer-events-none z-50 border-2 border-primary bg-primary/10"
         :style="{
           left: dragBox.left + 'px',
           top: dragBox.top + 'px',
@@ -430,21 +455,23 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
 
     <!-- 分页 -->
     <div v-if="total > perPage" class="mt-6 flex items-center justify-center gap-3 text-sm">
-      <button class="px-3 py-1.5 border border-gray-300 rounded-md disabled:opacity-40" :disabled="page <= 1" @click="goPrev">上一页</button>
-      <span class="text-gray-600">第 {{ page }} / {{ lastPage }} 页</span>
-      <button class="px-3 py-1.5 border border-gray-300 rounded-md disabled:opacity-40" :disabled="page >= lastPage" @click="goNext">下一页</button>
+      <Button variant="outline" size="sm" :disabled="page <= 1" @click="goPrev">上一页</Button>
+      <span class="text-muted-foreground">第 {{ page }} / {{ lastPage }} 页</span>
+      <Button variant="outline" size="sm" :disabled="page >= lastPage" @click="goNext">下一页</Button>
     </div>
 
     <!-- 自定义确认弹窗 -->
-    <AppConfirm
-      :show="confirmState.show"
-      :title="confirmState.title"
-      :message="confirmState.message"
-      :ok-text="confirmState.okText"
-      :danger="confirmState.danger"
-      @update:show="(v) => confirmState.show = v"
-      @confirm="onConfirmOk"
-      @cancel="onConfirmCancel"
-    />
+    <Dialog v-model:open="confirmState.show">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{{ confirmState.title }}</DialogTitle>
+        </DialogHeader>
+        <p class="text-sm text-muted-foreground">{{ confirmState.message }}</p>
+        <DialogFooter>
+          <Button variant="outline" @click="onConfirmCancel">取消</Button>
+          <Button :variant="confirmState.danger ? 'destructive' : 'default'" @click="onConfirmOk">{{ confirmState.okText }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>

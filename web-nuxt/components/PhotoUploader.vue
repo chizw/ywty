@@ -1,8 +1,9 @@
 <script setup lang="ts">
 // 图片上传组件：拖拽 / 粘贴 / 批量选择，独立进度条，缩略图预览，失败重试
 import { ref, computed, onMounted, onBeforeUnmount, triggerRef, watch } from 'vue'
-import { NUpload, NButton } from 'naive-ui'
-import type { UploadCustomRequestOptions } from 'naive-ui'
+import { Button } from '~/components/ui/button'
+import { Input } from '~/components/ui/input'
+import { Upload, X, RefreshCw, ChevronDown, ChevronUp } from '@lucide/vue'
 import { useAuthStore } from '~/stores/auth'
 import type { UploadResult } from '~/types/api'
 
@@ -43,6 +44,7 @@ interface TaskItem {
 
 const tasks = ref<TaskItem[]>([])
 const dragOver = ref(false)
+const inputRef = ref<HTMLInputElement | null>(null)
 
 let taskSeq = 0
 function nextId(): string {
@@ -192,26 +194,19 @@ function uploadPending() {
   }
 }
 
-// NUpload custom-request：将 NUpload 选择的文件桥接到任务系统
-function customRequest(options: UploadCustomRequestOptions) {
-  const rawFile = options.file.file as File | null
-  if (!rawFile) {
-    options.onError()
-    return
+// 文件选择
+function pickFiles() {
+  inputRef.value?.click()
+}
+
+function onFileInputChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  if (!input.files) return
+  for (const f of Array.from(input.files)) {
+    const item = createTask(f)
+    if (item && props.autoUpload) uploadTask(item)
   }
-  const item = createTask(rawFile)
-  if (!item) {
-    options.onError()
-    return
-  }
-  if (props.autoUpload) {
-    uploadTask(item, {
-      onFinish: () => options.onFinish(),
-      onError: () => options.onError(),
-    })
-  } else {
-    options.onFinish()
-  }
+  input.value = ''
 }
 
 // 拖拽上传
@@ -280,7 +275,6 @@ const overallProgress = computed(() => {
   if (list.length === 0) return 0
   const totalSize = list.reduce((s, t) => s + (t.size || 0), 0)
   if (totalSize === 0) {
-    // size 缺失时退化为按文件数等权
     const sum = list.reduce((s, t) => s + t.progress, 0)
     return Math.ceil(sum / list.length)
   }
@@ -288,10 +282,8 @@ const overallProgress = computed(() => {
   return Math.ceil(sum / totalSize)
 })
 
-// 详情展开：上传中默认折叠（节省空间），全部完成后默认折叠，可点击展开
 const showDetail = ref(false)
 watch(isAllDone, (v) => {
-  // 上传完毕后 2s 自动折叠
   if (v) {
     setTimeout(() => {
       if (isAllDone.value) showDetail.value = false
@@ -300,7 +292,6 @@ watch(isAllDone, (v) => {
 })
 
 function clearFinished() {
-  // 仅清除 success 的任务，保留 error / uploading / pending
   for (let i = tasks.value.length - 1; i >= 0; i--) {
     const t = tasks.value[i]
     if (t.status === 'success') {
@@ -320,50 +311,49 @@ function retryAllFailed() {
 <template>
   <ClientOnly>
     <div class="photo-uploader">
-      <!-- 拖拽区 + NUpload 触发器 -->
+      <!-- 拖拽区 -->
       <div
-        class="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition"
-        :class="dragOver ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400'"
+        class="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors"
+        :class="dragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'"
         @dragover="onDragOver"
         @dragleave="onDragLeave"
         @drop="onDrop"
+        @click="pickFiles"
       >
-        <NUpload
-          :custom-request="customRequest"
+        <input
+          ref="inputRef"
+          type="file"
+          class="hidden"
           :accept="ACCEPT_ATTR"
           :multiple="multiple"
-          :show-file-list="false"
-          :default-upload="true"
-        >
-          <div class="text-center">
-            <div class="text-4xl mb-2">📤</div>
-            <p class="text-sm text-gray-700">点击选择，或拖拽文件到此处</p>
-            <p class="mt-1 text-xs text-gray-500">
-              支持 jpeg/png/gif/webp/bmp，单文件不超过 {{ maxSizeMB }}MB（也可 Ctrl+V 粘贴）
-            </p>
-          </div>
-        </NUpload>
+          @change="onFileInputChange"
+        />
+        <Upload class="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+        <p class="text-sm text-foreground">点击选择，或拖拽文件到此处</p>
+        <p class="mt-1 text-xs text-muted-foreground">
+          支持 jpeg/png/gif/webp/bmp，单文件不超过 {{ maxSizeMB }}MB（也可 Ctrl+V 粘贴）
+        </p>
       </div>
 
       <!-- 手动上传按钮（autoUpload=false 时） -->
       <div v-if="!autoUpload && hasPending" class="mt-3 text-center">
-        <NButton type="primary" @click="uploadPending">上传全部</NButton>
+        <Button @click="uploadPending">上传全部</Button>
       </div>
 
-      <!-- 聚合进度条（始终单行，不占大量空间） -->
+      <!-- 聚合进度条 -->
       <div
         v-if="totalCount > 0"
-        class="mt-3 bg-white border border-gray-200 rounded-lg p-3"
+        class="mt-3 bg-card border border-border rounded-lg p-3"
       >
         <!-- 状态行 -->
         <div class="flex items-center gap-3 text-sm">
           <div class="flex-1 min-w-0">
-            <span v-if="uploadingCount > 0 || pendingCount > 0" class="text-gray-800">
-              正在上传 <b class="text-primary-600">{{ totalCount }}</b> 个文件
+            <span v-if="uploadingCount > 0 || pendingCount > 0" class="text-foreground">
+              正在上传 <b class="text-primary">{{ totalCount }}</b> 个文件
               <span v-if="successCount > 0" class="text-green-600">· 已完成 {{ successCount }}</span>
-              <span v-if="errorCount > 0" class="text-red-500">· 失败 {{ errorCount }}</span>
+              <span v-if="errorCount > 0" class="text-destructive">· 失败 {{ errorCount }}</span>
             </span>
-            <span v-else-if="isAllDone && errorCount > 0" class="text-red-600">
+            <span v-else-if="isAllDone && errorCount > 0" class="text-destructive">
               上传完成 · 成功 {{ successCount }} · 失败 {{ errorCount }}
             </span>
             <span v-else class="text-green-600">
@@ -371,59 +361,74 @@ function retryAllFailed() {
             </span>
           </div>
           <div class="flex items-center gap-2 shrink-0">
-            <button
+            <Button
               v-if="hasFailures && isAllDone"
-              class="px-2 py-1 text-xs border border-red-300 text-red-600 rounded hover:bg-red-50"
+              variant="outline"
+              size="sm"
+              class="h-7 text-xs text-destructive border-destructive/30"
               @click="retryAllFailed"
-            >重试失败</button>
-            <button
+            >
+              <RefreshCw class="h-3 w-3 mr-1" />
+              重试失败
+            </Button>
+            <Button
               v-if="isAllDone && successCount > 0"
-              class="px-2 py-1 text-xs text-gray-500 hover:text-gray-700"
+              variant="ghost"
+              size="sm"
+              class="h-7 text-xs text-muted-foreground"
               @click="clearFinished"
-            >清除已完成</button>
-            <button
-              class="px-2 py-1 text-xs text-primary-600 hover:underline"
+            >
+              清除已完成
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-7 text-xs text-primary"
               @click="showDetail = !showDetail"
-            >{{ showDetail ? '收起' : '详情' }} {{ showDetail ? '▴' : '▾' }}</button>
+            >
+              {{ showDetail ? '收起' : '详情' }}
+              <ChevronUp v-if="showDetail" class="h-3 w-3 ml-1" />
+              <ChevronDown v-else class="h-3 w-3 ml-1" />
+            </Button>
           </div>
         </div>
         <!-- 整体进度条 -->
-        <div class="mt-2 w-full bg-gray-200 rounded-full overflow-hidden" style="height: 4px;">
+        <div class="mt-2 w-full bg-muted rounded-full overflow-hidden" style="height: 4px;">
           <div
             class="h-full rounded-full transition-all duration-200 ease-out"
-            :class="hasFailures && isAllDone ? 'bg-red-500' : (isAllDone ? 'bg-green-500' : 'bg-primary-600')"
+            :class="hasFailures && isAllDone ? 'bg-destructive' : (isAllDone ? 'bg-green-500' : 'bg-primary')"
             :style="{ width: overallProgress + '%' }"
           ></div>
         </div>
       </div>
 
-      <!-- 文件详情列表（按需展开，默认折叠） -->
+      <!-- 文件详情列表 -->
       <div v-if="showDetail && totalCount > 0" class="mt-2 max-h-72 overflow-y-auto space-y-2 pr-1">
         <div
           v-for="task in tasks"
           :key="task.id"
-          class="flex items-center gap-2 bg-gray-50 px-2 py-1.5 rounded text-sm"
+          class="flex items-center gap-2 bg-muted px-2 py-1.5 rounded-md text-sm"
         >
           <!-- 缩略图预览 -->
-          <div class="w-8 h-8 flex-shrink-0 bg-gray-200 rounded overflow-hidden">
+          <div class="w-8 h-8 flex-shrink-0 bg-muted rounded overflow-hidden">
             <img :src="task.preview" :alt="task.name" class="w-full h-full object-cover" />
           </div>
 
           <!-- 文件名 + 进度条 -->
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between text-xs">
-              <span class="truncate text-gray-800">{{ task.name }}</span>
-              <span class="text-gray-500 ml-2 shrink-0">
+              <span class="truncate text-foreground">{{ task.name }}</span>
+              <span class="text-muted-foreground ml-2 shrink-0">
                 <template v-if="task.status === 'success'">✓</template>
                 <template v-else-if="task.status === 'error'">✕</template>
                 <template v-else>{{ task.progress }}%</template>
                 · {{ formatSize(task.size) }}
               </span>
             </div>
-            <div class="mt-1 w-full bg-gray-200 rounded-full overflow-hidden" style="height: 3px;">
+            <div class="mt-1 w-full bg-muted rounded-full overflow-hidden" style="height: 3px;">
               <div
                 class="h-full rounded-full transition-all duration-200 ease-out"
-                :class="task.status === 'success' ? 'bg-green-500' : (task.status === 'error' ? 'bg-red-500' : 'bg-primary-600')"
+                :class="task.status === 'success' ? 'bg-green-500' : (task.status === 'error' ? 'bg-destructive' : 'bg-primary')"
                 :style="{ width: task.progress + '%' }"
               ></div>
             </div>
@@ -431,25 +436,33 @@ function retryAllFailed() {
 
           <!-- 操作按钮 -->
           <div class="flex-shrink-0 flex gap-1 items-center">
-            <button
+            <Button
               v-if="task.status === 'error'"
-              class="text-primary-600 text-xs px-1 hover:underline"
+              variant="ghost"
+              size="sm"
+              class="h-6 text-xs text-primary px-1"
               @click="retryTask(task)"
-            >重试</button>
-            <button
-              class="text-gray-400 hover:text-red-500 text-sm px-1"
+            >
+              重试
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
               title="移除"
               @click="removeTask(task)"
-            >✕</button>
+            >
+              <X class="h-3 w-3" />
+            </Button>
           </div>
         </div>
       </div>
     </div>
 
     <template #fallback>
-      <div class="border-2 border-dashed rounded-lg p-8 text-center border-gray-300">
-        <div class="text-4xl mb-2">📤</div>
-        <p class="text-sm text-gray-700">加载上传组件...</p>
+      <div class="border-2 border-dashed rounded-lg p-8 text-center border-border">
+        <Upload class="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+        <p class="text-sm text-foreground">加载上传组件...</p>
       </div>
     </template>
   </ClientOnly>

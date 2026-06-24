@@ -47,12 +47,12 @@ useSeoMeta({
 
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <NuxtLink to="/explore" class="text-xs text-gray-500 hover:text-primary-600">← {{ t('nav.explore') }}</NuxtLink>
+    <NuxtLink to="/explore" class="text-xs text-muted-foreground hover:text-primary">← {{ t('nav.explore') }}</NuxtLink>
 
     <template v-if="album">
-      <h1 class="mt-2 text-2xl font-bold text-gray-900">{{ album.name }}</h1>
-      <p v-if="album.intro" class="mt-1 text-sm text-gray-500">{{ album.intro }}</p>
-      <p class="mt-1 text-xs text-gray-400">共 {{ photos.length }} 张</p>
+      <h1 class="mt-2 text-2xl font-bold text-foreground">{{ album.name }}</h1>
+      <p v-if="album.intro" class="mt-1 text-sm text-muted-foreground">{{ album.intro }}</p>
+      <p class="mt-1 text-xs text-muted-foreground/70">共 {{ photos.length }} 张</p>
 
       <AppEmpty v-if="photos.length === 0" title="相册内还没有图片" />
       <PhotoMasonry

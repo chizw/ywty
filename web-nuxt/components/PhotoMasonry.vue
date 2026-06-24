@@ -40,7 +40,7 @@ function onClick(photo: Photo, index: number) {
       class="mb-3 break-inside-avoid group relative cursor-zoom-in"
       @click="onClick(p, i)"
     >
-      <div class="relative bg-gray-100 rounded overflow-hidden">
+      <div class="relative bg-muted rounded-md overflow-hidden">
         <img
           :src="`/uploads/${p.pathname}`"
           :alt="p.name || ''"
@@ -48,7 +48,7 @@ function onClick(photo: Photo, index: number) {
           class="w-full h-auto block"
         />
         <div
-          class="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition"
+          class="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
           @click.stop
         >
           <LikeButton size="sm" target-type="photo" :target-id="p.id" />

@@ -1,5 +1,9 @@
 <script setup lang="ts">
 // 支付选择组件：图标 + 渠道选择
+import { Label } from '~/components/ui/label'
+import { Card, CardContent } from '~/components/ui/card'
+import { Check } from '@lucide/vue'
+
 interface PaymentChannel {
   key: string
   name: string
@@ -43,30 +47,28 @@ function selectChannel(key: string) {
 
 <template>
   <div class="space-y-2">
-    <label class="block text-sm text-gray-700 mb-2">选择支付方式</label>
+    <Label class="mb-2 block">选择支付方式</Label>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <button
         v-for="ch in channels"
         :key="ch.key"
         type="button"
-        class="flex items-center gap-3 p-3 border rounded-lg text-left transition"
+        class="flex items-center gap-3 p-3 border rounded-lg text-left transition-colors"
         :class="{
-          'border-primary-500 bg-primary-50 ring-1 ring-primary-500': selected === ch.key,
-          'border-gray-300 hover:border-gray-400': selected !== ch.key && !ch.disabled,
-          'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed': ch.disabled,
+          'border-primary bg-primary/5 ring-1 ring-primary': selected === ch.key,
+          'border-border hover:border-primary/50': selected !== ch.key && !ch.disabled,
+          'border-border bg-muted opacity-50 cursor-not-allowed': ch.disabled,
         }"
         :disabled="ch.disabled"
         @click="selectChannel(ch.key)"
       >
         <span class="text-2xl">{{ ch.icon }}</span>
         <div class="flex-1">
-          <div class="text-sm font-medium text-gray-900">{{ ch.name }}</div>
-          <div v-if="ch.description" class="text-xs text-gray-500">{{ ch.description }}</div>
+          <div class="text-sm font-medium text-foreground">{{ ch.name }}</div>
+          <div v-if="ch.description" class="text-xs text-muted-foreground">{{ ch.description }}</div>
         </div>
-        <div v-if="selected === ch.key" class="text-primary-600">
-          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-          </svg>
+        <div v-if="selected === ch.key" class="text-primary">
+          <Check class="h-5 w-5" />
         </div>
       </button>
     </div>

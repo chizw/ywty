@@ -34,8 +34,8 @@ useSeoMeta({
 
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="text-2xl font-bold text-gray-900">{{ t('nav.explore') }}</h1>
-    <p class="mt-1 text-sm text-gray-500">浏览公开图片</p>
+    <h1 class="text-2xl font-bold text-foreground">{{ t('nav.explore') }}</h1>
+    <p class="mt-1 text-sm text-muted-foreground">浏览公开图片</p>
 
     <AppEmpty v-if="items.length === 0" title="暂无公开图片" />
     <PhotoMasonry

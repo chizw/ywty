@@ -74,107 +74,107 @@ function fmtTime(s: any) {
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-bold text-gray-900">用户管理</h1>
-      <span class="text-sm text-gray-500">共 {{ meta?.total ?? users.length }} 个用户</span>
+      <h1 class="text-2xl font-bold text-foreground">用户管理</h1>
+      <span class="text-sm text-muted-foreground">共 {{ meta?.total ?? users.length }} 个用户</span>
     </div>
 
     <div class="mb-4 flex gap-2">
-      <input
+      <Input
         v-model="keyword"
         placeholder="搜索用户名/邮箱/姓名"
-        class="flex-1 max-w-sm px-3 py-2 border border-gray-300 rounded-md"
+        class="max-w-sm"
         @keyup.enter="() => refresh()"
       />
-      <AppButton @click="refresh">搜索</AppButton>
+      <Button @click="refresh">搜索</Button>
     </div>
 
-    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-gray-50 text-gray-600 text-left">
-          <tr>
-            <th class="px-4 py-2">ID</th>
-            <th class="px-4 py-2">用户名</th>
-            <th class="px-4 py-2">邮箱</th>
-            <th class="px-4 py-2">姓名</th>
-            <th class="px-4 py-2">状态</th>
-            <th class="px-4 py-2">管理员</th>
-            <th class="px-4 py-2">注册时间</th>
-            <th class="px-4 py-2 text-right">操作</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y">
-          <tr v-for="u in users" :key="u.id" class="hover:bg-gray-50">
-            <td class="px-4 py-2 text-gray-500">{{ u.id }}</td>
-            <td class="px-4 py-2 font-medium">{{ u.username }}</td>
-            <td class="px-4 py-2 text-gray-600">{{ u.email }}</td>
-            <td class="px-4 py-2">{{ u.name || '-' }}</td>
-            <td class="px-4 py-2">
-              <span
-                class="px-2 py-0.5 text-xs rounded-full"
-                :class="u.status === 'normal' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
-              >{{ u.status || 'normal' }}</span>
-            </td>
-            <td class="px-4 py-2">
-              <span
-                class="px-2 py-0.5 text-xs rounded-full"
-                :class="u.is_admin ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-500'"
-              >{{ u.is_admin ? '是' : '否' }}</span>
-            </td>
-            <td class="px-4 py-2 text-gray-500 text-xs">{{ fmtTime(u.created_at) }}</td>
-            <td class="px-4 py-2 text-right">
-              <button class="text-primary-600 hover:underline text-xs" @click="openEdit(u)">编辑</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <Card>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ID</TableHead>
+            <TableHead>用户名</TableHead>
+            <TableHead>邮箱</TableHead>
+            <TableHead>姓名</TableHead>
+            <TableHead>状态</TableHead>
+            <TableHead>管理员</TableHead>
+            <TableHead>注册时间</TableHead>
+            <TableHead class="text-right">操作</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-for="u in users" :key="u.id">
+            <TableCell class="text-muted-foreground">{{ u.id }}</TableCell>
+            <TableCell class="font-medium">{{ u.username }}</TableCell>
+            <TableCell class="text-muted-foreground">{{ u.email }}</TableCell>
+            <TableCell>{{ u.name || '-' }}</TableCell>
+            <TableCell>
+              <Badge :variant="u.status === 'normal' ? 'success' : 'secondary'">
+                {{ u.status || 'normal' }}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              <Badge :variant="u.is_admin ? 'default' : 'secondary'">
+                {{ u.is_admin ? '是' : '否' }}
+              </Badge>
+            </TableCell>
+            <TableCell class="text-muted-foreground text-xs">{{ fmtTime(u.created_at) }}</TableCell>
+            <TableCell class="text-right">
+              <Button variant="ghost" size="sm" @click="openEdit(u)">编辑</Button>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </Card>
 
     <div v-if="meta && meta.last_page > 1" class="mt-4 flex items-center justify-end gap-2">
-      <button
-        :disabled="page <= 1"
-        class="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
-        @click="page--; refresh()"
-      >上一页</button>
-      <span class="text-sm text-gray-500">第 {{ meta.current_page }} / {{ meta.last_page }} 页</span>
-      <button
-        :disabled="page >= meta.last_page"
-        class="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
-        @click="page++; refresh()"
-      >下一页</button>
+      <Button variant="outline" size="sm" :disabled="page <= 1" @click="page--; refresh()">上一页</Button>
+      <span class="text-sm text-muted-foreground">第 {{ meta.current_page }} / {{ meta.last_page }} 页</span>
+      <Button variant="outline" size="sm" :disabled="page >= meta.last_page" @click="page++; refresh()">下一页</Button>
     </div>
 
     <!-- 编辑弹窗 -->
-    <div
-      v-if="editing"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      @click.self="closeEdit"
-    >
-      <div class="w-full max-w-md bg-white rounded-lg p-5 space-y-3">
-        <h3 class="text-lg font-semibold">编辑用户 #{{ editing.id }}</h3>
-        <div>
-          <label class="block text-sm text-gray-700 mb-1">状态</label>
-          <select v-model="form.status" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-            <option value="normal">正常</option>
-            <option value="disabled">禁用</option>
-          </select>
+    <Dialog :open="!!editing" @update:open="(val: boolean) => { if (!val) closeEdit() }">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>编辑用户 #{{ editing?.id }}</DialogTitle>
+        </DialogHeader>
+        <div class="space-y-4">
+          <div>
+            <Label class="mb-1.5 block">状态</Label>
+            <Select :modelValue="form.status" @update:modelValue="(val: string) => form.status = val">
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="normal">正常</SelectItem>
+                <SelectItem value="disabled">禁用</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div class="flex items-center gap-2">
+            <Checkbox :checked="form.is_admin" @update:checked="(val: boolean) => form.is_admin = val" />
+            <Label>设为管理员</Label>
+          </div>
+          <div>
+            <Label class="mb-1.5 block">角色组</Label>
+            <Select :modelValue="String(form.group_id)" @update:modelValue="(val: string) => form.group_id = Number(val)">
+              <SelectTrigger>
+                <SelectValue placeholder="不修改" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">不修改</SelectItem>
+                <SelectItem v-for="g in groups" :key="g.id" :value="String(g.id)">{{ g.name }}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <p v-if="msg" class="text-sm" :class="msg.includes('失败') ? 'text-destructive' : 'text-primary'">{{ msg }}</p>
         </div>
-        <label class="flex items-center gap-2 text-sm">
-          <input v-model="form.is_admin" type="checkbox" />
-          设为管理员
-        </label>
-        <div>
-          <label class="block text-sm text-gray-700 mb-1">角色组</label>
-          <select v-model.number="form.group_id" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-            <option :value="0">不修改</option>
-            <option v-for="g in groups" :key="g.id" :value="g.id">{{ g.name }}</option>
-          </select>
-        </div>
-        <p v-if="msg" class="text-sm" :class="msg.includes('失败') ? 'text-red-500' : 'text-primary-600'">{{ msg }}</p>
-        <div class="flex justify-end gap-2 pt-2">
-          <button class="px-3 py-1.5 text-sm border border-gray-300 rounded-md" @click="closeEdit">取消</button>
-          <AppButton :loading="saving" @click="save">保存</AppButton>
-        </div>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button variant="outline" @click="closeEdit">取消</Button>
+          <Button :loading="saving" @click="save">保存</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>

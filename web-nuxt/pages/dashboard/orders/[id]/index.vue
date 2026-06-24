@@ -2,7 +2,7 @@
 // 订单详情 / 支付页：展示订单信息、发起支付、刷新状态、取消订单
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-import { NCard, NTag, NButton, NSpace, NAlert, NDescriptions, NDescriptionsItem, NSpin } from 'naive-ui'
+import { ArrowLeft, CreditCard, RefreshCw, XCircle, Copy, Loader2, CheckCircle, QrCode } from 'lucide-vue-next'
 
 const api = useApi()
 const message = useMessage()
@@ -30,11 +30,11 @@ const order = computed<any>(() => rawData.value || {})
 
 onMounted(() => fetchOrder())
 
-const statusMap: Record<string, { label: string; type: 'warning' | 'success' | 'default' | 'error' }> = {
-  unpaid: { label: '待支付', type: 'warning' },
-  paid: { label: '已支付', type: 'success' },
-  canceled: { label: '已取消', type: 'default' },
-  refunded: { label: '已退款', type: 'error' },
+const statusMap: Record<string, { label: string; variant: 'warning' | 'success' | 'secondary' | 'destructive' }> = {
+  unpaid: { label: '待支付', variant: 'warning' },
+  paid: { label: '已支付', variant: 'success' },
+  canceled: { label: '已取消', variant: 'secondary' },
+  refunded: { label: '已退款', variant: 'destructive' },
 }
 
 function fmtTime(t: any) {
@@ -133,100 +133,168 @@ function copyAppParams() {
 <template>
   <div>
     <div class="mb-4">
-      <NuxtLink to="/dashboard/orders" class="text-xs text-gray-500 hover:text-primary-600">← 返回订单列表</NuxtLink>
-      <h1 class="text-2xl font-bold text-gray-900 mt-1">订单详情</h1>
+      <NuxtLink to="/dashboard/orders" class="text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
+        <ArrowLeft class="h-3 w-3" />
+        返回订单列表
+      </NuxtLink>
+      <h1 class="text-2xl font-bold text-foreground mt-1">订单详情</h1>
     </div>
 
-    <NSpin :show="refreshing">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <!-- 左侧：订单信息 -->
-        <div class="lg:col-span-2 space-y-4">
-          <NCard title="订单信息">
-            <NDescriptions :columns="1" label-placement="left" bordered>
-              <NDescriptionsItem label="订单号">{{ order.trade_no }}</NDescriptionsItem>
-              <NDescriptionsItem label="套餐名称">{{ planName() }}</NDescriptionsItem>
-              <NDescriptionsItem label="订单状态">
-                <NTag :type="statusMap[order.status]?.type || 'default'" size="small">
-                  {{ statusMap[order.status]?.label || order.status }}
-                </NTag>
-              </NDescriptionsItem>
-              <NDescriptionsItem label="支付方式">{{ order.pay_method || '-' }}</NDescriptionsItem>
-              <NDescriptionsItem label="应付金额">
-                <span class="text-red-500 font-semibold">{{ formatPrice(order.amount) }}</span>
-              </NDescriptionsItem>
-              <NDescriptionsItem v-if="order.deduct_amount > 0" label="优惠抵扣">
-                <span class="text-green-600">{{ formatPrice(order.deduct_amount) }}</span>
-              </NDescriptionsItem>
-              <NDescriptionsItem label="创建时间">{{ fmtTime(order.created_at) }}</NDescriptionsItem>
-              <NDescriptionsItem v-if="order.paid_at" label="支付时间">{{ fmtTime(order.paid_at) }}</NDescriptionsItem>
-              <NDescriptionsItem v-if="order.canceled_at" label="取消时间">{{ fmtTime(order.canceled_at) }}</NDescriptionsItem>
-            </NDescriptions>
-          </NCard>
+    <div v-if="refreshing" class="space-y-4">
+      <Skeleton class="h-48 w-full" />
+      <Skeleton class="h-32 w-full" />
+    </div>
+    <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- 左侧：订单信息 -->
+      <div class="lg:col-span-2 space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>订单信息</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl class="space-y-3 text-sm">
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">订单号</dt>
+                <dd class="font-medium">{{ order.trade_no }}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">套餐名称</dt>
+                <dd class="font-medium">{{ planName() }}</dd>
+              </div>
+              <div class="flex justify-between items-center">
+                <dt class="text-muted-foreground">订单状态</dt>
+                <dd>
+                  <Badge :variant="statusMap[order.status]?.variant || 'secondary'">
+                    {{ statusMap[order.status]?.label || order.status }}
+                  </Badge>
+                </dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">支付方式</dt>
+                <dd class="font-medium">{{ order.pay_method || '-' }}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">应付金额</dt>
+                <dd class="text-destructive font-semibold">{{ formatPrice(order.amount) }}</dd>
+              </div>
+              <div v-if="order.deduct_amount > 0" class="flex justify-between">
+                <dt class="text-muted-foreground">优惠抵扣</dt>
+                <dd class="text-green-600">{{ formatPrice(order.deduct_amount) }}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">创建时间</dt>
+                <dd>{{ fmtTime(order.created_at) }}</dd>
+              </div>
+              <div v-if="order.paid_at" class="flex justify-between">
+                <dt class="text-muted-foreground">支付时间</dt>
+                <dd>{{ fmtTime(order.paid_at) }}</dd>
+              </div>
+              <div v-if="order.canceled_at" class="flex justify-between">
+                <dt class="text-muted-foreground">取消时间</dt>
+                <dd>{{ fmtTime(order.canceled_at) }}</dd>
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
 
-          <NCard v-if="order.snapshot?.plan?.features?.length" title="套餐权益">
+        <Card v-if="order.snapshot?.plan?.features?.length">
+          <CardHeader>
+            <CardTitle>套餐权益</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div
                 v-for="feature in order.snapshot.plan.features"
                 :key="feature"
-                class="flex items-start gap-2 text-sm text-gray-700"
+                class="flex items-start gap-2 text-sm text-foreground"
               >
-                <span class="text-green-500 mt-0.5">✓</span>
+                <CheckCircle class="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
                 <span>{{ feature }}</span>
               </div>
             </div>
-          </NCard>
-        </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        <!-- 右侧：支付操作 -->
-        <div class="space-y-4">
-          <NCard v-if="order.status === 'unpaid'" title="支付">
-            <NAlert type="info" :show-icon="false" class="mb-4 text-xs">
-              点击「立即支付」后将根据支付方式跳转到对应收银台或展示二维码。
-            </NAlert>
+      <!-- 右侧：支付操作 -->
+      <div class="space-y-4">
+        <Card v-if="order.status === 'unpaid'">
+          <CardHeader>
+            <CardTitle>支付</CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-3">
+            <Alert variant="info">
+              <AlertDescription class="text-xs">
+                点击「立即支付」后将根据支付方式跳转到对应收银台或展示二维码。
+              </AlertDescription>
+            </Alert>
 
-            <NSpace vertical class="w-full">
-              <NButton type="primary" block size="large" :loading="paying" @click="pay">
-                立即支付
-              </NButton>
-              <NButton block :loading="refreshing" @click="refreshOrder">
-                我已支付
-              </NButton>
-              <NButton type="error" block :loading="canceling" @click="cancelOrder">
-                取消订单
-              </NButton>
-            </NSpace>
-          </NCard>
+            <Button class="w-full" size="lg" :loading="paying" @click="pay">
+              <CreditCard class="mr-2 h-4 w-4" />
+              立即支付
+            </Button>
+            <Button variant="outline" class="w-full" :loading="refreshing" @click="refreshOrder">
+              <RefreshCw class="mr-2 h-4 w-4" />
+              我已支付
+            </Button>
+            <Button variant="destructive" class="w-full" :loading="canceling" @click="cancelOrder">
+              <XCircle class="mr-2 h-4 w-4" />
+              取消订单
+            </Button>
+          </CardContent>
+        </Card>
 
-          <NCard v-else title="操作">
-            <NSpace vertical class="w-full">
-              <NButton block @click="refreshOrder" :loading="refreshing">刷新状态</NButton>
-              <NuxtLink to="/dashboard/orders">
-                <NButton block>返回订单列表</NButton>
-              </NuxtLink>
-            </NSpace>
-          </NCard>
+        <Card v-else>
+          <CardHeader>
+            <CardTitle>操作</CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-3">
+            <Button variant="outline" class="w-full" :loading="refreshing" @click="refreshOrder">
+              <RefreshCw class="mr-2 h-4 w-4" />
+              刷新状态
+            </Button>
+            <NuxtLink to="/dashboard/orders" class="block">
+              <Button variant="outline" class="w-full">返回订单列表</Button>
+            </NuxtLink>
+          </CardContent>
+        </Card>
 
-          <!-- 二维码 -->
-          <NCard v-if="qrcodeUrl" title="请扫码支付">
+        <!-- 二维码 -->
+        <Card v-if="qrcodeUrl">
+          <CardHeader>
+            <CardTitle class="flex items-center gap-2">
+              <QrCode class="h-4 w-4" />
+              请扫码支付
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div class="flex justify-center">
-              <img :src="qrcodeUrl" alt="支付二维码" class="max-w-[240px] rounded border border-gray-200" />
+              <img :src="qrcodeUrl" alt="支付二维码" class="max-w-[240px] rounded border border-border" />
             </div>
-            <p class="text-center text-xs text-gray-500 mt-3">支付完成后请点击「我已支付」刷新状态</p>
-          </NCard>
+            <p class="text-center text-xs text-muted-foreground mt-3">支付完成后请点击「我已支付」刷新状态</p>
+          </CardContent>
+        </Card>
 
-          <!-- App 参数 -->
-          <NCard v-if="appParams" title="请复制以下参数完成支付">
-            <textarea
+        <!-- App 参数 -->
+        <Card v-if="appParams">
+          <CardHeader>
+            <CardTitle>请复制以下参数完成支付</CardTitle>
+          </CardHeader>
+          <CardContent class="space-y-3">
+            <Textarea
               v-model="appParams"
               readonly
               rows="6"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md text-xs font-mono bg-gray-50"
+              class="text-xs font-mono bg-muted"
             />
-            <NButton class="mt-3" block @click="copyAppParams">复制参数</NButton>
-          </NCard>
-        </div>
+            <Button variant="outline" class="w-full" @click="copyAppParams">
+              <Copy class="mr-2 h-4 w-4" />
+              复制参数
+            </Button>
+          </CardContent>
+        </Card>
       </div>
-    </NSpin>
+    </div>
 
     <!-- 隐藏容器用于 form 类型自动提交 -->
     <div ref="formRef" class="hidden" />

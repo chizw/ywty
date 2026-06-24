@@ -2,6 +2,8 @@
 // 相册详情：批量移除照片 / 设置封面 / 添加图片
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
+import { ArrowLeft, Plus, Check, Image as ImageIcon } from 'lucide-vue-next'
+
 const route = useRoute()
 const albumId = Number(route.params.id)
 const api = useApi()
@@ -117,36 +119,46 @@ function isCover(p: any) {
   <div v-if="album">
     <div class="flex items-center justify-between mb-4">
       <div>
-        <NuxtLink to="/dashboard/albums" class="text-xs text-gray-500 hover:text-primary-600">← 返回相册列表</NuxtLink>
-        <h1 class="text-2xl font-bold text-gray-900 mt-1">{{ album.name }}</h1>
-        <p v-if="album.intro" class="mt-1 text-sm text-gray-500">{{ album.intro }}</p>
+        <NuxtLink to="/dashboard/albums" class="text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
+          <ArrowLeft class="h-3 w-3" />
+          返回相册列表
+        </NuxtLink>
+        <h1 class="text-2xl font-bold text-foreground mt-1">{{ album.name }}</h1>
+        <p v-if="album.intro" class="mt-1 text-sm text-muted-foreground">{{ album.intro }}</p>
       </div>
-      <button
-        class="px-3 py-1.5 text-sm rounded-md border"
-        :class="selectMode ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 text-gray-700 hover:bg-gray-50'"
+      <Button
+        :variant="selectMode ? 'default' : 'outline'"
         @click="toggleSelectMode"
-      >{{ selectMode ? '退出多选' : '多选' }}</button>
+      >{{ selectMode ? '退出多选' : '多选' }}</Button>
     </div>
 
-    <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-      <h3 class="text-sm font-medium text-gray-700 mb-2">添加已有图片到该相册</h3>
-      <form class="flex gap-2" @submit.prevent="moveIn">
-        <input v-model="newPhotoId" type="number" min="1" placeholder="图片 ID" class="flex-1 px-3 py-2 border border-gray-300 rounded-md" />
-        <AppButton type="submit">添加</AppButton>
-      </form>
-    </div>
+    <Card class="mb-6">
+      <CardHeader>
+        <CardTitle class="text-sm font-medium">添加已有图片到该相册</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form class="flex gap-2" @submit.prevent="moveIn">
+          <Input v-model="newPhotoId" type="number" min="1" placeholder="图片 ID" class="flex-1" />
+          <Button type="submit">
+            <Plus class="mr-1 h-4 w-4" />
+            添加
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
 
     <!-- 批量操作栏 -->
     <div v-if="selectMode" class="mb-4 flex items-center gap-3">
-      <span class="text-sm text-gray-600">已选 <b class="text-primary-600">{{ selectedIds.length }}</b> 项</span>
-      <button class="px-3 py-1.5 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50" @click="toggleSelectAll">
+      <span class="text-sm text-muted-foreground">已选 <b class="text-primary">{{ selectedIds.length }}</b> 项</span>
+      <Button variant="outline" size="sm" @click="toggleSelectAll">
         {{ allSelected ? '取消全选' : '全选' }}
-      </button>
-      <button
-        class="px-3 py-1.5 text-sm bg-red-500 text-white rounded-md disabled:opacity-50"
+      </Button>
+      <Button
+        variant="destructive"
+        size="sm"
         :disabled="selectedIds.length === 0"
         @click="batchRemove"
-      >批量移除</button>
+      >批量移除</Button>
     </div>
 
     <AppEmpty v-if="photoList.length === 0" title="相册内还没有图片" />
@@ -154,41 +166,49 @@ function isCover(p: any) {
       <div
         v-for="p in photoList"
         :key="p.id"
-        class="group relative aspect-square bg-gray-100 rounded overflow-hidden cursor-pointer"
-        :class="{ 'ring-2 ring-primary-500': selectMode && selectedIds.includes(p.id) }"
+        class="group relative aspect-square bg-muted rounded overflow-hidden cursor-pointer"
+        :class="{ 'ring-2 ring-primary': selectMode && selectedIds.includes(p.id) }"
         @click="selectMode ? toggleSelect(p.id) : null"
       >
         <img :src="`/uploads/${p.pathname}`" :alt="p.name" class="w-full h-full object-cover" />
 
         <!-- 封面标记 -->
-        <span
+        <Badge
           v-if="isCover(p)"
-          class="absolute top-1 left-1 px-1.5 py-0.5 bg-primary-500 text-white text-[10px] rounded"
-        >封面</span>
+          variant="default"
+          class="absolute top-1 left-1 text-[10px]"
+        >封面</Badge>
 
         <!-- 多选勾选框 -->
         <div v-if="selectMode" class="absolute top-1 right-1 z-10">
           <span
             class="inline-flex items-center justify-center w-5 h-5 rounded border-2 text-white text-xs"
-            :class="selectedIds.includes(p.id) ? 'bg-primary-600 border-primary-600' : 'bg-black/30 border-white'"
+            :class="selectedIds.includes(p.id) ? 'bg-primary border-primary' : 'bg-black/30 border-white'"
           >{{ selectedIds.includes(p.id) ? '✓' : '' }}</span>
         </div>
 
         <!-- 单张操作（非多选模式） -->
         <div v-else class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition flex flex-col justify-between p-2 opacity-0 group-hover:opacity-100">
           <div class="flex justify-end gap-1">
-            <button
-              class="px-1.5 py-0.5 bg-white text-[10px] rounded hover:bg-gray-100"
+            <Button
+              variant="secondary"
+              size="sm"
+              class="h-6 px-1.5 text-[10px]"
               :disabled="isCover(p)"
               :class="{ 'opacity-40 cursor-not-allowed': isCover(p) }"
               @click.stop="setCover(p.id)"
-            >设为封面</button>
+            >
+              <ImageIcon class="mr-1 h-3 w-3" />
+              设为封面
+            </Button>
           </div>
           <div class="flex justify-end">
-            <button
-              class="px-1.5 py-0.5 bg-red-500 text-white text-[10px] rounded"
+            <Button
+              variant="destructive"
+              size="sm"
+              class="h-6 px-1.5 text-[10px]"
               @click.stop="removeFromAlbum(p.id)"
-            >解绑</button>
+            >解绑</Button>
           </div>
         </div>
       </div>

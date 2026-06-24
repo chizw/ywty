@@ -1,6 +1,8 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
+import { RefreshCw, Image, FolderOpen, HardDrive } from 'lucide-vue-next'
+
 const { user, fetchMe } = useAuth()
 const statsStore = useStatsStore()
 
@@ -36,29 +38,47 @@ function onVisibility() {
   <div>
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">
+        <h1 class="text-2xl font-bold text-foreground">
           欢迎，{{ user?.name || user?.username }}
         </h1>
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-muted-foreground">
           这里是你的控制台<span v-if="updatedLabel"> · 上次更新 {{ updatedLabel }}</span>
         </p>
       </div>
-      <AppButton size="sm" :loading="statsStore.loading" @click="statsStore.refresh()">刷新</AppButton>
+      <Button size="sm" :loading="statsStore.loading" @click="statsStore.refresh()">
+        <RefreshCw class="mr-2 h-4 w-4" :class="{ 'animate-spin': statsStore.loading }" />
+        刷新
+      </Button>
     </div>
 
     <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div class="bg-white border border-gray-200 rounded-lg p-4">
-        <div class="text-xs text-gray-500">图片总数</div>
-        <div class="mt-1 text-2xl font-semibold">{{ photos }}</div>
-      </div>
-      <div class="bg-white border border-gray-200 rounded-lg p-4">
-        <div class="text-xs text-gray-500">我的相册</div>
-        <div class="mt-1 text-2xl font-semibold">{{ albums }}</div>
-      </div>
-      <div class="bg-white border border-gray-200 rounded-lg p-4">
-        <div class="text-xs text-gray-500">已用容量</div>
-        <div class="mt-1 text-2xl font-semibold">{{ usedLabel }}</div>
-      </div>
+      <Card>
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle class="text-sm font-medium text-muted-foreground">图片总数</CardTitle>
+          <Image class="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-semibold">{{ photos }}</div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle class="text-sm font-medium text-muted-foreground">我的相册</CardTitle>
+          <FolderOpen class="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-semibold">{{ albums }}</div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle class="text-sm font-medium text-muted-foreground">已用容量</CardTitle>
+          <HardDrive class="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-semibold">{{ usedLabel }}</div>
+        </CardContent>
+      </Card>
     </div>
   </div>
 </template>

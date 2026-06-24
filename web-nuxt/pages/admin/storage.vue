@@ -2,6 +2,8 @@
 // 管理后台：存储策略管理（增删改查）
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
+import { Plus, Pencil, Trash2 } from '@lucide/vue'
+
 const api = useApi()
 const message = useMessage()
 
@@ -45,6 +47,10 @@ function openEdit(row: any) {
   showCreate.value = true
 }
 
+function closeDialog() {
+  showCreate.value = false
+}
+
 async function submit() {
   if (!form.name.trim()) {
     message.warning('请填写名称')
@@ -79,11 +85,19 @@ async function submit() {
   }
 }
 
-async function remove(row: any) {
-  if (!confirm(`确定删除存储策略「${row.name}」？`)) return
+const confirmRow = ref<any>(null)
+function askRemove(row: any) {
+  confirmRow.value = row
+}
+function closeConfirm() {
+  confirmRow.value = null
+}
+async function doRemove() {
+  if (!confirmRow.value) return
   try {
-    await api.del(`/api/v1/admin/storage/delete/${row.id}`)
+    await api.del(`/api/v1/admin/storage/delete/${confirmRow.value.id}`)
     message.success('已删除')
+    confirmRow.value = null
     refresh()
   } catch (err: any) {
     message.error(err?.statusMessage || '删除失败')
@@ -109,88 +123,115 @@ function providerLabel(name: string) {
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-bold text-gray-900">存储策略</h1>
-      <AppButton @click="openCreate">+ 新建策略</AppButton>
+      <h1 class="text-2xl font-bold text-foreground">存储策略</h1>
+      <Button @click="openCreate">
+        <Plus class="h-4 w-4 mr-2" />
+        新建策略
+      </Button>
     </div>
 
-    <p class="text-sm text-gray-500 mb-4">
-      系统支持 {{ drivers.length }} 种存储驱动。配置后将保存到 <code>storages</code> 表，
+    <p class="text-sm text-muted-foreground mb-4">
+      系统支持 {{ drivers.length }} 种存储驱动。配置后将保存到 <code class="text-xs bg-muted px-1 py-0.5 rounded">storages</code> 表，
       供用户上传、跨存储复制等场景按策略 ID 调用。
     </p>
 
-    <div v-if="rows.length === 0" class="bg-white border border-dashed border-gray-300 rounded p-8 text-center text-sm text-gray-500">
+    <div v-if="rows.length === 0" class="border border-dashed border-border rounded-lg p-8 text-center text-sm text-muted-foreground">
       暂无存储策略，点击右上角"新建策略"开始。
     </div>
-    <div v-else class="bg-white rounded-md border border-gray-200 overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
-          <tr>
-            <th class="px-4 py-2 text-left w-16">ID</th>
-            <th class="px-4 py-2 text-left">名称</th>
-            <th class="px-4 py-2 text-left">驱动</th>
-            <th class="px-4 py-2 text-left">前缀</th>
-            <th class="px-4 py-2 text-left">说明</th>
-            <th class="px-4 py-2 text-right w-32">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in rows" :key="row.id" class="border-t border-gray-100">
-            <td class="px-4 py-2 text-gray-500">#{{ row.id }}</td>
-            <td class="px-4 py-2 font-medium text-gray-800">{{ row.name }}</td>
-            <td class="px-4 py-2">
-              <span class="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded">{{ providerLabel(row.provider) }}</span>
-            </td>
-            <td class="px-4 py-2 text-gray-500 font-mono text-xs">{{ row.prefix || '-' }}</td>
-            <td class="px-4 py-2 text-gray-500 text-xs truncate max-w-xs">{{ row.intro || '-' }}</td>
-            <td class="px-4 py-2 text-right space-x-1">
-              <button class="px-2 py-1 text-xs text-primary-600 hover:underline" @click="openEdit(row)">编辑</button>
-              <button class="px-2 py-1 text-xs text-red-600 hover:underline" @click="remove(row)">删除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <Card v-else>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead class="w-16">ID</TableHead>
+            <TableHead>名称</TableHead>
+            <TableHead>驱动</TableHead>
+            <TableHead>前缀</TableHead>
+            <TableHead>说明</TableHead>
+            <TableHead class="text-right w-32">操作</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-for="row in rows" :key="row.id">
+            <TableCell class="text-muted-foreground">#{{ row.id }}</TableCell>
+            <TableCell class="font-medium">{{ row.name }}</TableCell>
+            <TableCell>
+              <Badge variant="outline">{{ providerLabel(row.provider) }}</Badge>
+            </TableCell>
+            <TableCell class="text-muted-foreground font-mono text-xs">{{ row.prefix || '-' }}</TableCell>
+            <TableCell class="text-muted-foreground text-xs truncate max-w-xs">{{ row.intro || '-' }}</TableCell>
+            <TableCell class="text-right space-x-1">
+              <Button variant="ghost" size="sm" @click="openEdit(row)">
+                <Pencil class="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" class="text-destructive hover:text-destructive" @click="askRemove(row)">
+                <Trash2 class="h-4 w-4" />
+              </Button>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </Card>
 
-    <div v-if="showCreate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="showCreate = false">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-          {{ editing ? '编辑存储策略' : '新建存储策略' }}
-        </h3>
-        <div class="space-y-3 text-sm">
+    <!-- 创建/编辑弹窗 -->
+    <Dialog :open="showCreate" @update:open="(val: boolean) => { if (!val) closeDialog() }">
+      <DialogContent class="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{{ editing ? '编辑存储策略' : '新建存储策略' }}</DialogTitle>
+        </DialogHeader>
+        <div class="space-y-3">
           <div>
-            <label class="block text-gray-600 mb-1">名称 *</label>
-            <input v-model="form.name" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="如：阿里云 OSS 主站" />
+            <Label class="mb-1.5 block">名称 *</Label>
+            <Input v-model="form.name" placeholder="如：阿里云 OSS 主站" />
           </div>
           <div>
-            <label class="block text-gray-600 mb-1">驱动 *</label>
-            <select v-model="form.provider" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-              <option v-for="d in drivers" :key="d" :value="d">{{ providerLabel(d) }}（{{ d }}）</option>
-            </select>
+            <Label class="mb-1.5 block">驱动 *</Label>
+            <Select :modelValue="form.provider" @update:modelValue="(val: string) => form.provider = val">
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="d in drivers" :key="d" :value="d">{{ providerLabel(d) }}（{{ d }}）</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
-            <label class="block text-gray-600 mb-1">路径前缀</label>
-            <input v-model="form.prefix" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="如：images/2026" />
+            <Label class="mb-1.5 block">路径前缀</Label>
+            <Input v-model="form.prefix" placeholder="如：images/2026" />
           </div>
           <div>
-            <label class="block text-gray-600 mb-1">说明</label>
-            <input v-model="form.intro" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
+            <Label class="mb-1.5 block">说明</Label>
+            <Input v-model="form.intro" />
           </div>
           <div>
-            <label class="block text-gray-600 mb-1">Options（JSON）</label>
-            <textarea
+            <Label class="mb-1.5 block">Options（JSON）</Label>
+            <Textarea
               v-model="form.options_text"
-              rows="6"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-xs"
+              :rows="6"
+              class="font-mono text-xs"
               placeholder='{"endpoint": "https://oss-cn-hangzhou.aliyuncs.com", "bucket": "my-bucket", "access_key": "***", "secret_key": "***"}'
             />
-            <p class="mt-1 text-xs text-gray-400">不同驱动的 options 字段不同，参考驱动文档填写。</p>
+            <p class="mt-1 text-xs text-muted-foreground">不同驱动的 options 字段不同，参考驱动文档填写。</p>
           </div>
         </div>
-        <div class="mt-5 flex justify-end gap-2">
-          <button class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800" @click="showCreate = false">取消</button>
-          <AppButton @click="submit">{{ editing ? '保存' : '创建' }}</AppButton>
-        </div>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button variant="outline" @click="closeDialog">取消</Button>
+          <Button @click="submit">{{ editing ? '保存' : '创建' }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- 删除确认弹窗 -->
+    <Dialog :open="!!confirmRow" @update:open="(val: boolean) => { if (!val) closeConfirm() }">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>确认删除</DialogTitle>
+        </DialogHeader>
+        <p class="text-sm text-muted-foreground">确定删除存储策略「{{ confirmRow?.name }}」？</p>
+        <DialogFooter>
+          <Button variant="outline" @click="closeConfirm">取消</Button>
+          <Button variant="destructive" @click="doRemove">删除</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
