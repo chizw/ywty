@@ -43,7 +43,7 @@ async function save() {
   saving.value = true
   try {
     await api.request('/api/v1/user/profile', { method: 'PATCH', body: form })
-    message.success('已保�?)
+    message.success('已保存')
   } catch (err: any) {
     message.error(err?.statusMessage || '保存失败')
   } finally {
@@ -106,7 +106,7 @@ const navItems = [
             </div>
           </div>
           <div>
-            <Label>个人简�?/Label>
+            <Label>个人简介</Label>
             <Textarea v-model="form.bio" rows="3" class="mt-1" />
           </div>
         </CardContent>

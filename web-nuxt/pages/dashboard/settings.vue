@@ -43,7 +43,7 @@ async function save() {
   try {
     await api.request('/api/v1/user/profile', { method: 'PATCH', body: form })
     await fetchMe()
-    msg.value = '已保�?
+    msg.value = '已保存'
   } catch (err: any) {
     msg.value = err?.statusMessage || '保存失败'
   } finally {
@@ -78,7 +78,7 @@ const navItems = [
         <CardContent class="pt-6 space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>用户�?/Label>
+              <Label>用户名</Label>
               <Input :model-value="user?.username" disabled class="mt-1 bg-muted" />
             </div>
             <div>
@@ -111,7 +111,7 @@ const navItems = [
             </div>
           </div>
           <div>
-            <Label>个人简�?/Label>
+            <Label>个人简介</Label>
             <Textarea v-model="form.bio" rows="3" class="mt-1" />
           </div>
           <p v-if="msg" class="text-sm" :class="msg.includes('失败') ? 'text-destructive' : 'text-green-600'">{{ msg }}</p>

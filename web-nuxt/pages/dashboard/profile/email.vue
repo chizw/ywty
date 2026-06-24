@@ -19,7 +19,7 @@ const countdown = ref(0)
 
 async function sendCode() {
   if (!form.email) {
-    message.error('请先输入新邮�?)
+    message.error('请先输入新邮箱')
     return
   }
   if (countdown.value > 0) return
@@ -31,14 +31,14 @@ async function sendCode() {
       account: form.email,
       event: 'change_email',
     })
-    message.success('验证码已发�?)
+    message.success('验证码已发�?)
     countdown.value = 60
     const t = setInterval(() => {
       countdown.value--
       if (countdown.value <= 0) clearInterval(t)
     }, 1000)
   } catch (err: any) {
-    message.error(err?.statusMessage || '发送失�?)
+    message.error(err?.statusMessage || '发送失�?)
   } finally {
     sending.value = false
   }
@@ -46,7 +46,7 @@ async function sendCode() {
 
 async function changeEmail() {
   if (!form.email || !form.code) {
-    message.error('请填写完�?)
+    message.error('请填写完整')
     return
   }
 
@@ -57,7 +57,7 @@ async function changeEmail() {
       code: form.code,
     })
     await fetchMe()
-    message.success('邮箱已更�?)
+    message.success('邮箱已更新')
     form.email = ''
     form.code = ''
   } catch (err: any) {
@@ -98,12 +98,12 @@ const navItems = [
         </div>
 
         <div>
-          <Label>新邮�?/Label>
+          <Label>新邮箱</Label>
           <Input v-model="form.email" type="email" placeholder="请输入新邮箱" class="mt-1" />
         </div>
 
         <div>
-          <Label>验证�?/Label>
+          <Label>验证码</Label>
           <div class="flex gap-2 mt-1">
             <Input v-model="form.code" type="text" maxlength="6" placeholder="请输入验证码" class="flex-1" />
             <Button

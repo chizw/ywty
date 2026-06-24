@@ -60,7 +60,7 @@ async function unbind(provider: string) {
 
   try {
     await api.post(`/api/v1/oauth/${provider}/unbind`, {})
-    message.success('已解�?)
+    message.success('已解绑')
     await loadAccounts()
   } catch (err: any) {
     message.error(err?.statusMessage || '解绑失败')
@@ -102,7 +102,7 @@ const navItems = [
               <div v-if="isBound(p.key)" class="text-xs text-muted-foreground">
                 已绑定：{{ getAccount(p.key)?.union_id }}
               </div>
-              <div v-else class="text-xs text-muted-foreground">未绑�?/div>
+              <div v-else class="text-xs text-muted-foreground">未绑定</div>
             </div>
           </div>
 

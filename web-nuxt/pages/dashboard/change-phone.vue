@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// 更换手机�?definePageMeta({ layout: 'dashboard', middleware: 'auth' })
+// 更换手机号
+definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 import { Phone } from '@lucide/vue'
 
@@ -14,7 +15,7 @@ const msg = ref('')
 
 async function sendCode() {
   if (!form.new_phone) {
-    msg.value = '请填写新手机�?
+    msg.value = '请填写新手机号'
     return
   }
   sending.value = true
@@ -31,7 +32,7 @@ async function sendCode() {
       if (countdown.value <= 0) clearInterval(t)
     }, 1000)
   } catch (err: any) {
-    msg.value = err?.statusMessage || '发送失�?
+    msg.value = err?.statusMessage || '发送失败'
   } finally {
     sending.value = false
   }
@@ -39,7 +40,7 @@ async function sendCode() {
 
 async function submit() {
   if (!form.new_phone || !form.code) {
-    msg.value = '请填写完�?
+    msg.value = '请填写完整'
     return
   }
   loading.value = true
@@ -60,8 +61,8 @@ async function submit() {
 
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-foreground mb-4">更换手机�?/h1>
-    <p class="text-sm text-muted-foreground mb-4">当前手机：{{ (user as any)?.phone || '未绑�? }}</p>
+    <h1 class="text-2xl font-bold text-foreground mb-4">更换手机�?/h1>
+    <p class="text-sm text-muted-foreground mb-4">当前手机：{{ (user as any)?.phone || '未绑�? }}</p>
     <Card class="max-w-md">
       <form @submit.prevent="submit">
         <CardContent class="pt-6 space-y-4">
@@ -70,7 +71,7 @@ async function submit() {
             <Input v-model="form.new_phone" required class="mt-1" />
           </div>
           <div>
-            <Label>验证�?/Label>
+            <Label>验证码</Label>
             <div class="flex gap-2 mt-1">
               <Input v-model="form.code" required maxlength="6" class="flex-1" />
               <Button

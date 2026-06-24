@@ -21,7 +21,8 @@ const updatedLabel = computed(() => {
 })
 
 onMounted(() => {
-  // fetchMe �?statsStore.refresh 并行执行，互不阻�?  fetchMe().catch(() => {})
+  // fetchMe 和 statsStore.refresh 并行执行，互不阻塞
+  fetchMe().catch(() => {})
   statsStore.refresh()
   document.addEventListener('visibilitychange', onVisibility)
 })

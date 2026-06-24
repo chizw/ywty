@@ -35,7 +35,7 @@ async function create() {
   try {
     await api.post('/api/v1/tags', { name: newName.value })
     newName.value = ''
-    msg.value = '已添�?
+    msg.value = '已添加'
     fetchTags()
   } catch (err: any) {
     msg.value = err?.statusMessage || '添加失败'
@@ -68,7 +68,7 @@ async function remove(id: number) {
       </CardContent>
     </Card>
 
-    <AppEmpty v-if="tags.length === 0" title="还没有标�? description="添加标签后可以绑定到图片" />
+    <AppEmpty v-if="tags.length === 0" title="还没有标签" description="添加标签后可以绑定到图片" />
     <div v-else class="flex flex-wrap gap-2">
       <Badge
         v-for="t in tags"

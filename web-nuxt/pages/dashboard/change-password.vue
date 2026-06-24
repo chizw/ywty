@@ -11,7 +11,7 @@ const msg = ref('')
 
 async function submit() {
   if (form.new_password.length < 6) {
-    msg.value = '新密码至�?6 �?
+    msg.value = '新密码至少6位'
     return
   }
   loading.value = true
@@ -38,11 +38,11 @@ async function submit() {
       <form @submit.prevent="submit">
         <CardContent class="pt-6 space-y-4">
           <div>
-            <Label>原密�?/Label>
+            <Label>原密码</Label>
             <Input v-model="form.old_password" type="password" required class="mt-1" />
           </div>
           <div>
-            <Label>新密�?/Label>
+            <Label>新密码</Label>
             <Input v-model="form.new_password" type="password" required minlength="6" class="mt-1" />
           </div>
           <p v-if="msg" class="text-sm" :class="msg.includes('成功') ? 'text-green-600' : 'text-destructive'">{{ msg }}</p>

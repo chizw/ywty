@@ -31,14 +31,14 @@ async function sendCode() {
       account: form.phone,
       event: 'change_phone',
     })
-    message.success('验证码已发�?)
+    message.success('验证码已发送')
     countdown.value = 60
     const t = setInterval(() => {
       countdown.value--
       if (countdown.value <= 0) clearInterval(t)
     }, 1000)
   } catch (err: any) {
-    message.error(err?.statusMessage || '发送失�?)
+    message.error(err?.statusMessage || '发送失�?)
   } finally {
     sending.value = false
   }
@@ -46,7 +46,7 @@ async function sendCode() {
 
 async function changePhone() {
   if (!form.phone || !form.code) {
-    message.error('请填写完�?)
+    message.error('请填写完�?)
     return
   }
 
@@ -93,17 +93,17 @@ const navItems = [
     <Card class="max-w-2xl">
       <CardContent class="pt-6 space-y-4">
         <div>
-          <Label>当前手机�?/Label>
+          <Label>当前手机�?/Label>
           <Input :model-value="user?.phone" disabled class="mt-1 bg-muted" />
         </div>
 
         <div>
           <Label>新手机号</Label>
-          <Input v-model="form.phone" type="tel" placeholder="请输入新手机�? class="mt-1" />
+          <Input v-model="form.phone" type="tel" placeholder="请输入新手机�? class="mt-1" />
         </div>
 
         <div>
-          <Label>验证�?/Label>
+          <Label>验证�?/Label>
           <div class="flex gap-2 mt-1">
             <Input v-model="form.code" type="text" maxlength="6" placeholder="请输入验证码" class="flex-1" />
             <Button

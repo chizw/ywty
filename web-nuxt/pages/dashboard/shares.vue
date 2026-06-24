@@ -40,7 +40,7 @@ const msg = ref('')
 async function create() {
   const ids = form.ids.split(/[,\s]+/).map((s) => Number(s.trim())).filter((n) => n > 0)
   if (ids.length === 0) {
-    msg.value = '请填写至少一个资�?ID'
+    msg.value = '请填写至少一个资源ID'
     return
   }
   creating.value = true
@@ -72,7 +72,7 @@ async function remove(id: number) {
 function copyUrl(slug: string) {
   const url = `${window.location.origin}/s/${slug}`
   navigator.clipboard?.writeText(url).then(
-    () => (msg.value = '链接已复�?),
+    () => (msg.value = '链接已复制'),
     () => (msg.value = '复制失败，请手动复制')
   )
 }
@@ -104,14 +104,14 @@ function copyUrl(slug: string) {
         </div>
         <div>
           <Label>资源 ID（多个用逗号或空格分隔）</Label>
-          <Input v-model="form.ids" placeholder="�?1,2,3" class="mt-1" />
+          <Input v-model="form.ids" placeholder="如 1,2,3" class="mt-1" />
         </div>
         <div>
           <Label>访问密码（可选）</Label>
           <Input v-model="form.password" class="mt-1" />
         </div>
         <div>
-          <Label>过期分钟数（0 = 永不过期�?/Label>
+          <Label>过期分钟数（0 = 永不过期）</Label>
           <Input v-model.number="form.expire_minutes" type="number" min="0" class="mt-1" />
         </div>
         <Button :loading="creating" @click="create">创建</Button>
@@ -119,7 +119,7 @@ function copyUrl(slug: string) {
       </CardContent>
     </Card>
 
-    <AppEmpty v-if="shares.length === 0" title="还没有分�? description="把图片或相册生成可分享链�? />
+    <AppEmpty v-if="shares.length === 0" title="还没有分享" description="把图片或相册生成可分享链接" />
     <Card v-else>
       <CardContent class="p-0 divide-y divide-border">
         <div v-for="s in shares" :key="s.id" class="flex items-center justify-between p-4">
@@ -129,7 +129,7 @@ function copyUrl(slug: string) {
               <Badge variant="secondary">#{{ s.id }}</Badge>
             </div>
             <div class="mt-1 text-xs text-muted-foreground truncate">
-              /s/{{ s.slug }} · 浏览 {{ s.view_count ?? 0 }} �?              <span v-if="s.expired_at"> · 过期 {{ new Date(s.expired_at * 1000).toLocaleString() }}</span>
+              /s/{{ s.slug }} · 浏览 {{ s.view_count ?? 0 }} 次              <span v-if="s.expired_at"> · 过期 {{ new Date(s.expired_at * 1000).toLocaleString() }}</span>
             </div>
           </div>
           <div class="flex gap-2">

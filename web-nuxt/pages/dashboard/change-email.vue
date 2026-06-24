@@ -32,7 +32,7 @@ async function sendCode() {
       if (countdown.value <= 0) clearInterval(t)
     }, 1000)
   } catch (err: any) {
-    msg.value = err?.statusMessage || '发送失�?
+    msg.value = err?.statusMessage || '发送失败'
   } finally {
     sending.value = false
   }
@@ -40,7 +40,7 @@ async function sendCode() {
 
 async function submit() {
   if (!form.new_email || !form.code) {
-    msg.value = '请填写完�?
+    msg.value = '请填写完整'
     return
   }
   loading.value = true
@@ -67,11 +67,11 @@ async function submit() {
       <form @submit.prevent="submit">
         <CardContent class="pt-6 space-y-4">
           <div>
-            <Label>新邮�?/Label>
+            <Label>新邮箱</Label>
             <Input v-model="form.new_email" type="email" required class="mt-1" />
           </div>
           <div>
-            <Label>验证�?/Label>
+            <Label>验证码</Label>
             <div class="flex gap-2 mt-1">
               <Input v-model="form.code" required maxlength="6" class="flex-1" />
               <Button
