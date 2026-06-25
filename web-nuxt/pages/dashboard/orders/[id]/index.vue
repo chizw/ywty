@@ -2,12 +2,11 @@
 // 订单详情 / 支付页：展示订单信息、发起支付、刷新状态、取消订单
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-import { ArrowLeft, CreditCard, RefreshCw, XCircle, Copy, Loader2, CheckCircle, QrCode } from '@lucide/vue'
+import { ArrowLeft, CreditCard, RefreshCw, XCircle, Copy, CheckCircle, QrCode } from '@lucide/vue'
 
 const api = useApi()
 const message = useMessage()
 const route = useRoute()
-const router = useRouter()
 
 const orderId = computed(() => Number(route.params.id))
 const formRef = ref<HTMLDivElement | null>(null)
@@ -284,7 +283,7 @@ function copyAppParams() {
             <Textarea
               v-model="appParams"
               readonly
-              rows="6"
+              :rows="6"
               class="text-xs font-mono bg-muted"
             />
             <Button variant="outline" class="w-full" @click="copyAppParams">

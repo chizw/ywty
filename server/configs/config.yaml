@@ -1,40 +1,39 @@
 # 应用配置
 app:
   name: "云雾图驿"
-  env: "dev"             # dev | prod
+  env: "prod"
   version: "0.1.0"
   host: "0.0.0.0"
-  port: 8080
+  port: 3000
   timezone: "Asia/Shanghai"
-  base_url: "http://localhost:8080"
+  base_url: "http://localhost:3000"
 
-# 数据库（支持 mysql / sqlite，默认 sqlite；MySQL 推荐 MariaDB 10.6.20+）
+# 数据库（默认 sqlite，开箱即用；需要 MySQL 时改为 mysql）
 database:
-  driver: "sqlite"       # mysql | sqlite
-  # MySQL
-  host: "127.0.0.1"
-  port: 3306
-  username: "ywty"
-  password: "secret"
-  dbname: "ywty"
-  charset: "utf8mb4"
-  parse_time: true
-  loc: "Local"
-  # SQLite
-  path: "storage/dev.db"
-  # 连接池
+  driver: "sqlite"
+  path: "/data/ywty.db"
+  # MySQL（按需启用）
+  # driver: "mysql"
+  # host: "127.0.0.1"
+  # port: 3306
+  # username: "ywty"
+  # password: "secret"
+  # dbname: "ywty"
+  # charset: "utf8mb4"
+  # parse_time: true
+  # loc: "Local"
   max_open_conns: 100
   max_idle_conns: 10
-  conn_max_lifetime: 3600    # 秒
-  conn_max_idle_time: 600    # 秒
+  conn_max_lifetime: 3600
+  conn_max_idle_time: 600
 
-# Redis（队列 / 缓存共用）
+# Redis（留空则禁用队列功能，纯 SQLite 模式下可不配置）
 redis:
-  addr: "127.0.0.1:6379"
+  addr: ""
   password: ""
   db: 0
 
-# 队列（Asynq）
+# 队列
 queue:
   concurrency: 10
   queues:
@@ -44,20 +43,19 @@ queue:
 
 # 日志
 log:
-  level: "debug"            # debug | info | warn | error
-  format: "console"         # console | json
-  output: "stdout"          # stdout | file
+  level: "info"
+  format: "console"
+  output: "stdout"
   file_path: "storage/logs/app.log"
-  max_size: 100             # MB
-  max_age: 7                # 天
+  max_size: 100
+  max_age: 7
   max_backups: 10
   compress: true
 
 # CORS
 cors:
   allow_origins:
-    - "http://localhost:3000"
-    - "http://localhost:8080"
+    - "*"
   allow_methods:
     - "GET"
     - "POST"
@@ -80,8 +78,8 @@ auth:
   jwt:
     secret: "please-change-me-in-production"
     issuer: "ywty"
-    access_expire: 7200       # 秒
-    refresh_expire: 2592000   # 秒
+    access_expire: 7200
+    refresh_expire: 2592000
   admin_session:
     name: "ywty_admin_session"
     secret: "please-change-me-too"
@@ -96,29 +94,29 @@ ratelimit:
   upload_per_minute: 60
   api_per_minute: 300
 
-# 存储（P3 阶段：先实现 local，后续按需加 s3/oss/cos/qiniu）
+# 存储
 storage:
   driver:
-    provider: "local"            # local | s3 | oss | cos | qiniu | ...
-    root: "storage/uploads"      # 本地磁盘根目录
-    public_url: "http://localhost:8080/uploads"
-    visibility: "public"         # public | private
+    provider: "local"
+    root: "/data/uploads"
+    public_url: "http://localhost:3000/uploads"
+    visibility: "public"
     extra: {}
 
-# 邮件（默认 log，开发期打印到 stdout；生产建议 smtp）
+# 邮件
 mail:
-  provider: "log"                # log | smtp
-  host: "smtp.example.com"
+  provider: "log"
+  host: ""
   port: 587
   username: ""
   password: ""
-  from: "no-reply@example.com"
+  from: ""
   from_name: "ywty"
 
-# 短信（默认 log，生产按需扩展 aliyun / tencent）
+# 短信
 sms:
-  provider: "log"                # log | aliyun | tencent
+  provider: "log"
   access_key: ""
   secret_key: ""
-  sign: "ywty"
-  region: "cn-hangzhou"
+  sign: ""
+  region: ""

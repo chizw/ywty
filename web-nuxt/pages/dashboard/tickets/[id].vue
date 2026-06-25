@@ -160,7 +160,7 @@ function fmtTime(t: any) {
             <MessageSquare class="h-4 w-4" />
             添加回复
           </h3>
-          <Textarea v-model="replyContent" rows="4" placeholder="输入回复内容..." class="mt-2" />
+          <Textarea v-model="replyContent" :rows="4" placeholder="输入回复内容..." class="mt-2" />
           <div class="mt-2 flex justify-end">
             <Button :loading="replying" @click="submitReply">
               <Send class="mr-1 h-4 w-4" />

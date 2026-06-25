@@ -8,6 +8,7 @@
 [![License](https://img.shields.io/github/license/scfcn/ywty?style=flat-square)](./LICENSE.md)
 [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev)
 [![Nuxt](https://img.shields.io/badge/Nuxt-3-00DC82?style=flat-square&logo=nuxt.js&logoColor=white)](https://nuxt.com)
+[![shadcn--vue](https://img.shields.io/badge/shadcn--vue-000000?style=flat-square&logo=shadcnui&logoColor=white)](https://shadcn-vue.com)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/scfcn/ywty/ci.yml?label=CI&style=flat-square)](https://github.com/scfcn/ywty/actions)
 [![Stars](https://img.shields.io/github/stars/scfcn/ywty?style=flat-square)](https://github.com/scfcn/ywty/stargazers)
 [![Forks](https://img.shields.io/github/forks/scfcn/ywty?style=flat-square)](https://github.com/scfcn/ywty/network/members)
@@ -20,7 +21,7 @@
 
 ## ✨ 项目简介
 
-**ywty** 是一款**自托管图床 / 云相册**系统：从经典 ywty 完全重写而来，后端从 PHP/Laravel 迁移到 **Go + Gin + GORM**，前端从 Vue 3 + Vite 升级到 **Nuxt 3 SSR**。
+**ywty** 是一款**自托管图床 / 云相册**系统：从经典 ywty 完全重写而来，后端从 PHP/Laravel 迁移到 **Go + Gin + GORM**，前端从 Vue 3 + Vite 升级到 **Nuxt 3 SSR**，UI 组件库采用 **shadcn-vue**（Radix Vue + Tailwind CSS）。
 
 我们保留了原有的 REST 契约、30+ 张业务表结构和「多驱动」生态，目标是给个人/团队提供**零成本、可扩展、长期可维护**的私有云相册方案。
 
@@ -91,10 +92,14 @@ Local · **S3** · 阿里云 **OSS** · 腾讯云 **COS** · 七牛云 · 又拍
 |---|---|
 | **Nuxt 3** | SSR / SSG 框架 |
 | **Vue 3** + **TypeScript** | 视图层 |
+| **shadcn-vue** | UI 组件库（42 个组件，基于 Radix Vue） |
+| **Radix Vue** | 无样式原语（Accessible Primitives） |
+| **Tailwind CSS** | 原子化样式 + CSS 变量主题 |
+| **class-variance-authority** | 组件变体管理 |
+| **@lucide/vue** | 图标库 |
 | **Pinia** | 状态管理 |
 | **Vue I18n** | 国际化（zh-CN / en-US） |
 | **@nuxt/image** | 图片优化 |
-| **Tailwind CSS** | 样式 |
 
 ### DevOps
 | 技术 | 用途 |
@@ -209,6 +214,7 @@ ywty/
 │   ├── pages/                # 公共端 + 用户中心 + 管理后台
 │   ├── layouts/              # 4 套布局
 │   ├── components/           # 通用组件
+│   │   └── ui/               # shadcn-vue UI 组件（42 个）
 │   ├── composables/          # useApi / useAuth / useMessage
 │   ├── stores/               # Pinia 状态
 │   ├── middleware/           # 路由守卫
@@ -321,6 +327,7 @@ npm run test
 | P9 | Nuxt 用户中心 | ✅ |
 | P10 | Nuxt 管理后台 | ✅ |
 | P11 | 测试与部署 | ✅ |
+| P12 | shadcn-vue UI 重构 | ✅ |
 | v1.0 | 正式版 | 🎯 2026 Q4 |
 | 未来 | 移动端 App / 多租户 / 联邦 | 💭 |
 

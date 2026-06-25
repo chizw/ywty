@@ -62,9 +62,15 @@ func main() {
 	logger.L.Info("storage driver ready", zString("driver", driver.Name()))
 
 	// 初始化队列客户端（异步任务：缩略图/处理/自动删除）
-	qClient := queue.NewClient(cfg.Redis)
-	defer qClient.Close()
-	logger.L.Info("queue client ready", zString("addr", cfg.Redis.Addr))
+	// Redis 为空时跳过队列（纯 SQLite 模式下队列功能不可用）
+	var qClient *queue.Client
+	if cfg.Redis.Addr != "" {
+		qClient = queue.NewClient(cfg.Redis)
+		defer qClient.Close()
+		logger.L.Info("queue client ready", zString("addr", cfg.Redis.Addr))
+	} else {
+		logger.L.Info("redis not configured, queue disabled")
+	}
 
 	r := router.New(&router.Options{
 		Cfg:         cfg,

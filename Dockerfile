@@ -1,4 +1,4 @@
-﻿﻿# ---------- Stage 1: Go builder ----------
+# ---------- Stage 1: Go builder ----------
 FROM golang:1.25-alpine AS go-builder
 WORKDIR /src
 COPY server/go.mod server/go.sum* ./
@@ -25,30 +25,37 @@ RUN --mount=type=cache,target=/root/.npm \
 # ---------- Stage 3: runtime ----------
 FROM node:22-alpine AS runtime
 
-RUN apk add --no-cache ca-certificates tzdata wget \
+RUN apk add --no-cache ca-certificates tzdata curl \
  && addgroup -S app && adduser -S app -G app
 
 WORKDIR /app
 
-# Go 浜岃繘鍒?+ 閰嶇疆
+# Go 二进制 + 配置
 COPY --from=go-builder /out/api /app/api
 COPY --from=go-builder /out/migrate /app/migrate
 COPY server/configs /app/configs
 
-# Nuxt 鏋勫缓浜х墿
+# Nuxt 构建产物
 COPY --from=web-builder /app/.output /app/.output
 
-# 鍏ュ彛鑴氭湰
+# 入口脚本
 COPY --chmod=0755 <<'EOF' /app/entrypoint.sh
 #!/bin/sh
 set -e
 
-# 杩愯鏁版嵁搴撹縼绉?/app/migrate up
+# 自动生成 JWT 密钥（首次运行时）
+if [ "$YWTY_AUTH_JWT_SECRET" = "please-change-me" ] || [ -z "$YWTY_AUTH_JWT_SECRET" ]; then
+  export YWTY_AUTH_JWT_SECRET=$(cat /proc/sys/kernel/random/uuid | tr -d '-' | head -c 48)
+  echo "[entrypoint] Auto-generated JWT secret: $YWTY_AUTH_JWT_SECRET"
+fi
 
-# 鍚庡彴鍚姩 API
+# 运行数据库迁移
+/app/migrate up 2>/dev/null || true
+
+# 后台启动 API
 /app/api &
 
-# 鍓嶅彴鍚姩 Nuxt
+# 前台启动 Nuxt
 exec node /app/.output/server/index.mjs
 EOF
 
@@ -58,12 +65,15 @@ ENV TZ=Asia/Shanghai \
     HOST=0.0.0.0 \
     NUXT_TELEMETRY_DISABLED=1 \
     NUXT_API_BASE="" \
-    NUXT_API_INTERNAL="http://127.0.0.1:8080"
+    NUXT_API_INTERNAL="http://127.0.0.1:3000" \
+    YWTY_AUTH_JWT_SECRET="please-change-me" \
+    YWTY_APP_BASEURL="http://localhost:3000" \
+    YWTY_STORAGE_DRIVER_PUBLICURL="http://localhost:3000/uploads"
 
 USER app
 EXPOSE 3000
 
-HEALTHCHECK --interval=15s --timeout=3s --start-period=15s --retries=5 \
-  CMD wget -qO- http://127.0.0.1:3000/healthz >/dev/null 2>&1 || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:3000/api/v1/ping || exit 1
 
 ENTRYPOINT ["/app/entrypoint.sh"]
