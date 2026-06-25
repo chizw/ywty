@@ -1,24 +1,5 @@
 <script setup lang="ts">
 // 照片批量操作组件：批量删除 / 移入相册 / 移出相册 / 公开 / 私有 / 分享 / 全选
-import { Button } from '~/components/ui/button'
-import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '~/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '~/components/ui/select'
-
 const props = defineProps<{
   selectedIds: number[]
   allIds: number[]

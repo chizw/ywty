@@ -1,7 +1,5 @@
 <script setup lang="ts">
 // 通用文件上传组件
-import { Button } from '~/components/ui/button'
-import { Card, CardContent } from '~/components/ui/card'
 import { Upload, X } from '@lucide/vue'
 import type { UploadResult } from '~/types/api'
 

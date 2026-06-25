@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+﻿﻿<script setup lang="ts">
 // 管理后台：仪表盘
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 

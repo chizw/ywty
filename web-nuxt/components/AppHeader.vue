@@ -1,8 +1,5 @@
 <script setup lang="ts">
 // 公开端顶部导航
-import { Button } from '~/components/ui/button'
-import { Avatar, AvatarFallback } from '~/components/ui/avatar'
-
 const { user, isLoggedIn, logout } = useAuth()
 
 const navLinks = [

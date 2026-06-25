@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { Button } from '~/components/ui/button'
-
 const props = defineProps<{ error: { statusCode: number; message: string } }>()
 const handleError = () => clearError({ redirect: '/' })
 </script>

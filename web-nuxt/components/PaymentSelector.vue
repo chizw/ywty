@@ -1,7 +1,5 @@
 <script setup lang="ts">
 // 支付选择组件：套餐 + 渠道选择
-import { Label } from '~/components/ui/label'
-import { Card, CardContent } from '~/components/ui/card'
 import { Check } from '@lucide/vue'
 
 interface PaymentChannel {

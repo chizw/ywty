@@ -1,6 +1,5 @@
 <script setup lang="ts">
 // 全屏图片查看器：上一张/下一张、键盘控制、缩略图导航、点击关闭
-import { Button } from '~/components/ui/button'
 import { X, ChevronLeft, ChevronRight } from '@lucide/vue'
 
 interface Photo {

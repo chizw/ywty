@@ -1,7 +1,5 @@
 <script setup lang="ts">
 // 通用按钮组件：包装 shadcn Button，兼容旧接口
-import { Button } from '~/components/ui/button'
-
 const variantMap = {
   primary: 'default',
   secondary: 'secondary',

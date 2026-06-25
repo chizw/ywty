@@ -1,7 +1,5 @@
 <script setup lang="ts">
 // 通用加载占位组件：使用 shadcn Skeleton
-import { Skeleton } from '~/components/ui/skeleton'
-
 withDefaults(defineProps<{
   rows?: number
   block?: boolean

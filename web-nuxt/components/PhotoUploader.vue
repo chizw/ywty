@@ -1,8 +1,6 @@
 <script setup lang="ts">
 // 图片上传组件：拖拽 / 粘贴 / 批量选择，独立进度条，缩略图预览，失败重试
 import { ref, computed, onMounted, onBeforeUnmount, triggerRef, watch } from 'vue'
-import { Button } from '~/components/ui/button'
-import { Input } from '~/components/ui/input'
 import { Upload, X, RefreshCw, ChevronDown, ChevronUp } from '@lucide/vue'
 import { useAuthStore } from '~/stores/auth'
 import type { UploadResult } from '~/types/api'

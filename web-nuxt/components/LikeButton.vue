@@ -1,6 +1,5 @@
 <script setup lang="ts">
 // 点赞按钮组件：支持任意 target_type + target_id）
-import { Button } from '~/components/ui/button'
 import { Heart } from '@lucide/vue'
 
 const props = defineProps<{

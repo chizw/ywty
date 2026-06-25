@@ -1,16 +1,6 @@
 <script setup lang="ts">
 // 通用确认弹窗：替代浏览器原生 confirm()
 // 通过 v-model 打开关闭，resolve() 返回 true/false
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '~/components/ui/dialog'
-import { Button } from '~/components/ui/button'
-
 const props = withDefaults(defineProps<{
   show: boolean
   title?: string

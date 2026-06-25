@@ -4,10 +4,6 @@
 // - 支持图形验证码（可选，captcha=true 时显示）
 // - 60 秒倒计时
 // - 验证码输入框（4-6 位）
-import { Input } from '~/components/ui/input'
-import { Button } from '~/components/ui/button'
-import { Label } from '~/components/ui/label'
-
 const props = withDefaults(defineProps<{
   // 兼容 'phone'：内部归一化为 'sms'
   channel: 'email' | 'sms' | 'phone'
