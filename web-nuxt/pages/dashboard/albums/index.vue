@@ -65,7 +65,7 @@ async function remove(id: number) {
         </div>
         <div>
           <Label>介绍（可选）</Label>
-          <Textarea v-model="newAlbum.intro" placeholder="介绍（可选）" :rows="2" class="mt-1" />
+          <Textarea v-model="newAlbum.intro" placeholder="介绍（可选）" rows="2" class="mt-1" />
         </div>
         <div class="flex items-center gap-2">
           <Checkbox v-model:checked="newAlbum.is_public" id="album-public" />

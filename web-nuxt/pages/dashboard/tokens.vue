@@ -35,7 +35,7 @@ const msg = ref('')
 
 async function create() {
   if (!form.name) {
-    msg.value = '请填写名称'
+    msg.value = '请填写名�?
     return
   }
   creating.value = true
@@ -58,7 +58,7 @@ async function create() {
 }
 
 async function revoke(id: number) {
-  if (!confirm('确定吊销该Token？')) return
+  if (!confirm('确定吊销�?Token�?)) return
   await api.del(`/api/v1/tokens/${id}`)
   fetchTokens()
 }
@@ -66,7 +66,7 @@ async function revoke(id: number) {
 function copyToken() {
   if (created.value) {
     navigator.clipboard?.writeText(created.value.token).then(
-      () => (msg.value = '已复制到剪贴板'),
+      () => (msg.value = '已复制到剪贴�?),
       () => (msg.value = '复制失败')
     )
   }
@@ -87,14 +87,14 @@ function copyToken() {
       <CardContent class="pt-6 space-y-3">
         <div>
           <Label>名称</Label>
-          <Input v-model="form.name" placeholder="如 ci-deploy" class="mt-1" />
+          <Input v-model="form.name" placeholder="�?ci-deploy" class="mt-1" />
         </div>
         <div>
-          <Label>能力（逗号分隔，* = 全部）</Label>
+          <Label>能力（逗号分隔�? = 全部�?/Label>
           <Input v-model="form.abilities" class="mt-1" />
         </div>
         <div>
-          <Label>过期天数（0 = 永不过期）</Label>
+          <Label>过期天数�? = 永不过期�?/Label>
           <Input v-model.number="form.ttl_days" type="number" min="0" class="mt-1" />
         </div>
         <Button :loading="creating" @click="create">创建</Button>
@@ -116,7 +116,7 @@ function copyToken() {
       </CardContent>
     </Card>
 
-    <AppEmpty v-if="tokens.length === 0" title="还没有Token" description="创建 API Token 用于外部脚本访问" />
+    <AppEmpty v-if="tokens.length === 0" title="还没�?Token" description="创建 API Token 用于外部脚本访问" />
     <Card v-else>
       <CardContent class="p-0 divide-y divide-border">
         <div v-for="t in tokens" :key="t.id" class="flex items-center justify-between p-4">
@@ -126,8 +126,8 @@ function copyToken() {
               <span class="text-sm font-medium text-foreground">{{ t.name }}</span>
             </div>
             <div class="mt-1 text-xs text-muted-foreground">
-              创建于 {{ new Date(t.created_at).toLocaleString() }}
-              <span v-if="t.last_used_at"> · 最后使用 {{ new Date(t.last_used_at * 1000).toLocaleString() }}</span>
+              创建�?{{ new Date(t.created_at).toLocaleString() }}
+              <span v-if="t.last_used_at"> · 最后使�?{{ new Date(t.last_used_at * 1000).toLocaleString() }}</span>
               <span v-if="t.expires_at"> · 过期 {{ new Date(t.expires_at * 1000).toLocaleString() }}</span>
             </div>
           </div>

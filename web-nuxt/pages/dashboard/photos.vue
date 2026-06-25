@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 我的图片列表：多选 + 拖动框选 + 批量操作 + 筛选 + 排序 + 分页
+// 我的图片列表：多�?+ 拖动框�?+ 批量操作 + 筛�?+ 排序 + 分页
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 import { MousePointerClick, X } from '@lucide/vue'
@@ -11,8 +11,7 @@ const statsStore = useStatsStore()
 const page = ref(1)
 const perPage = 24
 
-// 筛选条件
-const filterAlbumId = ref<number | null>(null)
+// 筛选条�?const filterAlbumId = ref<number | null>(null)
 const filterTag = ref('')
 const startDate = ref('')
 const endDate = ref('')
@@ -21,14 +20,11 @@ const endDate = ref('')
 const sortBy = ref<'created_at' | 'size' | 'name'>('created_at')
 const sortOrder = ref<'desc' | 'asc'>('desc')
 
-// 多选 + 拖动框选
-// 新交互：无需先点"多选"按钮，在网格空白处按下并拖动鼠标即自动进入多选模式
-const selectedIds = ref<number[]>([])
+// 多�?+ 拖动框�?// 新交互：无需先点"多�?按钮，在网格空白处按下并拖动鼠标即自动进入多选模�?const selectedIds = ref<number[]>([])
 const dragSelecting = ref(false)
 const dragStart = ref<{ x: number; y: number } | null>(null)
 const dragEnd = ref<{ x: number; y: number } | null>(null)
-const dragMoved = ref(false) // 是否产生有效拖动（>5px），用于区分单击和框选
-const containerRef = ref<HTMLElement | null>(null)
+const dragMoved = ref(false) // 是否产生有效拖动�?5px），用于区分单击和框�?const containerRef = ref<HTMLElement | null>(null)
 const itemRefs = ref<HTMLElement[]>([])
 
 const query = computed(() => {
@@ -45,7 +41,7 @@ const query = computed(() => {
   return q
 })
 
-// 手动管理数据，不使用 useAsyncData（避免 setup 阶段 auth 未就绪导致请求失败）
+// 手动管理数据，不使用 useAsyncData（避�?setup 阶段 auth 未就绪导致请求失败）
 const rawData = ref<any>(null)
 const loading = ref(false)
 
@@ -77,7 +73,7 @@ const albumOptions = ref<{ label: string; value: number }[]>([])
 const tagOptions = ref<{ label: string; value: string }[]>([])
 
 onMounted(async () => {
-  // 并行加载：图片列表 + 相册筛选项 + 标签筛选项
+  // 并行加载：图片列�?+ 相册筛选项 + 标签筛选项
   const [, albumsRes, tagsRes] = await Promise.all([
     fetchPhotos(),
     api.get<any>('/api/v1/albums').catch(() => []),
@@ -89,14 +85,13 @@ onMounted(async () => {
   tagOptions.value = tList.map((t: any) => ({ label: t.name, value: t.name }))
 })
 
-// refresh 供上方删除后调用
-function refresh() {
+// refresh 供上�?删除后调�?function refresh() {
   fetchPhotos()
 }
 
 const allIds = computed(() => photos.value.map((p) => p.id))
 
-// --- 自定义确认弹窗（替代 confirm()）--
+// --- 自定义确认弹窗（替代 confirm()�?--
 const confirmState = reactive({
   show: false,
   title: '确认',
@@ -133,8 +128,7 @@ function inBox(el: HTMLElement, box: { left: number; top: number; width: number;
   return !(r.right < box.left || r.bottom < box.top || r.left > box.left + box.width || r.top > box.top + box.height)
 }
 
-// 计算 selectMode：只要有选中项或正在拖动选择，就视为多选模式
-const selectMode = computed(() => selectedIds.value.length > 0 || dragSelecting.value)
+// 计算 selectMode：只要有选中项或正在拖动选择，就视为多选模�?const selectMode = computed(() => selectedIds.value.length > 0 || dragSelecting.value)
 
 function onPointerDown(e: PointerEvent) {
   // 只响应左键、且点击空白区域（不是图片）
@@ -152,8 +146,7 @@ function onPointerDown(e: PointerEvent) {
 function onPointerMove(e: PointerEvent) {
   if (!dragStart.value) return
   dragEnd.value = { x: e.clientX, y: e.clientY }
-  // 当鼠标移动超过 5px 才视为有效框选
-  if (!dragMoved.value) {
+  // 当鼠标移动超�?5px 才视为有效框�?  if (!dragMoved.value) {
     const dx = e.clientX - dragStart.value.x
     const dy = e.clientY - dragStart.value.y
     if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
@@ -168,8 +161,7 @@ function onPointerUp() {
   if (dragMoved.value) {
     const box = dragBox.value
     if (box) {
-      // 选择所有在拖动框内的图片
-      const ids: number[] = []
+      // 选择所有在拖动框内的图�?      const ids: number[] = []
       for (const el of itemRefs.value) {
         if (el && inBox(el, box)) {
           const id = Number(el.dataset.photoId)
@@ -242,14 +234,14 @@ function resetFilters() {
 async function remove(id: number) {
   const ok = await openConfirm({
     title: '删除图片',
-    message: '确定删除这张图片？此操作不可撤销。',
+    message: '确定删除这张图片？此操作不可撤销�?,
     okText: '删除',
     danger: true,
   })
   if (!ok) return
   try {
     await api.del(`/api/v1/photos/${id}`)
-    message.success('已删除')
+    message.success('已删�?)
     refresh()
     statsStore.refresh()
   } catch (err: any) {
@@ -260,7 +252,7 @@ async function remove(id: number) {
 async function copy(id: number) {
   try {
     await api.post(`/api/v1/photos/${id}/copy`, {})
-    message.success('已复制')
+    message.success('已复�?)
     refresh()
     statsStore.refresh()
   } catch (err: any) {
@@ -283,14 +275,13 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
 
 <template>
   <div>
-    <!-- 顶部操作栏 -->
+    <!-- 顶部操作�?-->
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-3">
         <h1 class="text-2xl font-bold text-foreground">我的图片</h1>
-        <span class="text-sm text-muted-foreground">共 {{ total }} 张</span>
+        <span class="text-sm text-muted-foreground">�?{{ total }} �?/span>
         <Badge v-if="selectMode" variant="default">
-          已选<strong class="ml-1">{{ selectedIds.length }}</strong> 张
-        </Badge>
+          已�?<strong class="ml-1">{{ selectedIds.length }}</strong> �?        </Badge>
       </div>
       <div class="flex items-center gap-2">
         <Button
@@ -305,15 +296,14 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
       </div>
     </div>
 
-    <!-- 多选使用提示 -->
+    <!-- 多选使用提�?-->
     <div v-if="!selectMode" class="mb-3 text-xs text-muted-foreground flex items-center gap-1.5">
       <MousePointerClick class="w-3.5 h-3.5" />
-      提示：在图片网格的空白处<strong class="font-semibold mx-0.5">按住鼠标左键拖动</strong>可框选多张图片
-    </div>
+      提示：在图片网格的空白处<strong class="font-semibold mx-0.5">按住鼠标左键拖动</strong>可框选多张图�?    </div>
 
     <PhotoUploader class="mb-6" @uploaded="onUploaded" @error="(m) => message.error(m)" />
 
-    <!-- 筛选 / 排序 -->
+    <!-- 筛�?/ 排序 -->
     <Card class="mb-4">
       <CardContent class="p-3">
         <div class="flex flex-wrap items-end gap-3">
@@ -342,7 +332,7 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
             </Select>
           </div>
           <div>
-            <Label class="text-xs text-muted-foreground mb-1">开始日期</Label>
+            <Label class="text-xs text-muted-foreground mb-1">开始日�?/Label>
             <Input v-model="startDate" type="date" class="w-[150px]" />
           </div>
           <div>
@@ -356,9 +346,9 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="created_at">按时间</SelectItem>
-                <SelectItem value="size">按大小</SelectItem>
-                <SelectItem value="name">按名称</SelectItem>
+                <SelectItem value="created_at">按时�?/SelectItem>
+                <SelectItem value="size">按大�?/SelectItem>
+                <SelectItem value="name">按名�?/SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -379,7 +369,7 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
       </CardContent>
     </Card>
 
-    <!-- 批量操作栏 -->
+    <!-- 批量操作�?-->
     <div v-if="selectMode" class="mb-4">
       <PhotoBatchActions
         v-model:selected-ids="selectedIds"
@@ -388,7 +378,7 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
       />
     </div>
 
-    <AppEmpty v-if="photos.length === 0" title="还没有图片" description="拖拽或点击上方上传你的第一张图片" />
+    <AppEmpty v-if="photos.length === 0" title="还没有图�? description="拖拽或点击上方上传你的第一张图�? />
     <div
       v-else
       ref="containerRef"
@@ -419,7 +409,7 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
           <span
             class="inline-flex items-center justify-center w-5 h-5 rounded border-2 text-white text-xs"
             :class="isSelected(p.id) ? 'bg-primary border-primary' : 'bg-black/30 border-white'"
-          >{{ isSelected(p.id) ? '✓' : '' }}</span>
+          >{{ isSelected(p.id) ? '�? : '' }}</span>
         </div>
 
         <!-- 单张操作 -->
@@ -433,14 +423,14 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
           <div class="flex gap-1 w-full justify-end items-center flex-wrap">
             <LikeButton size="sm" target-type="photo" :target-id="p.id" />
             <ReportButton size="sm" target-type="photo" :target-id="p.id" />
-            <Button variant="secondary" size="sm" class="h-6 px-2 text-[10px]" @click.stop="togglePublic(p)">{{ p.is_public ? '转私有' : '转公开' }}</Button>
+            <Button variant="secondary" size="sm" class="h-6 px-2 text-[10px]" @click.stop="togglePublic(p)">{{ p.is_public ? '转私�? : '转公开' }}</Button>
             <Button variant="secondary" size="sm" class="h-6 px-2 text-[10px]" @click.stop="copy(p.id)">复制</Button>
             <Button variant="destructive" size="sm" class="h-6 px-2 text-[10px]" @click.stop="remove(p.id)">删除</Button>
           </div>
         </div>
       </div>
 
-      <!-- 拖动选区框 -->
+      <!-- 拖动选区�?-->
       <div
         v-if="dragBox"
         class="fixed pointer-events-none z-50 border-2 border-primary bg-primary/10"
@@ -455,12 +445,12 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
 
     <!-- 分页 -->
     <div v-if="total > perPage" class="mt-6 flex items-center justify-center gap-3 text-sm">
-      <Button variant="outline" size="sm" :disabled="page <= 1" @click="goPrev">上一页</Button>
-      <span class="text-muted-foreground">第 {{ page }} / {{ lastPage }} 页</span>
-      <Button variant="outline" size="sm" :disabled="page >= lastPage" @click="goNext">下一页</Button>
+      <Button variant="outline" size="sm" :disabled="page <= 1" @click="goPrev">上一�?/Button>
+      <span class="text-muted-foreground">�?{{ page }} / {{ lastPage }} �?/span>
+      <Button variant="outline" size="sm" :disabled="page >= lastPage" @click="goNext">下一�?/Button>
     </div>
 
-    <!-- 自定义确认弹窗 -->
+    <!-- 自定义确认弹�?-->
     <Dialog v-model:open="confirmState.show">
       <DialogContent>
         <DialogHeader>
