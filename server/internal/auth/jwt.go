@@ -101,6 +101,7 @@ func (i *Issuer) ParseRefresh(tokenStr string) (uint64, error) {
 	// refresh token 的 userID 存在 Subject 中
 	return strconv.ParseUint(claims.Subject, 10, 64)
 }
+
 // Parse 解析并校验 access token
 func (i *Issuer) Parse(tokenStr string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (any, error) {

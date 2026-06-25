@@ -24,20 +24,20 @@ func NewGroupService(db *gorm.DB) *GroupService {
 
 // CreateGroupRequest 创建群组请求
 type CreateGroupRequest struct {
-	Name      string         `json:"name" binding:"required"`
-	Intro     string         `json:"intro"`
-	Options   model.JSONMap  `json:"options"`
-	IsDefault bool           `json:"is_default"`
-	IsGuest   bool           `json:"is_guest"`
+	Name      string        `json:"name" binding:"required"`
+	Intro     string        `json:"intro"`
+	Options   model.JSONMap `json:"options"`
+	IsDefault bool          `json:"is_default"`
+	IsGuest   bool          `json:"is_guest"`
 }
 
 // UpdateGroupRequest 更新群组请求
 type UpdateGroupRequest struct {
-	Name      string         `json:"name"`
-	Intro     string         `json:"intro"`
-	Options   model.JSONMap  `json:"options"`
-	IsDefault bool           `json:"is_default"`
-	IsGuest   bool           `json:"is_guest"`
+	Name      string        `json:"name"`
+	Intro     string        `json:"intro"`
+	Options   model.JSONMap `json:"options"`
+	IsDefault bool          `json:"is_default"`
+	IsGuest   bool          `json:"is_guest"`
 }
 
 // Create 创建群组

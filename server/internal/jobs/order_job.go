@@ -69,8 +69,8 @@ func (h *Handlers) HandleOrderCancel(ctx context.Context, t *asynq.Task) error {
 
 	now := time.Now().Unix()
 	if err := h.DB.WithContext(ctx).Model(&order).Updates(map[string]any{
-		"status":       model.OrderStatusCanceled,
-		"canceled_at":  now,
+		"status":      model.OrderStatusCanceled,
+		"canceled_at": now,
 	}).Error; err != nil {
 		return err
 	}

@@ -36,7 +36,7 @@ func (PlanPrice) TableName() string { return "plan_prices" }
 // PlanGroup 计划可用组（中间表，无时间戳）
 type PlanGroup struct {
 	ID      uint64 `gorm:"primaryKey;autoIncrement" json:"id"`
-	PlanID  uint64 `gorm:"not null;index" json:"plan_id"`  // 计划
+	PlanID  uint64 `gorm:"not null;index" json:"plan_id"`   // 计划
 	GroupID uint64 `gorm:"index;default:0" json:"group_id"` // 角色组
 }
 

@@ -13,12 +13,12 @@ import (
 
 // PayPalDriver PayPal 驱动
 type PayPalDriver struct {
-	clientID   string
-	secret     string
-	sandbox    bool
-	notifyURL  string
-	returnURL  string
-	cancelURL  string
+	clientID  string
+	secret    string
+	sandbox   bool
+	notifyURL string
+	returnURL string
+	cancelURL string
 }
 
 // NewPayPalDriver 创建 PayPal 驱动

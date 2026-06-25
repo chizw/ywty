@@ -80,7 +80,7 @@ func epaySign(params url.Values, key string) string {
 type logDriver struct{}
 
 func newLogDriver(_ map[string]string) (Driver, error) { return &logDriver{}, nil }
-func (d *logDriver) Name() string                       { return "log" }
+func (d *logDriver) Name() string                      { return "log" }
 func (d *logDriver) CreatePayment(ctx context.Context, order model.Order, cfg map[string]string) (*CreateResult, error) {
 	returnURL := firstNonEmpty(cfg["return_url"], "/orders/result")
 	data := fmt.Sprintf("%s?trade_no=%s&log_paid=1", returnURL, order.TradeNo)

@@ -9,44 +9,44 @@ import (
 
 // Order 订单
 type Order struct {
-	ID          string  // 订单号
-	Subject     string  // 订单标题
-	Amount      float64 // 金额（元）
-	Currency    string  // 货币（CNY/USD/JPY）
-	UserID      string
-	ExpireTime  int64 // 过期时间戳
-	NotifyURL   string
-	ReturnURL   string
-	Metadata    map[string]string
+	ID         string  // 订单号
+	Subject    string  // 订单标题
+	Amount     float64 // 金额（元）
+	Currency   string  // 货币（CNY/USD/JPY）
+	UserID     string
+	ExpireTime int64 // 过期时间戳
+	NotifyURL  string
+	ReturnURL  string
+	Metadata   map[string]string
 }
 
 // PayResult 支付发起结果
 type PayResult struct {
-	OrderID     string
-	PayURL      string // 跳转支付 URL
-	FormHTML    string // 表单提交 HTML（用于扫码支付）
-	QRCode      string // 二维码内容
-	PrepayID    string // 预支付 ID
-	ExpireTime  int64
-	Raw         any
+	OrderID    string
+	PayURL     string // 跳转支付 URL
+	FormHTML   string // 表单提交 HTML（用于扫码支付）
+	QRCode     string // 二维码内容
+	PrepayID   string // 预支付 ID
+	ExpireTime int64
+	Raw        any
 }
 
 // NotifyPayload 回调通知载荷
 type NotifyPayload struct {
-	OrderID     string
-	TradeNo     string // 第三方流水号
-	Status      string // paid/closed/refunded
-	Amount      float64
-	PaidAt      int64
-	Raw         any
+	OrderID string
+	TradeNo string // 第三方流水号
+	Status  string // paid/closed/refunded
+	Amount  float64
+	PaidAt  int64
+	Raw     any
 }
 
 // RefundRequest 退款请求
 type RefundRequest struct {
-	OrderID   string
-	RefundNo  string
-	Amount    float64
-	Reason    string
+	OrderID  string
+	RefundNo string
+	Amount   float64
+	Reason   string
 }
 
 // RefundResult 退款结果

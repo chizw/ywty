@@ -40,12 +40,12 @@ func (d *StripeDriver) VerifyNotify(ctx context.Context, raw []byte, headers map
 		Type string `json:"type"`
 		Data struct {
 			Object struct {
-				ID              string `json:"id"`
-				PaymentIntent   string `json:"payment_intent"`
-				Amount          int    `json:"amount"`
-				Currency        string `json:"currency"`
-				Metadata        map[string]string `json:"metadata"`
-				Created         int64  `json:"created"`
+				ID            string            `json:"id"`
+				PaymentIntent string            `json:"payment_intent"`
+				Amount        int               `json:"amount"`
+				Currency      string            `json:"currency"`
+				Metadata      map[string]string `json:"metadata"`
+				Created       int64             `json:"created"`
 			} `json:"object"`
 		} `json:"data"`
 	}

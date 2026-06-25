@@ -189,7 +189,7 @@ func (w *WeChatDriver) ExchangeCode(ctx context.Context, code, _ string) (*Token
 		return nil, err
 	}
 	return &Token{
-		AccessToken: asString(raw["access_token"]),
+		AccessToken:  asString(raw["access_token"]),
 		RefreshToken: asString(raw["refresh_token"]),
 		ExpiresIn:    int(asFloat(raw["expires_in"])),
 		Raw:          raw,
@@ -206,12 +206,12 @@ func (w *WeChatDriver) GetUserInfo(ctx context.Context, t *Token) (*User, error)
 		return nil, err
 	}
 	return &User{
-		OpenID: asString(raw["openid"]),
+		OpenID:  asString(raw["openid"]),
 		UnionID: asString(raw["unionid"]),
-		Nick:   asString(raw["nickname"]),
-		Name:   asString(raw["nickname"]),
-		Avatar: asString(raw["headimgurl"]),
-		Raw:    raw,
+		Nick:    asString(raw["nickname"]),
+		Name:    asString(raw["nickname"]),
+		Avatar:  asString(raw["headimgurl"]),
+		Raw:     raw,
 	}, nil
 }
 
@@ -220,9 +220,9 @@ func (w *WeChatDriver) GetUserInfo(ctx context.Context, t *Token) (*User, error)
 // ============================================================
 
 type QQDriver struct {
-	AppID     string
-	AppKey    string
-	Redirect  string
+	AppID    string
+	AppKey   string
+	Redirect string
 }
 
 func NewQQDriver(cfg map[string]string) (Driver, error) {

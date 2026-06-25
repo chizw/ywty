@@ -60,14 +60,14 @@ func (d *AlipayDriver) CreatePay(ctx context.Context, order *Order) (*PayResult,
 		exp = order.ExpireTime
 	}
 	params := map[string]string{
-		"app_id":      d.appID,
-		"method":      "alipay.trade.page.pay",
-		"charset":     "utf-8",
-		"sign_type":   "RSA2",
-		"timestamp":   now.Format("2006-01-02 15:04:05"),
-		"version":     "1.0",
-		"notify_url":  firstNonEmpty(order.NotifyURL, d.notifyURL),
-		"return_url":  order.ReturnURL,
+		"app_id":     d.appID,
+		"method":     "alipay.trade.page.pay",
+		"charset":    "utf-8",
+		"sign_type":  "RSA2",
+		"timestamp":  now.Format("2006-01-02 15:04:05"),
+		"version":    "1.0",
+		"notify_url": firstNonEmpty(order.NotifyURL, d.notifyURL),
+		"return_url": order.ReturnURL,
 		"biz_content": fmt.Sprintf(`{"out_trade_no":"%s","total_amount":"%.2f","subject":"%s","product_code":"FAST_INSTANT_TRADE_PAY","timeout_express":"15m"}`,
 			order.ID, order.Amount, escapeJSON(order.Subject)),
 	}

@@ -84,7 +84,7 @@ func (d *WxPayDriver) VerifyNotify(ctx context.Context, raw []byte, headers map[
 			Total    int    `json:"total"`
 			Currency string `json:"currency"`
 		} `json:"amount"`
-		State    string `json:"state"`
+		State       string `json:"state"`
 		SuccessTime string `json:"success_time"`
 	}
 	if err := json.Unmarshal(raw, &body); err != nil {

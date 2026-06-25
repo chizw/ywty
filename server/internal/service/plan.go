@@ -36,8 +36,8 @@ type AdminPlanReq struct {
 		Duration int    `json:"duration" binding:"required"`
 		Price    int    `json:"price" binding:"required,min=0"`
 	} `json:"prices"`
-	Capacities []int64 `json:"capacities"` // 容量(字节)
-	GroupIDs   []uint64  `json:"group_ids"`  // 空=全部可用
+	Capacities []int64  `json:"capacities"` // 容量(字节)
+	GroupIDs   []uint64 `json:"group_ids"`  // 空=全部可用
 }
 
 // PlanDetail 套餐详情（含关联数据）

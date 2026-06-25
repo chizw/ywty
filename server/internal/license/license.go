@@ -14,29 +14,29 @@ import (
 
 // LicenseType License 类型
 const (
-	LicenseTypeFree       = "free"        // 免费版
-	LicenseTypePro        = "pro"         // 专业版
-	LicenseTypeEnterprise = "enterprise"  // 企业版
+	LicenseTypeFree       = "free"       // 免费版
+	LicenseTypePro        = "pro"        // 专业版
+	LicenseTypeEnterprise = "enterprise" // 企业版
 )
 
 // LicenseStatus License 状态
 const (
-	LicenseStatusActive   = "active"   // 激活
-	LicenseStatusExpired  = "expired"  // 已过期
-	LicenseStatusRevoked  = "revoked"  // 已撤销
+	LicenseStatusActive  = "active"  // 激活
+	LicenseStatusExpired = "expired" // 已过期
+	LicenseStatusRevoked = "revoked" // 已撤销
 )
 
 // License License 信息
 type License struct {
-	ID          uint64    `json:"id"`
-	Key         string    `json:"key"`          // License 密钥
-	Type        string    `json:"type"`         // 类型
-	Status      string    `json:"status"`       // 状态
-	MaxUsers    int       `json:"max_users"`    // 最大用户数
-	MaxStorage  int64     `json:"max_storage"`  // 最大存储空间(字节)
-	Features    []string  `json:"features"`     // 启用的功能
-	ExpiresAt   time.Time `json:"expires_at"`   // 过期时间
-	CreatedAt   time.Time `json:"created_at"`
+	ID         uint64    `json:"id"`
+	Key        string    `json:"key"`         // License 密钥
+	Type       string    `json:"type"`        // 类型
+	Status     string    `json:"status"`      // 状态
+	MaxUsers   int       `json:"max_users"`   // 最大用户数
+	MaxStorage int64     `json:"max_storage"` // 最大存储空间(字节)
+	Features   []string  `json:"features"`    // 启用的功能
+	ExpiresAt  time.Time `json:"expires_at"`  // 过期时间
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 // Service License 服务
@@ -67,15 +67,15 @@ func (s *Service) Get(ctx context.Context) (*License, error) {
 func (s *Service) Activate(ctx context.Context, key string) (*License, error) {
 	// TODO: 实际项目中需要验证 License 密钥的有效性
 	// 这里简化处理，直接创建一条记录
-	
+
 	license := &License{
-		Key:         key,
-		Type:        LicenseTypePro,
-		Status:      LicenseStatusActive,
-		MaxUsers:    1000,
-		MaxStorage:  100 * 1024 * 1024 * 1024, // 100GB
-		Features:    []string{"advanced_search", "batch_upload", "custom_theme"},
-		ExpiresAt:   time.Now().AddDate(1, 0, 0), // 1年后过期
+		Key:        key,
+		Type:       LicenseTypePro,
+		Status:     LicenseStatusActive,
+		MaxUsers:   1000,
+		MaxStorage: 100 * 1024 * 1024 * 1024, // 100GB
+		Features:   []string{"advanced_search", "batch_upload", "custom_theme"},
+		ExpiresAt:  time.Now().AddDate(1, 0, 0), // 1年后过期
 	}
 
 	var existing License
