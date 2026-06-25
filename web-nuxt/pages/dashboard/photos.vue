@@ -279,9 +279,10 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-3">
         <h1 class="text-2xl font-bold text-foreground">我的图片</h1>
-        <span class="text-sm text-muted-foreground">�?{{ total }} �?/span>
+        <span class="text-sm text-muted-foreground">共 {{ total }} 张</span>
         <Badge v-if="selectMode" variant="default">
-          已�?<strong class="ml-1">{{ selectedIds.length }}</strong> �?        </Badge>
+          已选<strong class="ml-1">{{ selectedIds.length }}</strong> 张
+        </Badge>
       </div>
       <div class="flex items-center gap-2">
         <Button
@@ -332,7 +333,7 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
             </Select>
           </div>
           <div>
-            <Label class="text-xs text-muted-foreground mb-1">开始日�?/Label>
+            <Label class="text-xs text-muted-foreground mb-1">开始日期</Label>
             <Input v-model="startDate" type="date" class="w-[150px]" />
           </div>
           <div>
@@ -346,9 +347,9 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="created_at">按时�?/SelectItem>
-                <SelectItem value="size">按大�?/SelectItem>
-                <SelectItem value="name">按名�?/SelectItem>
+                <SelectItem value="created_at">按时间</SelectItem>
+                <SelectItem value="size">按大小</SelectItem>
+                <SelectItem value="name">按名称</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -445,9 +446,9 @@ function goNext() { if (page.value < lastPage.value) page.value++ }
 
     <!-- 分页 -->
     <div v-if="total > perPage" class="mt-6 flex items-center justify-center gap-3 text-sm">
-      <Button variant="outline" size="sm" :disabled="page <= 1" @click="goPrev">上一�?/Button>
-      <span class="text-muted-foreground">�?{{ page }} / {{ lastPage }} �?/span>
-      <Button variant="outline" size="sm" :disabled="page >= lastPage" @click="goNext">下一�?/Button>
+      <Button variant="outline" size="sm" :disabled="page <= 1" @click="goPrev">上一页</Button>
+      <span class="text-muted-foreground">第 {{ page }} / {{ lastPage }} 页</span>
+      <Button variant="outline" size="sm" :disabled="page >= lastPage" @click="goNext">下一页</Button>
     </div>
 
     <!-- 自定义确认弹�?-->
