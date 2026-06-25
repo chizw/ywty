@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// 管理后台：工单管�?definePageMeta({ layout: 'admin', middleware: 'admin' })
+// 管理后台：工单管理
+definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 const api = useApi()
 const { data, refresh } = await useAsyncData('admin-tickets', () => api.get<any>('/api/v1/admin/tickets'))

@@ -54,7 +54,7 @@ async function save() {
         group_id: form.group_id || undefined,
       },
     })
-    msg.value = '已保存
+    msg.value = '已保存'
     closeEdit()
     refresh()
   } catch (err: any) {
@@ -75,7 +75,7 @@ function fmtTime(s: any) {
   <div>
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-2xl font-bold text-foreground">用户管理</h1>
-      <span class="text-sm text-muted-foreground">�?{{ meta?.total ?? users.length }} 个用户</span>
+      <span class="text-sm text-muted-foreground">共 {{ meta?.total ?? users.length }} 个用户</span>
     </div>
 
     <div class="mb-4 flex gap-2">
@@ -115,7 +115,7 @@ function fmtTime(s: any) {
             </TableCell>
             <TableCell>
               <Badge :variant="u.is_admin ? 'default' : 'secondary'">
-                {{ u.is_admin ? '�? : '�? }}
+                {{ u.is_admin ? '是' : '否' }}
               </Badge>
             </TableCell>
             <TableCell class="text-muted-foreground text-xs">{{ fmtTime(u.created_at) }}</TableCell>
@@ -160,7 +160,7 @@ function fmtTime(s: any) {
             <Label class="mb-1.5 block">角色组</Label>
             <Select :modelValue="String(form.group_id)" @update:modelValue="(val: string) => form.group_id = Number(val)">
               <SelectTrigger>
-                <SelectValue placeholder="不修改 />
+                <SelectValue placeholder="不修改" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="0">不修改</SelectItem>

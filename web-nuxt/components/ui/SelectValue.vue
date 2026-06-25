@@ -3,6 +3,8 @@ import { SelectValue, type SelectValueProps } from 'radix-vue'
 const props = defineProps<SelectValueProps>()
 </script>
 
-<SelectValue v-bind="props">
-  <slot />
-</SelectValue>
+<template>
+  <SelectValue v-bind="props">
+    <slot />
+  </SelectValue>
+</template>

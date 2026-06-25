@@ -22,7 +22,7 @@ const msg = ref('')
 
 async function create() {
   if (!form.title.trim()) {
-    msg.value = '请输入标题
+    msg.value = '请输入标题'
     return
   }
   loading.value = true

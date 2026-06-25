@@ -22,7 +22,7 @@ async function create() {
   msg.value = ''
   try {
     await api.post('/api/v1/admin/groups', newGroup)
-    msg.value = '已创建
+    msg.value = '已创建'
     newGroup.name = ''
     newGroup.intro = ''
     newGroup.is_default = false
@@ -54,7 +54,7 @@ async function saveEdit() {
       method: 'PATCH',
       body: { name: editForm.name, intro: editForm.intro, is_default: editForm.is_default },
     })
-    msg.value = '已保存
+    msg.value = '已保存'
     closeEdit()
     refresh()
   } catch (err: any) {
@@ -89,7 +89,7 @@ async function doRemove() {
       <h1 class="text-2xl font-bold text-foreground">角色组</h1>
       <Button @click="showCreate = !showCreate">
         <Plus v-if="!showCreate" class="h-4 w-4 mr-2" />
-        {{ showCreate ? '取消' : '新建角色�? }}
+        {{ showCreate ? '取消' : '新建角色组' }}
       </Button>
     </div>
 
@@ -139,7 +139,7 @@ async function doRemove() {
           <Textarea v-model="editForm.intro" :rows="2" />
           <div class="flex items-center gap-2">
             <Checkbox :checked="editForm.is_default" @update:checked="(val: boolean) => editForm.is_default = val" />
-            <Label>注册时默认使�?/Label>
+            <Label>注册时默认使用</Label>
           </div>
           <p v-if="msg" class="text-sm" :class="msg.includes('失败') ? 'text-destructive' : 'text-primary'">{{ msg }}</p>
         </div>
@@ -156,7 +156,7 @@ async function doRemove() {
         <DialogHeader>
           <DialogTitle>确认删除</DialogTitle>
         </DialogHeader>
-        <p class="text-sm text-muted-foreground">确定删除该角色组？相关用户角色绑定也会被解除�?/p>
+        <p class="text-sm text-muted-foreground">确定删除该角色组？相关用户角色绑定也会被解除。</p>
         <DialogFooter>
           <Button variant="outline" @click="closeConfirm">取消</Button>
           <Button variant="destructive" @click="doRemove">删除</Button>

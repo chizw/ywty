@@ -2,173 +2,146 @@ const fs = require('fs');
 const path = require('path');
 
 const baseDir = path.join(__dirname, 'web-nuxt', 'pages', 'admin');
-const FFFD = '\ufffd';
+const R = '\ufffd'; // U+FFFD replacement character
 
-// For remaining corruptions, we need different search patterns
-// because the raw byte corruption (XX YY 3F) loses the following byte
+// All corruption follows the same pattern: \ufffd? in the file
+// (corrupted last byte of multi-byte UTF-8 char becomes U+FFFD + '?')
+// Search strings include the ? that follows \ufffd in every case.
+
 const fixMap = {
-  'tickets.vue': [
-    // statusMap: the closing ' was lost, so search without it
-    ["'待处" + FFFD + "?,", "'待处理',"],
-    ["'处理" + FFFD + "?,", "'处理中',"],
-    ["'已解" + FFFD + "?,", "'已解决',"],
-    ["'已关" + FFFD + "?,", "'已关闭',"],
-    // levelMap: entire char replaced
-    ["low: '" + FFFD + "?,", "low: '低',"],
-    ["medium: '" + FFFD + "?,", "medium: '中',"],
-    ["high: '" + FFFD + "?,", "high: '高',"],
-    ["urgent: '紧" + FFFD + "?,", "urgent: '紧急',"],
-  ],
-
-  'drivers.vue': [
-    // providerLabel: closing ' was lost
-    ["'七牛" + FFFD + "?,", "'七牛云',"],
-    ["'又拍" + FFFD + "?,", "'又拍云',"],
-    ["'阿里云邮件推" + FFFD + "?,", "'阿里云邮件推送',"],
-    ["'阿里云短" + FFFD + "?,", "'阿里云短信',"],
-    ["'腾讯云短" + FFFD + "?,", "'腾讯云短信',"],
-    ["'阿里云内容安" + FFFD + "?,", "'阿里云内容安全',"],
-    ["'空操" + FFFD + "?,", "'空操作',"],
-    // comments and template: closing char lost
-    ["短信测试发" + FFFD + "\n", "短信测试发送\n"],
-    ["邮件测试发" + FFFD + "\n", "邮件测试发送\n"],
-    ["发送失" + FFFD + "')", "发送失败')"],
-    ["发送请求已提交（请查看日志/上游" + FFFD + ")", "发送请求已提交（请查看日志/上游）"],
-    ["邮件发送请求已提交" + FFFD + "", "邮件发送请求已提交"],  // may not exist
-    ["短信发送请求已提交" + FFFD + "", "短信发送请求已提交"],
-    // Template text with lost closing chars
-    ["存储策略</NuxtLink>。", "存储策略</NuxtLink>。"],  // keep as-is if correct
-    // Empty spans - the ? was the only content
-    ['text-muted-foreground">' + FFFD + '</span>', 'text-muted-foreground">无</span>'],
-    // SMS provider line
-    ["SMS provider" + FFFD + "/p>", "SMS provider）</p>"],
-    // 邮件发送 line
-    ["触发一次发" + FFFD + "/p>", "触发一次发送</p>"],
-    // 发送 button
-    ['@click="testSMS">' + FFFD + "/Button>", '@click="testSMS">发送</Button>'],
-    ['@click="testMail">' + FFFD + "/Button>", '@click="testMail">发送</Button>'],
-    // 这是一封来云雾图驿
-    ["一封来" + FFFD + "云雾图驿", "一封来自云雾图驿"],
-    ["测试邮件" + FFFD + "", "测试邮件。"],  // need to check exact context
-    // placeholder 手机号 收件人邮箱
-    ['placeholder="' + FFFD + '手机号" class', 'placeholder="手机号" class'],  // may not work
-    ['placeholder="' + FFFD + '收件人邮箱" class', 'placeholder="收件人邮箱" class'],
-    ['placeholder="手机' + FFFD + ' class', 'placeholder="手机号" class'],
-    ['placeholder="收件人邮' + FFFD + ' class', 'placeholder="收件人邮箱" class'],
-    // 短信测试标题
-    ['已配置 SMS provider' + FFFD + '/p>', '已配置 SMS provider）</p>'],
-  ],
-
-  'storage.vue': [
-    // comment
-    ["增删改查" + FFFD + ")", "增删改查）"],
-    // providerLabel
-    ["'七牛" + FFFD + "?,", "'七牛云',"],
-    ["'又拍" + FFFD + "?,", "'又拍云',"],
-    ["'阿里" + FFFD + "?OSS", "'阿里云OSS"],
-    ["'腾讯" + FFFD + "?COS", "'腾讯云COS"],
-    // messages
-    ["'已更" + FFFD + "?,", "'已更新',"],
-    ["'已创" + FFFD + "?,", "'已创建',"],
-    ["'已删" + FFFD + "?,", "'已删除',"],
-    ["请填写名" + FFFD + "?)", "请填写名称')"],
-    ["options 必须是合" + FFFD + "?JSON", "options 必须是合法JSON"],
-    // Template
-    ["按策略 ID 调用" + FFFD + "   </p>", "按策略 ID 调用。    </p>"],
-    ["\u201c新建策略\u201d开始" + FFFD + "   </div>", "\u201c新建策略\u201d开始。    </div>"],
-    ["如：阿里" + FFFD + "?OSS 主站", "如：阿里云 OSS 主站"],
-    ["（{{ d }}" + FFFD + "/SelectItem>", "（{{ d }}）</SelectItem>"],
-    ["Options（JSON" + FFFD + "/Label>", "Options（JSON）</Label>"],
-    ["不同驱动" + FFFD + "?options", "不同驱动的 options"],
-    ["参考驱动文档填写" + FFFD + "/p>", "参考驱动文档填写。</p>"],
-  ],
-
   'pages.vue': [
-    // comment
-    ["单页管" + FFFD + "\ndefinePageMeta", "单页管理\ndefinePageMeta"],
-    // placeholder
-    ['placeholder="' + FFFD + 'about"', 'placeholder="如 about"'],
+    // comment: 单页管理
+    ['单页管' + R + '?definePageMeta', '单页管理\ndefinePageMeta'],
+    // placeholder: 如 about
+    ['placeholder="' + R + '?about"', 'placeholder="如 about"'],
   ],
 
   'photos.vue': [
-    // comment
-    ["图片管" + FFFD + "\ndefinePageMeta", "图片管理\ndefinePageMeta"],
-    // counter
-    ["}} " + FFFD + " </span>", "}} 张 </span>"],
+    // comment: 图片管理
+    ['图片管' + R + '?definePageMeta', '图片管理\ndefinePageMeta'],
+    // counter: 张
+    ['}} ' + R + '?/span>', '}} 张</span>'],
   ],
 
   'reports.vue': [
-    // comment  
-    ["举报管" + FFFD + "\ndefinePageMeta", "举报管理\ndefinePageMeta"],
+    // comment: 举报管理
+    ['举报管' + R + '?definePageMeta', '举报管理\ndefinePageMeta'],
     // 无说明
-    ["（无说明" + FFFD + ")", "（无说明）"],
+    ['（无说明' + R + '? }}', '（无说明） }}'],
+  ],
+
+  'feedbacks.vue': [
+    // comment: may be 意见管理 or 反馈管理
+    ['意见反馈管' + R + '?', '意见反馈管理'],
+    ['反馈管' + R + '?definePageMeta', '反馈管理\ndefinePageMeta'],
+  ],
+
+  'tickets.vue': [
+    // comment: 工单管理
+    ['工单管' + R + '?', '工单管理'],
+  ],
+
+  'violations.vue': [
+    // comment: 违规记录管理
+    ['违规记录管' + R + '?', '违规记录管理'],
+  ],
+
+  'users.vue': [
+    // 共 X 个用户
+    [R + '?{{ meta?.total ?? users.length }} 个用户', '共 {{ meta?.total ?? users.length }} 个用户'],
+    // 是/否
+    ["{{ u.is_admin ? '" + R + "? : '" + R + "? }}", "{{ u.is_admin ? '是' : '否' }}"],
+  ],
+
+  'index.vue': [
+    // 多余的 ?
+    ['举报?          </div>', '举报          </div>'],
+  ],
+
+  'notices.vue': [
+    // ？
+    ['确定删除该通知' + R + '?/p>', '确定删除该通知？</p>'],
+  ],
+
+  'storage.vue': [
+    // comment: 增删改查）
+    ['增删改查' + R + '?', '增删改查）'],
+    // messages
+    ["'已更" + R + "?)", "'已更新')"],
+    ["'已创" + R + "?)", "'已创建')"],
+    ["'已删" + R + "?)", "'已删除')"],
+    // 请填写名称
+    ['请填写名' + R + "?)", "请填写名称')"],
+    // options 必须是合法JSON
+    ['options 必须是合' + R + '?JSON', 'options 必须是合法JSON'],
+    // template: 调用。
+    ['按策略 ID 调用' + R + '?    </p>', '按策略 ID 调用。    </p>'],
+    // 开始。
+    ['"新建策略"开始' + R + '?    </div>', '"新建策略"开始。    </div>'],
+    // SelectItem: ）
+    ['（{{ d }}' + R + '?/SelectItem>', '（{{ d }}）</SelectItem>'],
+    // Label: ）
+    ['Options（JSON' + R + '?/Label>', 'Options（JSON）</Label>'],
+    // 文档填写。
+    ['参考驱动文档填写' + R + '?/p>', '参考驱动文档填写。</p>'],
+  ],
+
+  'drivers.vue': [
+    // comment: 短信测试发送
+    ['短信测试发' + R + '?const sms', '短信测试发送\nconst sms'],
+    // 验证码：
+    ['您的验证码' + R + '?123456', '您的验证码：123456'],
+    // 发送失败
+    ["'发送失" + R + "?)", "'发送失败')"],
+    // comment: 邮件测试发送
+    ['邮件测试发' + R + '?const mai', '邮件测试发送\nconst mai'],
+    // 一封来自
+    ['一封来' + R + '?云雾图驿', '一封来自云雾图驿'],
+    // 测试邮件。 (literal 。? where ? is extra)
+    ['测试邮件。? }', '测试邮件。 }'],
+    // 测试邮件。  (if \ufffd? variant exists)
+    ['测试邮件' + R + '? }', '测试邮件。 }'],
+    // </NuxtLink>。
+    ['</NuxtLink>' + R + '?      驱动实际', '</NuxtLink>。      驱动实际'],
+    // ）。
+    ['）' + R + '?    </p>', '）    </p>'],
+    // 无</span>
+    ['">' + R + '?/span>', '">无</span>'],
+    // SMS provider）
+    ['SMS provider' + R + '?/p>', 'SMS provider）</p>'],
+    // 触发一次发送
+    ['触发一次发' + R + '?/p>', '触发一次发送</p>'],
+    // 发送</Button>
+    ['testMail">发' + R + '?/Button>', 'testMail">发送</Button>'],
   ],
 
   'groups.vue': [
-    // new group button text
-    ["新建角色" + FFFD + " }}", "新建角色组 }}"],
-    // register default label
-    ["注册时默认使" + FFFD + "/Label>", "注册时默认使用</Label>"],
-    // delete confirm
-    ["用户角色绑定也会被解除" + FFFD + "/p>", "用户角色绑定也会被解除。</p>"],
+    // 新建角色组
+    ['新建角色' + R + '? }}', '新建角色组 }}'],
+    // 注册时默认使用
+    ['注册时默认使' + R + '?/Label>', '注册时默认使用</Label>'],
+    // 。
+    ['用户角色绑定也会被解除' + R + '?/p>', '用户角色绑定也会被解除。</p>'],
   ],
 
   'license.vue': [
     // 免费版
-    ["免费" + FFFD + "' }}", "免费版' }}"],
-    // 已激活 已过期 未激活
-    ["'已激" + FFFD + " : ", "'已激活' : "],
-    ["'已过" + FFFD + " : ", "'已过期' : "],
-    ["'未激" + FFFD + "'", "'未激活'"],
+    ["免费" + R + "? }}", "免费版' }}"],
+    // 已激活
+    ["'已激" + R + "? : ", "'已激活' : "],
+    // 已过期
+    ["'已过" + R + "? : ", "'已过期' : "],
+    // 未激活
+    ["'未激" + R + "? }}", "'未激活' }}"],
     // 无限制
-    ["无限制" + FFFD + "' }}", "无限制' }}"],  // hmm, check context
-    // 最大存储空间
-    ["最大存储空" + FFFD + "            </div>", "最大存储空间            </div>"],
-    // 已启用功能
-    ["已启用功" + FFFD + "          </div>", "已启用功能          </div>"],
-    // 激活按钮
-    ["? '激" + FFFD + "License' : '激" + FFFD + "License'", "? '激活 License' : '激活 License'"],
-    // 请输入 License Key
-    ['placeholder="请输' + FFFD + 'License Key"', 'placeholder="请输入 License Key"'],
-    // 激活按钮  
-    ['@click="activate">' + FFFD + "/Button>", '@click="activate">激活</Button>'],
-    // 状态 label
-    ["状" + FFFD + "            </div>", "状态            </div>"],
-  ],
-
-  'violations.vue': [
-    // comment
-    ["违规记录管" + FFFD + "\ndefinePageMeta", "违规记录管理\ndefinePageMeta"],
-    // statusMap
-    ["'待处" + FFFD + "?,", "'待处理',"],
-    ["'已处" + FFFD + "?,", "'已处理',"],
-    ["'已忽" + FFFD + "?,", "'已忽略',"],
-  ],
-
-  'users.vue': [
-    // remaining: 共 X 个用户 label
-    [FFFD + "{{ meta?.total ?? users.length }} 个用户", "共 {{ meta?.total ?? users.length }} 个用户"],
-    // 是/否
-    ["{{ u.is_admin ? '" + FFFD + " : '" + FFFD + " }}", "{{ u.is_admin ? '是' : '否' }}"],
-  ],
-
-  'index.vue': [
-    // remaining: P2 corruptions (extra ? after 报)
-    ['举报?          </div>', '举报          </div>'],
-  ],
-
-  'feedbacks.vue': [
-    ["意见管" + FFFD + "\ndefinePageMeta", "意见管理\ndefinePageMeta"],
-    ["反馈管" + FFFD + "\ndefinePageMeta", "反馈管理\ndefinePageMeta"],
-  ],
-
-  'notices.vue': [
-    // remaining
-    ["确定删除该通知" + FFFD + "/p>", "确定删除该通知？</p>"],
+    ["无限" + R + "? }}", "无限制' }}"],
+    // 请输入
+    ['请输' + R + '?License Key', '请输入 License Key'],
   ],
 };
 
 let totalFixed = 0;
+const results = {};
 
 for (const [file, fixes] of Object.entries(fixMap)) {
   const filePath = path.join(baseDir, file);
@@ -176,30 +149,50 @@ for (const [file, fixes] of Object.entries(fixMap)) {
     console.log(`SKIP ${file}: not found`);
     continue;
   }
-  
+
   let content = fs.readFileSync(filePath, 'utf8');
   const original = content;
   let fileFixCount = 0;
   let missed = [];
-  
+
   for (const [search, replace] of fixes) {
     if (content.includes(search)) {
       content = content.split(search).join(replace);
       fileFixCount++;
     } else {
-      missed.push(search.substring(0, 30).replace(/\ufffd/g, 'FFFD'));
+      // Show truncated search for debugging
+      const s = search.substring(0, 40).replace(/\ufffd/g, '[FFFD]');
+      missed.push(s);
     }
   }
-  
+
   if (content !== original) {
     fs.writeFileSync(filePath, content, 'utf8');
-    console.log(`${file}: ${fileFixCount} applied`);
-    if (missed.length > 0) console.log(`  missed: ${missed.join('; ')}`);
+    console.log(`${file}: ${fileFixCount} fixed`);
+    if (missed.length > 0) console.log(`  missed: ${missed.join(' | ')}`);
     totalFixed += fileFixCount;
   } else {
-    console.log(`${file}: no changes (${missed.length} patterns not found)`);
-    if (missed.length > 0) console.log(`  missed: ${missed.join('; ')}`);
+    if (missed.length > 0) {
+      console.log(`${file}: 0 fixed, ${missed.length} missed`);
+      console.log(`  missed: ${missed.join(' | ')}`);
+    } else {
+      console.log(`${file}: already clean`);
+    }
   }
 }
 
 console.log(`\nTotal: ${totalFixed} replacements`);
+
+// Verification: scan for remaining \ufffd
+console.log('\n--- Verification: remaining \\ufffd ---');
+let remaining = 0;
+for (const file of fs.readdirSync(baseDir).filter(f => f.endsWith('.vue'))) {
+  const c = fs.readFileSync(path.join(baseDir, file), 'utf8');
+  const count = (c.match(/\ufffd/g) || []).length;
+  if (count > 0) {
+    console.log(`  ${file}: ${count} remaining`);
+    remaining += count;
+  }
+}
+if (remaining === 0) console.log('  All clean!');
+else console.log(`  Total remaining: ${remaining}`);

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// 管理后台：违规记录管�?definePageMeta({ layout: 'admin', middleware: 'admin' })
+// 管理后台：违规记录管理
+definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 import { ShieldAlert } from '@lucide/vue'
 

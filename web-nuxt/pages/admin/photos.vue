@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// 管理后台：图片管�?definePageMeta({ layout: 'admin', middleware: 'admin' })
+// 管理后台：图片管理
+definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 import { Search, Trash2 } from '@lucide/vue'
 
@@ -43,7 +44,7 @@ function fmtTime(s: any) {
   <div>
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-2xl font-bold text-foreground">图片管理</h1>
-      <span class="text-sm text-muted-foreground">共 {{ meta?.total ?? photos.length }} �?/span>
+      <span class="text-sm text-muted-foreground">共 {{ meta?.total ?? photos.length }} 张</span>
     </div>
 
     <div class="mb-4 flex gap-2">
@@ -51,7 +52,7 @@ function fmtTime(s: any) {
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           v-model="keyword"
-          placeholder="搜索文件名/原始名
+          placeholder="搜索文件名/原始名"
           class="pl-9"
           @keyup.enter="() => refresh()"
         />

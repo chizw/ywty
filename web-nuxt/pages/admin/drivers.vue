@@ -42,7 +42,8 @@ const providerLabel: Record<string, string> = {
   aliyun_sms: '阿里云短信',
 }
 
-// 短信测试发�?const smsTest = reactive({ to: '', body: '【测试】您的验证码�?123456' })
+// 短信测试发送
+const smsTest = reactive({ to: '', body: '【测试】您的验证码：123456' })
 const smsBusy = ref(false)
 async function testSMS() {
   if (!smsTest.to) {
@@ -52,15 +53,16 @@ async function testSMS() {
   smsBusy.value = true
   try {
     await api.post('/api/v1/verify-codes/sms', { phone: smsTest.to, purpose: 'test' })
-    message.success('短信发送请求已提交（请查看日志/上游）)
+    message.success('短信发送请求已提交（请查看日志/上游）')
   } catch (err: any) {
-    message.error(err?.statusMessage || '发送失�?)
+    message.error(err?.statusMessage || '发送失败')
   } finally {
     smsBusy.value = false
   }
 }
 
-// 邮件测试发�?const mailTest = reactive({ to: '', subject: '【测试】邮件通知', text: '这是一封来�?云雾图驿 的测试邮件。? })
+// 邮件测试发送
+const mailTest = reactive({ to: '', subject: '【测试】邮件通知', text: '这是一封来自云雾图驿的测试邮件。' })
 const mailBusy = ref(false)
 async function testMail() {
   if (!mailTest.to) {
@@ -72,7 +74,7 @@ async function testMail() {
     await api.post('/api/v1/verify-codes/email', { email: mailTest.to, purpose: 'test' })
     message.success('邮件发送请求已提交')
   } catch (err: any) {
-    message.error(err?.statusMessage || '发送失�?)
+    message.error(err?.statusMessage || '发送失败')
   } finally {
     mailBusy.value = false
   }
@@ -94,7 +96,7 @@ function prettyName(name: string) {
     </div>
 
     <p class="text-sm text-muted-foreground mb-6">
-      系统所有可用的扩展驱动列表。存储策略详情见 <NuxtLink to="/admin/storage" class="text-primary underline">存储策略</NuxtLink>�?      驱动实际配置来自 <code class="text-xs bg-muted px-1 py-0.5 rounded">configs/config.yaml</code> 或环境变量（<code class="text-xs bg-muted px-1 py-0.5 rounded">YWTY_*</code>）�?    </p>
+      系统所有可用的扩展驱动列表。存储策略详情见 <NuxtLink to="/admin/storage" class="text-primary underline">存储策略</NuxtLink>。      驱动实际配置来自 <code class="text-xs bg-muted px-1 py-0.5 rounded">configs/config.yaml</code> 或环境变量（<code class="text-xs bg-muted px-1 py-0.5 rounded">YWTY_*</code>）    </p>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <Card>
@@ -108,7 +110,7 @@ function prettyName(name: string) {
             <Badge v-for="d in (drivers.storage ?? [])" :key="`s-${d}`" variant="outline">
               {{ prettyName(d) }}
             </Badge>
-            <span v-if="!(drivers.storage ?? []).length" class="text-xs text-muted-foreground">�?/span>
+            <span v-if="!(drivers.storage ?? []).length" class="text-xs text-muted-foreground">无</span>
           </div>
         </CardContent>
       </Card>
@@ -124,7 +126,7 @@ function prettyName(name: string) {
             <Badge v-for="d in (drivers.sms ?? [])" :key="`sms-${d}`" variant="outline">
               {{ prettyName(d) }}
             </Badge>
-            <span v-if="!(drivers.sms ?? []).length" class="text-xs text-muted-foreground">�?/span>
+            <span v-if="!(drivers.sms ?? []).length" class="text-xs text-muted-foreground">无</span>
           </div>
         </CardContent>
       </Card>
@@ -140,7 +142,7 @@ function prettyName(name: string) {
             <Badge v-for="d in (drivers.mail ?? [])" :key="`mail-${d}`" variant="outline">
               {{ prettyName(d) }}
             </Badge>
-            <span v-if="!(drivers.mail ?? []).length" class="text-xs text-muted-foreground">�?/span>
+            <span v-if="!(drivers.mail ?? []).length" class="text-xs text-muted-foreground">无</span>
           </div>
         </CardContent>
       </Card>
@@ -156,7 +158,7 @@ function prettyName(name: string) {
             <Badge v-for="d in (drivers.social ?? [])" :key="`so-${d}`" variant="outline">
               {{ prettyName(d) }}
             </Badge>
-            <span v-if="!(drivers.social ?? []).length" class="text-xs text-muted-foreground">�?/span>
+            <span v-if="!(drivers.social ?? []).length" class="text-xs text-muted-foreground">无</span>
           </div>
         </CardContent>
       </Card>
@@ -172,7 +174,7 @@ function prettyName(name: string) {
             <Badge v-for="d in (drivers.scan ?? [])" :key="`sc-${d}`" variant="outline">
               {{ prettyName(d) }}
             </Badge>
-            <span v-if="!(drivers.scan ?? []).length" class="text-xs text-muted-foreground">�?/span>
+            <span v-if="!(drivers.scan ?? []).length" class="text-xs text-muted-foreground">无</span>
           </div>
         </CardContent>
       </Card>
@@ -188,7 +190,7 @@ function prettyName(name: string) {
             <Badge v-for="d in (drivers.process ?? [])" :key="`pr-${d}`" variant="outline">
               {{ prettyName(d) }}
             </Badge>
-            <span v-if="!(drivers.process ?? []).length" class="text-xs text-muted-foreground">�?/span>
+            <span v-if="!(drivers.process ?? []).length" class="text-xs text-muted-foreground">无</span>
           </div>
         </CardContent>
       </Card>
@@ -198,7 +200,7 @@ function prettyName(name: string) {
       <Card>
         <CardContent class="p-4">
           <h3 class="font-semibold text-foreground mb-3">短信测试</h3>
-          <p class="text-xs text-muted-foreground mb-3">通过短信验证码接口触发一次发送（请确保已配置 SMS provider�?/p>
+          <p class="text-xs text-muted-foreground mb-3">通过短信验证码接口触发一次发送（请确保已配置 SMS provider）</p>
           <div class="flex gap-2">
             <Input v-model="smsTest.to" placeholder="手机号" class="flex-1" />
             <Button :loading="smsBusy" @click="testSMS">发送</Button>
@@ -208,10 +210,10 @@ function prettyName(name: string) {
       <Card>
         <CardContent class="p-4">
           <h3 class="font-semibold text-foreground mb-3">邮件测试</h3>
-          <p class="text-xs text-muted-foreground mb-3">通过邮件验证码接口触发一次发�?/p>
+          <p class="text-xs text-muted-foreground mb-3">通过邮件验证码接口触发一次发送</p>
           <div class="flex gap-2">
             <Input v-model="mailTest.to" placeholder="收件人邮箱" class="flex-1" />
-            <Button :loading="mailBusy" @click="testMail">发�?/Button>
+            <Button :loading="mailBusy" @click="testMail">发送</Button>
           </div>
         </CardContent>
       </Card>

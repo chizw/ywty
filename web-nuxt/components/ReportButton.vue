@@ -75,7 +75,7 @@ async function submit() {
           v-model="reason"
           :rows="3"
           :maxlength="200"
-          placeholder="如：违规、色情、侵权�?
+          placeholder="如：违规、色情、侵权"
         />
         <p v-if="msg" class="text-sm" :class="msg.includes('失败') ? 'text-destructive' : 'text-primary'">{{ msg }}</p>
         <DialogFooter>

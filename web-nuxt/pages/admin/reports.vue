@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// 管理后台：举报管�?definePageMeta({ layout: 'admin', middleware: 'admin' })
+// 管理后台：举报管理
+definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 import { Flag, Filter } from '@lucide/vue'
 
@@ -74,7 +75,7 @@ function fmtTime(s: any) {
                   {{ r.status }}
                 </Badge>
               </div>
-              <div class="mt-1 text-sm text-foreground">{{ r.content || '（无说明�? }}</div>
+              <div class="mt-1 text-sm text-foreground">{{ r.content || '（无说明）' }}</div>
               <div class="mt-1 text-xs text-muted-foreground">
                 举报人#{{ r.report_user_id || '-' }} · {{ r.ip_address || '-' }} · {{ fmtTime(r.created_at) }}
                 <span v-if="r.handled_at"> · 处理于{{ fmtTime(r.handled_at) }}</span>

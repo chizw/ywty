@@ -8,13 +8,13 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@pinia/nuxt',
     '@nuxtjs/i18n',
-    'shadcn-nuxt',
   ],
 
-  shadcn: {
-    prefix: '',
-    componentDir: '@/components/ui',
-  },
+  // shadcn-vue UI 组件无前缀自动导入
+  components: [
+    { path: '~/components/ui', prefix: '' },
+    '~/components',
+  ],
 
   // i18n（P8 阶段启用）
   i18n: {

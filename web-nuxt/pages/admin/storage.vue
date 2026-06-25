@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// 管理后台：存储策略管理（增删改查�?definePageMeta({ layout: 'admin', middleware: 'admin' })
+// 管理后台：存储策略管理（增删改查）
+definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 import { Plus, Pencil, Trash2 } from '@lucide/vue'
 
@@ -72,10 +73,10 @@ async function submit() {
   try {
     if (editing.value) {
       await api.patch(`/api/v1/admin/storage/update/${editing.value.id}`, body)
-      message.success('已更�?)
+      message.success('已更新')
     } else {
       await api.post('/api/v1/admin/storage/create', body)
-      message.success('已创�?)
+      message.success('已创建')
     }
     showCreate.value = false
     refresh()
@@ -95,7 +96,7 @@ async function doRemove() {
   if (!confirmRow.value) return
   try {
     await api.del(`/api/v1/admin/storage/delete/${confirmRow.value.id}`)
-    message.success('已删�?)
+    message.success('已删除')
     confirmRow.value = null
     refresh()
   } catch (err: any) {
@@ -131,10 +132,11 @@ function providerLabel(name: string) {
 
     <p class="text-sm text-muted-foreground mb-4">
       系统支持 {{ drivers.length }} 种存储驱动。配置后将保存到 <code class="text-xs bg-muted px-1 py-0.5 rounded">storages</code> 表，
-      供用户上传、跨存储复制等场景按策略 ID 调用�?    </p>
+      供用户上传、跨存储复制等场景按策略 ID 调用。    </p>
 
     <div v-if="rows.length === 0" class="border border-dashed border-border rounded-lg p-8 text-center text-sm text-muted-foreground">
-      暂无存储策略，点击右上角"新建策略"开始�?    </div>
+      暂无存储策略，点击右上角"新建策略"开始。
+    </div>
     <Card v-else>
       <Table>
         <TableHeader>
@@ -187,7 +189,7 @@ function providerLabel(name: string) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem v-for="d in drivers" :key="d" :value="d">{{ providerLabel(d) }}（{{ d }}�?/SelectItem>
+                <SelectItem v-for="d in drivers" :key="d" :value="d">{{ providerLabel(d) }}（{{ d }}）</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -200,14 +202,14 @@ function providerLabel(name: string) {
             <Input v-model="form.intro" />
           </div>
           <div>
-            <Label class="mb-1.5 block">Options（JSON�?/Label>
+            <Label class="mb-1.5 block">Options（JSON）</Label>
             <Textarea
               v-model="form.options_text"
               :rows="6"
               class="font-mono text-xs"
               placeholder='{"endpoint": "https://oss-cn-hangzhou.aliyuncs.com", "bucket": "my-bucket", "access_key": "***", "secret_key": "***"}'
             />
-            <p class="mt-1 text-xs text-muted-foreground">不同驱动的 options 字段不同，参考驱动文档填写�?/p>
+            <p class="mt-1 text-xs text-muted-foreground">不同驱动的 options 字段不同，参考驱动文档填写。</p>
           </div>
         </div>
         <DialogFooter>
