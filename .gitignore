@@ -104,6 +104,15 @@ coverage.xml
 *.dmg
 *.pkg
 
+# ---------- 个人调试脚本 / 临时产物 ----------
+cookies.txt
+debug_fix.js
+fix_encoding.js
+scan*.js
+scan*_output.txt
+test-auth.js
+refresh.json
+
 # ---------- 测试 / 临时文件 ----------
 tmp/
 temp/
