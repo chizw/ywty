@@ -1,0 +1,54 @@
+app:
+  name: "云雾图驿"
+  env: "dev"
+  host: "0.0.0.0"
+  port: 3000
+  timezone: "Asia/Shanghai"
+  base_url: "http://localhost:3000"
+
+database:
+  driver: "sqlite"
+  path: "./data/ywty.db"
+  max_open_conns: 100
+  max_idle_conns: 10
+
+redis:
+  addr: "127.0.0.1:6379"
+  password: null
+  db: 0
+
+auth:
+  jwt:
+    secret: "please-change-me-in-production-please-change-me"
+    access_expire: 7200
+    refresh_expire: 2592000
+
+storage:
+  driver: "local"
+  root: "./uploads"
+  url: "http://localhost:3000/uploads"
+
+queue:
+  concurrency: 10
+  queues:
+    - critical
+    - default
+    - low
+
+ratelimit:
+  enable: true
+  upload_per_minute: 60
+  api_per_minute: 300
+
+notify:
+  mail:
+    driver: "smtp"
+    host: "smtp.example.com"
+    port: 587
+    username: "noreply@example.com"
+    password: "your-password"
+    from: "云雾图驿 <noreply@example.com>"
+  sms:
+    driver: "aliyun"
+    access_key: ""
+    secret_key: ""

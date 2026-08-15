@@ -1,0 +1,12 @@
+[package]
+name = "api"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+# 薄二进制壳：仅运行时所需的最小集合，业务逻辑均在 core_lib 库中
+tokio.workspace = true
+anyhow.workspace = true
+
+# 本地 crates
+core_lib = { path = "../core_lib" }
