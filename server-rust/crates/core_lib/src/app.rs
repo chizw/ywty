@@ -47,6 +47,14 @@ impl AppState {
             .clone()
             .unwrap_or_else(|| "./uploads".to_string());
 
+        // 构建邮件服务
+        let mail_svc = config
+            .notify
+            .as_ref()
+            .and_then(|n| n.mail.as_ref())
+            .map(|mail_cfg| crate::services::mail::MailService::new(mail_cfg))
+            .unwrap_or_else(crate::services::mail::MailService::disabled);
+
         Ok(Self {
             config: Arc::new(config),
             db: db_pool.clone(),
@@ -54,6 +62,7 @@ impl AppState {
             auth_svc: crate::services::auth::AuthService::new(
                 db_pool.clone(),
                 jwt.as_ref().clone(),
+                mail_svc,
             ),
             user_svc: crate::services::user::UserService::new(db_pool.clone()),
             photo_svc: crate::services::photo::PhotoService::new(

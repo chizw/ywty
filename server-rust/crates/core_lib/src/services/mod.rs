@@ -2,6 +2,7 @@
 
 pub mod album;
 pub mod auth;
+pub mod mail;
 pub mod photo;
 pub mod storage;
 pub mod user;
