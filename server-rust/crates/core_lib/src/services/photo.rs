@@ -117,6 +117,24 @@ impl PhotoService {
         md5: Option<&str>,
         album_id: Option<i64>,
     ) -> AppResult<UploadResponse> {
+        self.create_with_thumbnail(user_id, filename, original_name, path, size, mime_type, width, height, md5, album_id, None).await
+    }
+
+    /// 创建图片记录（带缩略图）
+    pub async fn create_with_thumbnail(
+        &self,
+        user_id: i64,
+        filename: &str,
+        original_name: &str,
+        path: &str,
+        size: i64,
+        mime_type: &str,
+        width: Option<i32>,
+        height: Option<i32>,
+        md5: Option<&str>,
+        album_id: Option<i64>,
+        thumbnail_url: Option<&str>,
+    ) -> AppResult<UploadResponse> {
         let uuid = Uuid::new_v4().to_string();
         let url = format!("{}/{}", self.public_url_prefix.trim_end_matches('/'), path);
         let now = Utc::now().to_rfc3339();
@@ -124,8 +142,8 @@ impl PhotoService {
         let result = sqlx::query(
             r#"
             INSERT INTO photos (uuid, user_id, album_id, filename, original_name, path, url,
-                                size, width, height, mime_type, md5, is_public, status, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, ?, ?)
+                                thumbnail_url, size, width, height, mime_type, md5, is_public, status, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, ?, ?)
             "#,
         )
         .bind(&uuid)
@@ -135,6 +153,7 @@ impl PhotoService {
         .bind(original_name)
         .bind(path)
         .bind(&url)
+        .bind(thumbnail_url)
         .bind(size)
         .bind(width)
         .bind(height)
@@ -151,7 +170,7 @@ impl PhotoService {
             id,
             uuid,
             url,
-            thumbnail_url: None,
+            thumbnail_url: thumbnail_url.map(String::from),
             size,
             width,
             height,

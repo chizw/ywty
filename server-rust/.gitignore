@@ -21,6 +21,11 @@ Cargo.lock
 *.db-wal
 *.db-shm
 
+# Debug wrapper logs
+linker-wrapper.log
+projectswtserver-rustwrapper-debug.log
+projectsywtyserver-rustwrapper-debug.log
+
 # OS
 .DS_Store
 Thumbs.db

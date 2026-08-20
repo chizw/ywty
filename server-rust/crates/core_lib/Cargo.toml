@@ -38,3 +38,4 @@ md5.workspace = true
 
 [dev-dependencies]
 matchit = "0.7"
+http-body-util.workspace = true

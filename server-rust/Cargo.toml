@@ -76,6 +76,9 @@ infer = "0.16"
 # MD5 hashing
 md5 = "0.7"
 
+# Integration test utilities
+http-body-util = "0.1"
+
 [profile.release]
 opt-level = 3
 lto = true
@@ -84,3 +87,4 @@ strip = true
 
 [profile.dev]
 opt-level = 0
+
