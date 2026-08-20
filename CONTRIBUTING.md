@@ -10,7 +10,7 @@
 
 ## 🐛 报告 Bug
 
-1. 先在 [Issues](https://github.com/scfcn/ywty/issues) 搜索是否已有相关报告
+1. 先在 [Issues](https://github.com/chizw/ywty/issues) 搜索是否已有相关报告
 2. 使用 [Bug Report 模板](./.github/ISSUE_TEMPLATE/bug_report.yml) 提交
 3. 描述应包含：
    - 复现步骤（尽量具体）
@@ -20,7 +20,7 @@
 
 ## 💡 提议新功能
 
-1. 先在 [Discussions](https://github.com/scfcn/ywty/discussions) 发起讨论
+1. 先在 [Discussions](https://github.com/chizw/ywty/discussions) 发起讨论
 2. 确认方向后使用 [Feature Request 模板](./.github/ISSUE_TEMPLATE/feature_request.yml) 提交 Issue
 3. 等待维护者反馈后再开始编码
 
@@ -77,7 +77,7 @@ docs(readme): 更新 Docker Compose 启动说明
 - 提交前跑 `go vet ./...`
 - 业务错误请使用 [`internal/errors`](./server/internal/errors) 的业务错误码
 - 模型变更必须同步更新 GORM 迁移
-- 优先使用 [接口+注册表](https://github.com/scfcn/ywty/blob/main/REFACTOR_PLAN.md) 模式扩展驱动
+- 优先使用 [接口+注册表](https://github.com/chizw/ywty/blob/main/REFACTOR_PLAN.md) 模式扩展驱动
 - 敏感配置（密钥、AK/SK）必须通过环境变量传入，不允许硬编码
 
 ### 前端（Nuxt 3 + TypeScript）
@@ -110,7 +110,7 @@ docs(readme): 更新 Docker Compose 启动说明
 
 ## 💬 联系方式
 
-- 一般问题：[Discussions](https://github.com/scfcn/ywty/discussions)
+- 一般问题：[Discussions](https://github.com/chizw/ywty/discussions)
 - 安全问题：见 [SECURITY.md](./SECURITY.md)（**不要**在公开 Issue 中讨论）
 
 ---
