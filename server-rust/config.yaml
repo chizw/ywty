@@ -19,7 +19,7 @@ redis:
 
 auth:
   jwt:
-    secret: "please-change-me-in-production-please-change-me"
+    secret: "3L1gLvGLYRE/0w8gCYh2umacO7AH+avXgOdnyaJYrDEqHpfdi1BgsswoHefp2XyW"
     access_expire: 7200
     refresh_expire: 2592000
 
