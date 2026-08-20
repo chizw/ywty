@@ -6,9 +6,9 @@
 
 ## 📮 报告方式
 
-- **邮件**：`security@scfcn.dev`（首选）
+- **邮件**：`security@chizw.dev`（首选）
 - **GitHub Private Vulnerability Reporting**：
-  <https://github.com/scfcn/ywty/security/advisories/new>
+  <https://github.com/chizw/ywty/security/advisories/new>
 
 请在报告中尽量提供：
 

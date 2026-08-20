@@ -4,14 +4,14 @@
 
 **自托管图床 / 云相册 · Go + Nuxt 重构版**
 
-[![GitHub release](https://img.shields.io/github/v/release/scfcn/ywty?label=release&style=flat-square)](https://github.com/scfcn/ywty/releases)
-[![License](https://img.shields.io/github/license/scfcn/ywty?style=flat-square)](./LICENSE.md)
+[![GitHub release](https://img.shields.io/github/v/release/chizw/ywty?label=release&style=flat-square)](https://github.com/chizw/ywty/releases)
+[![License](https://img.shields.io/github/license/chizw/ywty?style=flat-square)](./LICENSE.md)
 [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev)
 [![Nuxt](https://img.shields.io/badge/Nuxt-3-00DC82?style=flat-square&logo=nuxt.js&logoColor=white)](https://nuxt.com)
 [![shadcn--vue](https://img.shields.io/badge/shadcn--vue-000000?style=flat-square&logo=shadcnui&logoColor=white)](https://shadcn-vue.com)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/scfcn/ywty/ci.yml?label=CI&style=flat-square)](https://github.com/scfcn/ywty/actions)
-[![Stars](https://img.shields.io/github/stars/scfcn/ywty?style=flat-square)](https://github.com/scfcn/ywty/stargazers)
-[![Forks](https://img.shields.io/github/forks/scfcn/ywty?style=flat-square)](https://github.com/scfcn/ywty/network/members)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/chizw/ywty/ci.yml?label=CI&style=flat-square)](https://github.com/chizw/ywty/actions)
+[![Stars](https://img.shields.io/github/stars/chizw/ywty?style=flat-square)](https://github.com/chizw/ywty/stargazers)
+[![Forks](https://img.shields.io/github/forks/chizw/ywty?style=flat-square)](https://github.com/chizw/ywty/network/members)
 
 [English](./README.en.md) · 简体中文
 
@@ -295,7 +295,7 @@ npm run test
 
 如果这个项目对你有帮助，请给我们一个 ⭐ 鼓励！你的支持是项目持续迭代的最大动力。
 
-[![Star History Chart](https://api.star-history.com/svg?repos=scfcn/ywty&type=Date)](https://star-history.com/#scfcn/ywty&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=chizw/ywty&type=Date)](https://star-history.com/#chizw/ywty&Date)
 
 ## 📐 API 约定
 

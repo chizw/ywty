@@ -1,6 +1,6 @@
 services:
   ywty:
-    image: ghcr.io/scfcn/ywty:latest
+    image: ghcr.io/chizw/ywty:latest
     restart: unless-stopped
     volumes:
       - ./data:/data

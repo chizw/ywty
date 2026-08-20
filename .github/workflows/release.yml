@@ -103,8 +103,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ghcr.io/scfcn/ywty:latest
-            ghcr.io/scfcn/ywty:v${{ inputs.version }}
+            ghcr.io/chizw/ywty:latest
+            ghcr.io/chizw/ywty:v${{ inputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
@@ -133,7 +133,7 @@ jobs:
           git log "$PREV_TAG"..HEAD --pretty=format:"- %s (%h)" >> $GITHUB_OUTPUT
           echo "" >> $GITHUB_OUTPUT
           echo "" >> $GITHUB_OUTPUT
-          echo "**Full Changelog**: https://github.com/scfcn/ywty/compare/$PREV_TAG...v${{ inputs.version }}" >> $GITHUB_OUTPUT
+          echo "**Full Changelog**: https://github.com/chizw/ywty/compare/$PREV_TAG...v${{ inputs.version }}" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create and push tag
