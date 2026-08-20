@@ -8,16 +8,18 @@ use crate::dto::auth::{AuthResponse, UserBrief};
 use crate::auth::password::{hash_password, verify_password};
 use crate::auth::JwtAuth;
 use crate::error::{AppError, AppResult};
+use crate::services::mail::MailService;
 
 #[derive(Clone)]
 pub struct AuthService {
     pool: SqlitePool,
     jwt: JwtAuth,
+    mail: MailService,
 }
 
 impl AuthService {
-    pub fn new(pool: SqlitePool, jwt: JwtAuth) -> Self {
-        Self { pool, jwt }
+    pub fn new(pool: SqlitePool, jwt: JwtAuth, mail: MailService) -> Self {
+        Self { pool, jwt, mail }
     }
 
     /// 用户注册
@@ -285,9 +287,9 @@ impl AuthService {
         })
     }
 
-    /// 发送验证码（简化实现：生成 6 位数字码并存储）
+    /// 发送验证码（生成 6 位数字码并通过邮件发送）
     pub async fn send_verify_code(&self, email: &str, event: &str) -> AppResult<String> {
-        // 简单数字验证码
+        // 生成 6 位数字验证码
         let code = format!("{:06}", rand::random::<u32>() % 1_000_000);
         let now_ts = Utc::now().timestamp();
         let expired_at = now_ts + 300; // 5 分钟过期
@@ -305,9 +307,15 @@ impl AuthService {
         .execute(&self.pool)
         .await?;
 
-        // TODO: 实际发送邮件（对接 mail 驱动）
-        tracing::info!(email = %email, event = %event, "验证码已生成（未实际发送）: {}", code);
+        // 通过邮件发送验证码
+        if let Err(e) = self.mail.send_verify_code(email, &code, event).await {
+            tracing::warn!(email = %email, error = %e, "邮件发送失败，但验证码已生成");
+            // 邮件发送失败不影响验证码生成，仅记录日志
+        } else {
+            tracing::info!(email = %email, event = %event, "验证码邮件已发送");
+        }
 
-        Ok(code) // 实际生产环境不应返回验证码，此处便于开发测试
+        // 注意：生产环境不应返回验证码，此处便于开发调试
+        Ok(code)
     }
 }

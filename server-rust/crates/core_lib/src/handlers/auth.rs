@@ -1,7 +1,9 @@
 //! 认证处理器
 
-use axum::extract::State;
+use axum::extract::{State};
 use axum::Json;
+
+use chrono::Utc;
 
 use crate::error::AppResult;
 
@@ -10,6 +12,7 @@ use crate::dto::auth::{
     SendVerifyCodeRequest,
 };
 use crate::handlers::validate_req;
+use crate::utils::captcha::generate_captcha;
 use crate::AppState;
 use crate::handlers::CurrentUser;
 
@@ -79,21 +82,84 @@ pub async fn me(
     }))
 }
 
-/// 获取验证码（占位实现）
-pub async fn get_captcha() -> AppResult<Json<CaptchaResponse>> {
-    // TODO: 对接图片验证码生成
+/// 获取图片验证码
+///
+/// 生成 4 位字符的扭曲 PNG 图片，存储到 DB，返回 base64 图片 + captcha_id。
+pub async fn get_captcha(
+    State(state): State<AppState>,
+) -> AppResult<Json<CaptchaResponse>> {
+    let captcha = generate_captcha()?;
+    let captcha_id = captcha.id.clone();
+    let code = captcha.code.clone();
+    let image_base64 = captcha.image_base64.clone();
+    let expires_in = captcha.expires_in;
+
+    // 存储到 DB
+    let now_ts = Utc::now().timestamp();
+    let expired_at = now_ts + expires_in as i64;
+
+    sqlx::query(
+        r#"
+        INSERT INTO captchas (captcha_id, code, expired_at, created_at)
+        VALUES (?, ?, ?, datetime('now'))
+        "#,
+    )
+    .bind(&captcha_id)
+    .bind(code.to_lowercase())
+    .bind(expired_at)
+    .execute(&state.db)
+    .await
+    .map_err(|e| crate::error::AppError::Internal(format!("存储验证码失败: {}", e)))?;
+
     Ok(Json(CaptchaResponse {
-        captcha_id: "placeholder".to_string(),
-        captcha_image: String::new(),
-        expires_in: 300,
+        captcha_id,
+        captcha_image: image_base64,
+        expires_in,
     }))
 }
 
-/// 校验验证码（占位实现）
+/// 校验图片验证码（不区分大小写，验证后标记为已使用）
 pub async fn verify_captcha(
-    Json(_req): Json<CaptchaVerifyRequest>,
+    State(state): State<AppState>,
+    Json(req): Json<CaptchaVerifyRequest>,
 ) -> AppResult<Json<serde_json::Value>> {
-    Ok(Json(serde_json::json!({ "valid": true })))
+    let now_ts = Utc::now().timestamp();
+
+    // 查询验证码
+    let row: Option<(i64, String, Option<i64>)> = sqlx::query_as(
+        "SELECT id, code, used_at FROM captchas WHERE captcha_id = ? AND expired_at > ? ORDER BY id DESC LIMIT 1"
+    )
+    .bind(&req.captcha_id)
+    .bind(now_ts)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|e| crate::error::AppError::Internal(format!("查询验证码失败: {}", e)))?;
+
+    let (db_id, stored_code, used_at) = match row {
+        Some(r) => r,
+        None => {
+            return Ok(Json(serde_json::json!({ "valid": false })));
+        }
+    };
+
+    // 检查是否已使用
+    if used_at.is_some() {
+        return Ok(Json(serde_json::json!({ "valid": false })));
+    }
+
+    // 不区分大小写比对
+    let valid = stored_code == req.captcha_code.to_lowercase();
+
+    if valid {
+        // 标记为已使用
+        let _ = sqlx::query("UPDATE captchas SET used_at = ? WHERE id = ?")
+            .bind(now_ts)
+            .bind(db_id)
+            .execute(&state.db)
+            .await;
+    }
+
+    Ok(Json(serde_json::json!({ "valid": valid })))
 }
 
 /// 发送验证码（邮件）
