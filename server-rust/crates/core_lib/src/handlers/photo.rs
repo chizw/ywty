@@ -187,21 +187,28 @@ pub async fn upload(
     // 写入文件
     fs::write(&absolute_path, &file_data).await?;
 
-    // 获取图片尺寸
+    // 获取图片尺寸并生成缩略图
     use std::io::Cursor;
-    let (width, height) = match image::io::Reader::new(Cursor::new(&file_data)).with_guessed_format() {
+    let (width, height, thumbnail_path) = match image::io::Reader::new(Cursor::new(&file_data)).with_guessed_format() {
         Ok(reader) => match reader.into_dimensions() {
-            Ok((w, h)) => (Some(w as i32), Some(h as i32)),
-            Err(_) => (None, None),
+            Ok((w, h)) => {
+                // 生成缩略图（最大 300x300，保持比例）
+                let thumb_path = generate_thumbnail(&file_data, &absolute_dir, &stored_filename, &upload_root, w, h);
+                (Some(w as i32), Some(h as i32), thumb_path)
+            }
+            Err(_) => (None, None, None),
         },
-        Err(_) => (None, None),
+        Err(_) => (None, None, None),
     };
 
     // 创建数据库记录
     let url = format!("{}/{}", public_url.trim_end_matches('/'), relative_path);
+    let thumbnail_url = thumbnail_path.as_ref().map(|p| {
+        format!("{}/{}", public_url.trim_end_matches('/'), p)
+    });
     let photo = state
         .photo_svc
-        .create(
+        .create_with_thumbnail(
             user_id,
             &stored_filename,
             &original_name,
@@ -212,6 +219,7 @@ pub async fn upload(
             height,
             Some(&md5_hash),
             album_id,
+            thumbnail_url.as_deref(),
         )
         .await?;
 
@@ -294,6 +302,51 @@ pub async fn copy(
 ) -> AppResult<Json<crate::dto::photo::UploadResponse>> {
     let photo = state.photo_svc.copy(user_id, photo_id, req.album_id).await?;
     Ok(Json(photo))
+}
+
+/// 生成缩略图（最大 300x300，保持比例）
+fn generate_thumbnail(
+    image_data: &[u8],
+    store_dir: &std::path::Path,
+    original_filename: &str,
+    upload_root: &str,
+    orig_width: u32,
+    orig_height: u32,
+) -> Option<String> {
+    use image::imageops::FilterType;
+
+    const THUMB_MAX: u32 = 300;
+
+    // 如果原图已经小于缩略图尺寸，不需要生成
+    if orig_width <= THUMB_MAX && orig_height <= THUMB_MAX {
+        return None;
+    }
+
+    // 计算缩略图尺寸（保持比例）
+    let (thumb_w, thumb_h) = if orig_width > orig_height {
+        let w = THUMB_MAX;
+        let h = (orig_height * THUMB_MAX) / orig_width;
+        (w, h)
+    } else {
+        let h = THUMB_MAX;
+        let w = (orig_width * THUMB_MAX) / orig_height;
+        (w, h)
+    };
+
+    // 解码并缩放图片
+    let img = image::load_from_memory(image_data).ok()?;
+    let thumbnail = img.resize(thumb_w, thumb_h, FilterType::Lanczos3);
+
+    // 缩略图路径：原目录/thumb_{filename}
+    let thumb_filename = format!("thumb_{}", original_filename);
+    let thumb_path = store_dir.join(&thumb_filename);
+
+    // 保存缩略图
+    let _ = thumbnail.save(&thumb_path);
+
+    // 返回相对路径
+    let relative = thumb_path.strip_prefix(upload_root).ok()?;
+    Some(relative.to_string_lossy().to_string())
 }
 
 /// 公开探索列表

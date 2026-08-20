@@ -41,7 +41,7 @@ pub struct ResetPasswordRequest {
     pub verify_code: String,
 }
 
-/// 验证码响应（占位，后续对接图片验证码）
+/// 验证码响应（图片验证码，base64 PNG）
 #[derive(Debug, Clone, Serialize)]
 pub struct CaptchaResponse {
     pub captcha_id: String,

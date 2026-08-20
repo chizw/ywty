@@ -1,0 +1,26 @@
+# Git
+.git
+.gitignore
+
+# Rust 构建产物
+target/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# 数据文件（运行时生成）
+data/
+uploads/
+*.db
+
+# 日志
+*.log
+
+# 文档
+*.md
+LICENSE*
+
+# CI
+.github/
