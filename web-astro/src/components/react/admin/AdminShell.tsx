@@ -41,6 +41,7 @@ const NAV = [
 export function AdminShell({ children }: { children: ReactNode }) {
   const user = useAuthStore((s) => s.user)
   const hydrate = useAuthStore((s) => s.hydrate)
+  const fetchMe = useAuthStore((s) => s.fetchMe)
   const logout = useAuthStore((s) => s.logout)
   const site = useSiteInfo()
   const sealChar = site.name.slice(-1)
@@ -50,7 +51,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     hydrate()
     setPath(window.location.pathname)
-  }, [hydrate])
+    // 以服务端为准刷新用户信息：旧 cookie 可能缺少 is_super_admin 等字段，
+    // 否则角色相关操作按钮会因陈旧缓存而不渲染
+    fetchMe()
+  }, [hydrate, fetchMe])
 
   return (
     <div className="flex min-h-screen bg-background">
