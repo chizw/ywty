@@ -236,8 +236,8 @@ async fn seed_admin_user(db: &sqlx::SqlitePool) {
     let now = chrono::Utc::now().to_rfc3339();
     let _ = sqlx::query(
         r#"
-        INSERT INTO users (uuid, username, email, password, role, status, created_at, updated_at)
-        VALUES (?, 'admin', 'admin@ywty.local', ?, 'admin', 1, ?, ?)
+        INSERT INTO users (uuid, username, email, password, role, is_super_admin, status, created_at, updated_at)
+        VALUES (?, 'admin', 'admin@ywty.local', ?, 'admin', 1, 1, ?, ?)
         "#,
     )
     .bind(&uuid)
