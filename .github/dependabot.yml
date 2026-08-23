@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # 前端依赖（web-astro）
+  - package-ecosystem: npm
+    directory: /web-astro
+    schedule:
+      interval: weekly
+    groups:
+      # 安全更新按组打包，减少 PR 数量
+      npm_and_yarn:
+        patterns:
+          - "*"
+    ignore:
+      # astro 主框架与官方集成的大版本升级需要整体迁移（见 issue #5），
+      # 迁移完成前忽略 major，避免产生不可合并的 PR
+      - dependency-name: "astro"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "@astrojs/*"
+        update-types:
+          - "version-update:semver-major"
