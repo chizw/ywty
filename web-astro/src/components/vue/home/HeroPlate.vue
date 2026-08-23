@@ -49,7 +49,7 @@ async function copyMarkdown() {
       </div>
 
       <!-- 标本标签 -->
-      <figcaption class="pt-3">
+      <div class="pt-3">
         <div class="flex items-baseline justify-between gap-2">
           <span class="font-display text-sm font-semibold">晨雾.jpg</span>
           <span class="shrink-0 text-[0.65rem] tabular-nums text-muted-foreground">2.4 MB · 4000×3000</span>
@@ -72,7 +72,7 @@ async function copyMarkdown() {
             {{ copyError ? '复制失败，请手动复制' : copied ? '已复制 ✓' : '复制 Markdown' }}
           </button>
         </div>
-      </figcaption>
+      </div>
     </div>
   </figure>
 </template>
