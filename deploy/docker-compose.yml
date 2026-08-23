@@ -87,7 +87,8 @@ services:
       DB_DRIVER: ${DB_DRIVER:-sqlite}
       DB_PATH: /app/data/ywty.db
       REDIS_ADDR: redis:6379
-      JWT_SECRET: ${JWT_SECRET:-please-change-me-in-production}
+      # 留空则由容器入口脚本自动生成并持久化到数据卷；集群部署请在 .env 固定
+      JWT_SECRET: ${JWT_SECRET:-}
     ports:
       - "3000:3000"
     volumes:

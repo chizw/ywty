@@ -2,6 +2,12 @@ services:
   ywty:
     image: ghcr.io/chizw/ywty:latest
     restart: unless-stopped
+    environment:
+      # 集群多实例或需固定密钥时，在同目录 .env 里设置 JWT_SECRET=...
+      # 留空则由容器入口脚本自动生成并持久化到数据卷（/app/data/.jwt_secret）
+      JWT_SECRET: ${JWT_SECRET:-}
+      # 对外访问地址（生成外链、OAuth 回调），如 https://img.example.com
+      APP_URL: ${APP_URL:-}
     volumes:
       - ./data:/app/data   # 数据库 + 自动生成的 JWT 密钥
       - ./uploads:/app/uploads
