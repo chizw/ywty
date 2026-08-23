@@ -60,12 +60,31 @@ dotenvy = "0.15"
 
 # Image processing
 image = "0.25"
+imageproc = "0.25"
+ab_glyph = "0.2"
+
+# AWS S3 SDK
+aws-sdk-s3 = "1"
+aws-credential-types = "1"
 
 # Email (SMTP)
 lettre = { version = "0.11", features = ["tokio1-native-tls"] }
 
 # Base64 encoding
 base64 = "0.22"
+
+# URL encoding (OAuth redirect URIs)
+urlencoding = "2"
+
+# Cookie handling (OAuth state)
+cookie = "0.18"
+time = "0.3"
+
+# HMAC / SHA for storage driver signing
+hmac = "0.12"
+sha1 = "0.10"
+sha2 = "0.10"
+hex = "0.4"
 
 # Captcha Generation
 captcha = "0.0.9"
@@ -75,6 +94,11 @@ infer = "0.16"
 
 # MD5 hashing
 md5 = "0.7"
+
+# OpenAPI/Swagger
+utoipa = { version = "5", features = ["chrono", "uuid", "preserve_order"] }
+# utoipa-swagger-ui 需要从 GitHub 下载资源，暂时注释掉
+# utoipa-swagger-ui = { version = "8", features = ["axum"] }
 
 # Integration test utilities
 http-body-util = "0.1"

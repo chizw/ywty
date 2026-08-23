@@ -3,6 +3,10 @@ services:
     image: ghcr.io/chizw/ywty:latest
     restart: unless-stopped
     volumes:
-      - ./data:/data
+      - ./data:/app/data   # 数据库 + 自动生成的 JWT 密钥
+      - ./uploads:/app/uploads
     ports:
       - "127.0.0.1:3000:3000"
+
+# 可选配置（全部非必填）：JWT_SECRET / APP_URL / DB_DRIVER 等，
+# 见 .env.example；站点名称、描述、页脚、注册开关等一律在 /admin/settings 后台修改。

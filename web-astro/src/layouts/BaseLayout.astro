@@ -1,0 +1,62 @@
+---
+// 基础布局：head 元信息 + 主题预注入（防 FOUC）+ 全局样式
+// 注：不用 <ClientRouter/>（View Transitions）——它会导致 React/Vue island 在
+// SPA 导航后不注水（点击无响应），dashboard/admin 交互区必须可靠，故保持整页加载。
+import '../styles/global.css'
+import { getSiteInfo } from '../lib/site'
+
+interface Props {
+  title?: string
+  description?: string
+  image?: string
+}
+
+// 站点信息（60s 内存缓存，失败降级默认值）驱动 title / description / og
+const site = await getSiteInfo()
+const {
+  title,
+  description = site.description,
+  image,
+} = Astro.props
+const fullTitle = title ? `${title} · ${site.name}` : `${site.name} · ${site.description}`
+---
+
+<!doctype html>
+<html lang="zh-CN" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {site.keywords && <meta name="keywords" content={site.keywords} />}
+    <meta name="generator" content={Astro.generator} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    {image && <meta property="og:image" content={image} />}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700;900&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <!-- 主题预注入：读取 cookie，避免暗色模式下闪白 -->
+    <script is:inline>
+      ;(function () {
+        try {
+          var m = document.cookie.match(new RegExp('(?:^|;\\s*)' + 'ywty.theme' + '=([^;]*)'))
+          var stored = m ? decodeURIComponent(m[1]).replace(/^"|"$/g, '') : null
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+          var theme = stored || (prefersDark ? 'dark' : 'light')
+          if (theme === 'dark') document.documentElement.classList.add('dark')
+          else document.documentElement.classList.remove('dark')
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

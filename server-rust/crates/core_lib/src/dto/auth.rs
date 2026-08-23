@@ -2,9 +2,10 @@
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 /// 登录/注册 成功响应
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct AuthResponse {
     pub access_token: String,
     pub refresh_token: String,
@@ -14,7 +15,7 @@ pub struct AuthResponse {
 }
 
 /// 用户简要信息（嵌套在 AuthResponse 中）
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct UserBrief {
     pub id: i64,
     pub uuid: String,
@@ -22,17 +23,18 @@ pub struct UserBrief {
     pub email: String,
     pub avatar: Option<String>,
     pub role: String,
+    pub is_super_admin: bool,
     pub created_at: DateTime<Utc>,
 }
 
 /// 刷新令牌请求
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, ToSchema)]
 pub struct RefreshRequest {
     pub refresh_token: String,
 }
 
 /// 重置密码请求
-#[derive(Debug, Clone, Deserialize, validator::Validate)]
+#[derive(Debug, Clone, Deserialize, validator::Validate, ToSchema)]
 pub struct ResetPasswordRequest {
     #[validate(email(message = "邮箱格式不正确"))]
     pub email: String,
@@ -42,7 +44,7 @@ pub struct ResetPasswordRequest {
 }
 
 /// 验证码响应（图片验证码，base64 PNG）
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct CaptchaResponse {
     pub captcha_id: String,
     pub captcha_image: String, // base64 或 URL
@@ -50,14 +52,14 @@ pub struct CaptchaResponse {
 }
 
 /// 验证码校验请求
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, ToSchema)]
 pub struct CaptchaVerifyRequest {
     pub captcha_id: String,
     pub captcha_code: String,
 }
 
 /// 发送验证码请求
-#[derive(Debug, Clone, Deserialize, validator::Validate)]
+#[derive(Debug, Clone, Deserialize, validator::Validate, ToSchema)]
 pub struct SendVerifyCodeRequest {
     #[validate(email(message = "邮箱格式不正确"))]
     pub email: String,

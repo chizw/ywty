@@ -270,12 +270,7 @@ impl AlbumService {
     }
 
     /// 从相册移除图片
-    pub async fn remove_photo(
-        &self,
-        user_id: i64,
-        album_id: i64,
-        photo_id: i64,
-    ) -> AppResult<()> {
+    pub async fn remove_photo(&self, user_id: i64, album_id: i64, photo_id: i64) -> AppResult<()> {
         self.check_ownership(user_id, album_id).await?;
 
         // 删除关联

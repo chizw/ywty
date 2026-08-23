@@ -41,11 +41,10 @@ logs/
 # 部署
 /deploy
 /node_modules
-/web/node_modules
-/web-nuxt/node_modules
-/web-nuxt/.output
-/web-nuxt/dist
-/web-nuxt/.nuxt
+/web-astro/node_modules
+/web-astro/dist
+/web-astro/.astro
+/server-rust/target
 /server/bin
 /server/dist
 /public/hot

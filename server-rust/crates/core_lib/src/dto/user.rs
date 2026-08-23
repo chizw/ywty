@@ -1,11 +1,12 @@
 //! 用户域 DTO
 
 use chrono::{DateTime, Utc};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
+use utoipa::ToSchema;
 
 /// 用户公开资料响应
-#[derive(Debug, Clone, Serialize, FromRow)]
+#[derive(Debug, Clone, Serialize, FromRow, ToSchema)]
 pub struct UserProfile {
     pub id: i64,
     pub uuid: String,
@@ -24,9 +25,25 @@ pub struct UserProfile {
 }
 
 /// 修改邮箱请求（复用验证）
-#[derive(Debug, Clone, serde::Deserialize, validator::Validate)]
+#[derive(Debug, Clone, Deserialize, validator::Validate, ToSchema)]
 pub struct ChangeEmailRequest {
     #[validate(email(message = "邮箱格式不正确"))]
     pub new_email: String,
     pub verify_code: String,
+}
+
+/// 后台用户列表项（不含密码等敏感字段）
+#[derive(Debug, Clone, Serialize, FromRow, ToSchema)]
+pub struct AdminUserResponse {
+    pub id: i64,
+    pub uuid: String,
+    pub username: String,
+    pub email: String,
+    pub avatar: Option<String>,
+    pub role: String,
+    pub is_super_admin: bool,
+    pub status: i32,
+    pub capacity_used: i64,
+    pub capacity_max: i64,
+    pub created_at: DateTime<Utc>,
 }

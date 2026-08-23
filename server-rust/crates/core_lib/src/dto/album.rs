@@ -3,10 +3,11 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
+use utoipa::ToSchema;
 use validator::Validate;
 
 /// 相册响应
-#[derive(Debug, Clone, Serialize, FromRow)]
+#[derive(Debug, Clone, Serialize, FromRow, ToSchema)]
 pub struct AlbumResponse {
     pub id: i64,
     pub uuid: String,
@@ -22,7 +23,7 @@ pub struct AlbumResponse {
 }
 
 /// 创建相册请求
-#[derive(Debug, Clone, Deserialize, Validate)]
+#[derive(Debug, Clone, Deserialize, Validate, ToSchema)]
 pub struct CreateAlbumRequest {
     #[validate(length(min = 1, max = 100, message = "相册名称长度必须在 1-100 之间"))]
     pub name: String,
@@ -31,7 +32,7 @@ pub struct CreateAlbumRequest {
 }
 
 /// 更新相册请求
-#[derive(Debug, Clone, Deserialize, Validate, Default)]
+#[derive(Debug, Clone, Deserialize, Validate, Default, ToSchema)]
 pub struct UpdateAlbumRequest {
     #[validate(length(min = 1, max = 100, message = "相册名称长度必须在 1-100 之间"))]
     pub name: Option<String>,
@@ -41,7 +42,7 @@ pub struct UpdateAlbumRequest {
 }
 
 /// 添加图片到相册请求
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, ToSchema)]
 pub struct AddPhotoToAlbumRequest {
     pub photo_ids: Vec<i64>,
 }

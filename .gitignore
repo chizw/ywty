@@ -2,32 +2,31 @@
 # ywty .gitignore
 # =========================================
 
-# ---------- 部署 / 构建产物 ----------
-deploy/
+# ---------- 构建产物 ----------
 bin/
 dist/
 build/
-.output/
 .next/
-.nuxt/
 .turbo/
 
 # ---------- 日志 ----------
 *.log
 logs/
 
-# ---------- 数据库 ----------
+# ---------- 数据库 / 运行时数据 ----------
 *.db
 *.sqlite
 *.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
 storage/
-!server/storage/.gitkeep
+uploads/
 
 # ---------- 环境配置 ----------
 .env
-.env.local
-.env.*.local
-.env.production
+.env.*
+!.env.example
 
 # ---------- IDE / 编辑器 ----------
 .idea/
@@ -57,35 +56,11 @@ bower_components/
 .eslintcache
 .stylelintcache
 
-# ---------- Go 产物 ----------
-# 可执行文件
-*.exe
-*.exe~
-*.dll
-*.dylib
-*.so
-*.dll
-*.test
-*.out
-# 允许提交的二进制
-!server/bin/.gitkeep
-
-# 覆盖率
-coverage.out
-coverage.html
-coverage.xml
-*.coverprofile
-
-# ---------- Laravel 残留（重构过程保留兼容） ----------
-/bootstrap/cache/*
-!/bootstrap/cache/.gitkeep
-/public/build/
-/public/hot
-/public/storage
-/storage/*.key
-/storage/logs
-.phpunit.result.cache
-.phpunit.cache/
+# ---------- Rust 产物 ----------
+target/
+*.rlib
+*.rmeta
+*.d
 
 # ---------- OS / 杂项 ----------
 *.tmp
@@ -104,19 +79,19 @@ coverage.xml
 *.dmg
 *.pkg
 
-# ---------- 个人调试脚本 / 临时产物 ----------
+# ---------- 本机临时产物（不入库） ----------
+build.bat
+build_log.txt
+check_output.txt
+server-rust/test.png
 cookies.txt
-debug_fix.js
-fix_encoding.js
-scan*.js
-scan*_output.txt
-test-auth.js
 refresh.json
 
 # ---------- 测试 / 临时文件 ----------
 tmp/
 temp/
 test-output/
+test-results/
 playwright-report/
 playwright/.cache/
 .vitest/

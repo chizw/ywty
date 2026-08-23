@@ -49,7 +49,7 @@ pub fn generate_captcha() -> AppResult<CaptchaResult> {
     })
 }
 
-/// 生成纯数字验证码（用于短信/邮件验证码场景）
+/// 生成纯数字验证码（用于邮件验证码场景）
 pub fn generate_numeric_captcha(length: usize) -> AppResult<CaptchaResult> {
     let id = Uuid::new_v4().to_string();
 
@@ -92,8 +92,11 @@ mod tests {
         for _ in 0..20 {
             let result = generate_captcha().unwrap();
             assert!(result.image_base64.starts_with("data:image/png;base64,"));
-            assert!(result.code.len() >= 3 && result.code.len() <= 8,
-                "unexpected code length: {}", result.code.len());
+            assert!(
+                result.code.len() >= 3 && result.code.len() <= 8,
+                "unexpected code length: {}",
+                result.code.len()
+            );
             assert_eq!(result.expires_in, 300);
             assert!(!result.id.is_empty());
         }

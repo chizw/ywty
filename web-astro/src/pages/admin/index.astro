@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { AdminDashboard } from '../../components/react/admin/AdminDashboard.tsx'
+---
+
+<BaseLayout title="仪表盘">
+  <AdminDashboard client:load />
+</BaseLayout>

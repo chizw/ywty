@@ -17,7 +17,7 @@ use tokio::sync::Mutex;
 
 /// 令牌桶状态
 #[derive(Debug)]
-pub(crate) struct Bucket {
+pub struct Bucket {
     tokens: f64,
     last_refill: Instant,
 }
@@ -60,8 +60,8 @@ pub struct RateLimitConfig {
 impl Default for RateLimitConfig {
     fn default() -> Self {
         Self {
-            rate_per_second: 5.0,  // 每秒 5 个请求
-            burst: 10.0,           // 最多突发 10 个
+            rate_per_second: 5.0, // 每秒 5 个请求
+            burst: 10.0,          // 最多突发 10 个
         }
     }
 }
@@ -104,10 +104,14 @@ pub async fn rate_limit_middleware(
     } else {
         tracing::warn!(ip = %ip, "请求被限流");
         use axum::response::IntoResponse;
-        (axum::http::StatusCode::TOO_MANY_REQUESTS, axum::Json(serde_json::json!({
-            "code": "RATE_LIMITED",
-            "message": "请求过于频繁，请稍后再试"
-        }))).into_response()
+        (
+            axum::http::StatusCode::TOO_MANY_REQUESTS,
+            axum::Json(serde_json::json!({
+                "code": "RATE_LIMITED",
+                "message": "请求过于频繁，请稍后再试"
+            })),
+        )
+            .into_response()
     }
 }
 

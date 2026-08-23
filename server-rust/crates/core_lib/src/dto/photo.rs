@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 /// 图片响应（不含敏感字段 path/md5/sha1）
-#[derive(Debug, Clone, Serialize, FromRow)]
+#[derive(Debug, Clone, Serialize, FromRow, utoipa::ToSchema)]
 pub struct PhotoResponse {
     pub id: i64,
     pub uuid: String,
@@ -30,7 +30,7 @@ pub struct PhotoResponse {
 }
 
 /// 图片公开信息（探索页）
-#[derive(Debug, Clone, Serialize, FromRow)]
+#[derive(Debug, Clone, Serialize, FromRow, utoipa::ToSchema)]
 pub struct PhotoPublicResponse {
     pub id: i64,
     pub uuid: String,
@@ -46,13 +46,13 @@ pub struct PhotoPublicResponse {
 }
 
 /// 批量操作请求
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct BatchIdsRequest {
     pub ids: Vec<i64>,
 }
 
 /// 批量更新请求
-#[derive(Debug, Clone, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize, Default, utoipa::ToSchema)]
 pub struct BatchUpdateRequest {
     pub ids: Vec<i64>,
     pub album_id: Option<i64>,
@@ -60,19 +60,19 @@ pub struct BatchUpdateRequest {
 }
 
 /// 移动到相册请求
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct MoveToAlbumRequest {
     pub album_id: i64,
 }
 
 /// 复制图片请求
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, utoipa::ToSchema)]
 pub struct CopyPhotoRequest {
     pub album_id: Option<i64>,
 }
 
 /// 上传结果响应
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct UploadResponse {
     pub id: i64,
     pub uuid: String,

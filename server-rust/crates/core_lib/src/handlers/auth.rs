@@ -1,6 +1,6 @@
 //! 认证处理器
 
-use axum::extract::{State};
+use axum::extract::State;
 use axum::Json;
 
 use chrono::Utc;
@@ -12,82 +12,153 @@ use crate::dto::auth::{
     SendVerifyCodeRequest,
 };
 use crate::handlers::validate_req;
-use crate::utils::captcha::generate_captcha;
-use crate::AppState;
 use crate::handlers::CurrentUser;
+use crate::utils::captcha::generate_captcha;
+use crate::utils::response::ApiResponse;
+use crate::AppState;
 
 /// 注册
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/register",
+    request_body = crate::models::user::RegisterRequest,
+    responses(
+        (status = 200, description = "成功", body = AuthResponse),
+    ),
+    tag = "认证"
+)]
 pub async fn register(
     State(state): State<AppState>,
     Json(req): Json<crate::models::user::RegisterRequest>,
-) -> AppResult<Json<AuthResponse>> {
+) -> AppResult<Json<ApiResponse<AuthResponse>>> {
     validate_req(&req)?;
     let resp = state
         .auth_svc
         .register(&req.username, &req.email, &req.password)
         .await?;
-    Ok(Json(resp))
+    Ok(Json(ApiResponse::success(resp)))
 }
 
-/// 登录
+/// 登录（支持邮箱 / 用户名 / 手机号）
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/login",
+    request_body = crate::models::user::LoginRequest,
+    responses(
+        (status = 200, description = "成功", body = AuthResponse),
+    ),
+    tag = "认证"
+)]
 pub async fn login(
     State(state): State<AppState>,
     Json(req): Json<crate::models::user::LoginRequest>,
-) -> AppResult<Json<AuthResponse>> {
+) -> AppResult<Json<ApiResponse<AuthResponse>>> {
     validate_req(&req)?;
-    let resp = state.auth_svc.login(&req.email, &req.password).await?;
-    Ok(Json(resp))
+    let resp = state.auth_svc.login(&req.account, &req.password).await?;
+    Ok(Json(ApiResponse::success(resp)))
 }
 
 /// 刷新令牌
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/refresh",
+    request_body = RefreshRequest,
+    responses(
+        (status = 200, description = "成功", body = AuthResponse),
+    ),
+    tag = "认证"
+)]
 pub async fn refresh(
     State(state): State<AppState>,
     Json(req): Json<RefreshRequest>,
-) -> AppResult<Json<AuthResponse>> {
+) -> AppResult<Json<ApiResponse<AuthResponse>>> {
     let resp = state.auth_svc.refresh(&req.refresh_token).await?;
-    Ok(Json(resp))
+    Ok(Json(ApiResponse::success(resp)))
 }
 
 /// 登出（无状态 JWT，前端清除 token 即可）
-pub async fn logout() -> AppResult<Json<serde_json::Value>> {
-    Ok(Json(serde_json::json!({ "message": "ok" })))
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/logout",
+    responses(
+        (status = 200, description = "成功", body = serde_json::Value),
+    ),
+    tag = "认证"
+)]
+pub async fn logout() -> AppResult<Json<ApiResponse<serde_json::Value>>> {
+    Ok(Json(ApiResponse::success(
+        serde_json::json!({ "message": "ok" }),
+    )))
 }
 
 /// 重置密码
+#[utoipa::path(
+    post,
+    path = "/api/v1/auth/reset-password",
+    request_body = ResetPasswordRequest,
+    responses(
+        (status = 200, description = "成功", body = serde_json::Value),
+    ),
+    tag = "认证"
+)]
 pub async fn reset_password(
     State(state): State<AppState>,
     Json(req): Json<ResetPasswordRequest>,
-) -> AppResult<Json<serde_json::Value>> {
+) -> AppResult<Json<ApiResponse<serde_json::Value>>> {
     validate_req(&req)?;
     state
         .auth_svc
         .reset_password(&req.email, &req.new_password, &req.verify_code)
         .await?;
-    Ok(Json(serde_json::json!({ "message": "密码重置成功" })))
+    Ok(Json(ApiResponse::success_with_message(
+        serde_json::json!({}),
+        "密码重置成功",
+    )))
 }
 
-/// 获取当前用户信息
+/// 获取当前用户信息（直接返回 user 对象，不含 token 包装）
+#[utoipa::path(
+    get,
+    path = "/api/v1/auth/me",
+    responses(
+        (status = 200, description = "成功", body = crate::models::user::UserPublic),
+    ),
+    tag = "认证"
+)]
 pub async fn me(
     State(state): State<AppState>,
     CurrentUser { user_id, .. }: CurrentUser,
-) -> AppResult<Json<AuthResponse>> {
-    let user = state.auth_svc.get_me(user_id).await?;
-    // 返回简化版（不含 token）
-    Ok(Json(AuthResponse {
-        access_token: String::new(),
-        refresh_token: String::new(),
-        token_type: "Bearer".to_string(),
-        expires_in: 0,
-        user,
-    }))
+) -> AppResult<Json<ApiResponse<crate::models::user::UserPublic>>> {
+    let brief = state.auth_svc.get_me(user_id).await?;
+    // 将 UserBrief 转换为 UserPublic
+    Ok(Json(ApiResponse::success(
+        crate::models::user::UserPublic {
+            id: brief.id,
+            uuid: brief.uuid,
+            username: brief.username,
+            avatar: brief.avatar,
+            bio: None,
+            role: brief.role,
+            is_super_admin: brief.is_super_admin,
+            created_at: brief.created_at,
+        },
+    )))
 }
 
 /// 获取图片验证码
 ///
 /// 生成 4 位字符的扭曲 PNG 图片，存储到 DB，返回 base64 图片 + captcha_id。
+#[utoipa::path(
+    get,
+    path = "/api/v1/captcha",
+    responses(
+        (status = 200, description = "成功", body = CaptchaResponse),
+    ),
+    tag = "认证"
+)]
 pub async fn get_captcha(
     State(state): State<AppState>,
-) -> AppResult<Json<CaptchaResponse>> {
+) -> AppResult<Json<ApiResponse<CaptchaResponse>>> {
     let captcha = generate_captcha()?;
     let captcha_id = captcha.id.clone();
     let code = captcha.code.clone();
@@ -111,18 +182,27 @@ pub async fn get_captcha(
     .await
     .map_err(|e| crate::error::AppError::Internal(format!("存储验证码失败: {}", e)))?;
 
-    Ok(Json(CaptchaResponse {
+    Ok(Json(ApiResponse::success(CaptchaResponse {
         captcha_id,
         captcha_image: image_base64,
         expires_in,
-    }))
+    })))
 }
 
 /// 校验图片验证码（不区分大小写，验证后标记为已使用）
+#[utoipa::path(
+    post,
+    path = "/api/v1/captcha/verify",
+    request_body = CaptchaVerifyRequest,
+    responses(
+        (status = 200, description = "成功", body = serde_json::Value),
+    ),
+    tag = "认证"
+)]
 pub async fn verify_captcha(
     State(state): State<AppState>,
     Json(req): Json<CaptchaVerifyRequest>,
-) -> AppResult<Json<serde_json::Value>> {
+) -> AppResult<Json<ApiResponse<serde_json::Value>>> {
     let now_ts = Utc::now().timestamp();
 
     // 查询验证码
@@ -138,13 +218,17 @@ pub async fn verify_captcha(
     let (db_id, stored_code, used_at) = match row {
         Some(r) => r,
         None => {
-            return Ok(Json(serde_json::json!({ "valid": false })));
+            return Ok(Json(ApiResponse::success(
+                serde_json::json!({ "valid": false }),
+            )));
         }
     };
 
     // 检查是否已使用
     if used_at.is_some() {
-        return Ok(Json(serde_json::json!({ "valid": false })));
+        return Ok(Json(ApiResponse::success(
+            serde_json::json!({ "valid": false }),
+        )));
     }
 
     // 不区分大小写比对
@@ -159,23 +243,29 @@ pub async fn verify_captcha(
             .await;
     }
 
-    Ok(Json(serde_json::json!({ "valid": valid })))
+    Ok(Json(ApiResponse::success(
+        serde_json::json!({ "valid": valid }),
+    )))
 }
 
 /// 发送验证码（邮件）
+#[utoipa::path(
+    post,
+    path = "/api/v1/verify-codes",
+    request_body = SendVerifyCodeRequest,
+    responses(
+        (status = 200, description = "成功", body = serde_json::Value),
+    ),
+    tag = "认证"
+)]
 pub async fn send_verify_code(
     State(state): State<AppState>,
     Json(req): Json<SendVerifyCodeRequest>,
-) -> AppResult<Json<serde_json::Value>> {
+) -> AppResult<Json<ApiResponse<serde_json::Value>>> {
     validate_req(&req)?;
     let event = req.event.as_deref().unwrap_or("register");
-    let code = state
-        .auth_svc
-        .send_verify_code(&req.email, event)
-        .await?;
-    // 注意：生产环境不应返回验证码，此处便于开发调试
-    Ok(Json(serde_json::json!({
-        "message": "验证码已发送",
-        "debug_code": code
-    })))
+    state.auth_svc.send_verify_code(&req.email, event).await?;
+    Ok(Json(ApiResponse::success(serde_json::json!({
+        "message": "验证码已发送"
+    }))))
 }

@@ -1,0 +1,19 @@
+---
+// 公开端布局：毛玻璃 Header（Vue island）+ 内容 + Footer
+// 站点信息在服务端获取一次，以 props 传给 islands，避免客户端再发请求
+import AppHeader from '../components/vue/layout/AppHeader.vue'
+import AppFooter from '../components/vue/layout/AppFooter.vue'
+import AppToaster from '../components/vue/layout/AppToaster.vue'
+import { getSiteInfo } from '../lib/site'
+
+const site = await getSiteInfo()
+---
+
+<div class="flex min-h-screen flex-col">
+  <AppHeader client:load name={site.name} allow-register={site.allow_register} />
+  <main class="flex-1">
+    <slot />
+  </main>
+  <AppFooter name={site.name} footer={site.footer} icp={site.icp} />
+  <AppToaster />
+</div>

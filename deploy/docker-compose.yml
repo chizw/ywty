@@ -1,0 +1,102 @@
+version: "3.9"
+
+# 一键拉起完整开发环境：
+#   - MySQL 8.0
+#   - PostgreSQL 15
+#   - Redis 7（缓存）
+#   - Rust API server + Nuxt 前端（合并镜像）
+# 用法：
+#   docker compose up -d mysql postgres redis   # 仅基础服务
+#   docker compose up -d                        # 全部
+#   docker compose --profile app up             # 业务应用
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ywty-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpw}
+      MYSQL_DATABASE: ywty
+      MYSQL_USER: ywty
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ywty_pw}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./deploy/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uywty", "-p${MYSQL_PASSWORD:-ywty_pw}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    profiles: ["mysql"]
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: ywty-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ywty
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ywty_pw}
+      POSTGRES_DB: ywty
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ywty -d ywty"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    profiles: ["postgres"]
+
+  redis:
+    image: redis:7-alpine
+    container_name: ywty-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ywty:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ywty
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      # 短变量名直接覆盖 config.yaml（详见 .env.example）
+      APP_ENV: dev
+      API_PORT: 3001
+      API_INTERNAL: http://127.0.0.1:3001
+      DB_DRIVER: ${DB_DRIVER:-sqlite}
+      DB_PATH: /app/data/ywty.db
+      REDIS_ADDR: redis:6379
+      JWT_SECRET: ${JWT_SECRET:-please-change-me-in-production}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ywty_data:/app/data
+      - ywty_uploads:/app/uploads
+
+volumes:
+  mysql_data:
+  postgres_data:
+  redis_data:
+  ywty_data:
+  ywty_uploads:

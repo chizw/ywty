@@ -16,7 +16,7 @@
    - 复现步骤（尽量具体）
    - 期望行为 vs 实际行为
    - 截图 / 视频 / 日志
-   - 环境信息：OS、Go 版本、Node 版本、数据库、部署方式
+   - 环境信息：OS、Rust 版本、Node 版本、数据库、部署方式
 
 ## 💡 提议新功能
 
@@ -36,8 +36,8 @@
 3. **补充测试**（如果是 bug 修复或新功能）
 4. **本地跑通**
    ```bash
-   cd server && go build ./... && go vet ./...
-   cd web-nuxt && npm run build
+   cd server-rust && cargo build --workspace && cargo clippy -- -D warnings
+   cd web-astro && npm run build
    ```
 5. **提交** — 建议遵循 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/) 规范
 6. **推送并创建 PR** — 使用 [PR 模板](./.github/PULL_REQUEST_TEMPLATE.md)
@@ -71,22 +71,22 @@ docs(readme): 更新 Docker Compose 启动说明
 
 ## 🧑‍💻 代码规范
 
-### 后端（Go）
+### 后端（Rust）
 
-- Go ≥ 1.25，使用 `gofmt` + `goimports`
-- 提交前跑 `go vet ./...`
-- 业务错误请使用 [`internal/errors`](./server/internal/errors) 的业务错误码
-- 模型变更必须同步更新 GORM 迁移
-- 优先使用 [接口+注册表](https://github.com/chizw/ywty/blob/main/REFACTOR_PLAN.md) 模式扩展驱动
+- Rust ≥ 1.85，使用 `cargo fmt` + `clippy`
+- 提交前跑 `cargo clippy --workspace -- -D warnings`
+- 业务错误请使用 `crates/core_lib/src/error.rs` 中的整数错误码
+- 模型变更需同步更新 SQL 迁移（`db/migrations/`）
+- 优先使用 trait + 注册表模式扩展驱动（存储驱动、支付驱动等）
 - 敏感配置（密钥、AK/SK）必须通过环境变量传入，不允许硬编码
 
-### 前端（Nuxt 3 + TypeScript）
+### 前端（Astro 5 + Vue/React Islands + TypeScript）
 
 - TypeScript 严格模式，避免 `any`
-- 组件命名采用 PascalCase（`<AppButton>`、`<AppUploader>`）
-- 页面放在 `pages/`，跨页组件放在 `components/`
-- 全局状态使用 Pinia Store
-- 提交前跑 `npm run build`
+- 公开页用 Vue Islands（`src/components/vue/`），用户中心/后台用 React Islands（`src/components/react/`）
+- 页面放在 `src/pages/`，组件按框架放在 `src/components/{vue,react}/`
+- 状态管理：Vue 用 Pinia，React 用 Zustand（`src/stores/`）
+- 提交前跑 `npx astro check` 和 `npm run build`
 
 ### 数据库
 
@@ -104,7 +104,7 @@ docs(readme): 更新 Docker Compose 启动说明
 - [ ] 代码遵循项目规范
 - [ ] 已添加 / 更新单元测试
 - [ ] 已更新相关文档（README / CHANGELOG）
-- [ ] `go build ./...` 通过
+- [ ] `cargo build --workspace` 通过
 - [ ] `npm run build` 通过
 - [ ] PR 描述清晰，对应 Issue 已链接
 

@@ -1,8 +1,28 @@
-//! 业务逻辑层（对应 Go 的 `internal/service/`）
-
+﻿//! 业务逻辑层（对应 Go 的 internal/service/）
+pub mod admin;
 pub mod album;
 pub mod auth;
+pub mod capacity;
+pub mod coupon;
+pub mod feedback;
+pub mod group;
+pub mod like;
 pub mod mail;
+pub mod notice;
+pub mod oauth;
+pub mod order;
+pub mod page;
+pub mod payment;
 pub mod photo;
+pub mod plan;
+pub mod queue;
+pub mod redis_cache;
+pub mod settings;
+pub mod share;
 pub mod storage;
+pub mod storage_admin;
+pub mod storage_driver;
+pub mod tag;
+pub mod ticket;
+pub mod token;
 pub mod user;

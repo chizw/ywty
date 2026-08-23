@@ -2,13 +2,13 @@
 
 # 云雾图驿
 
-**自托管图床 / 云相册 · Go + Nuxt 重构版**
+**自托管图床 / 云相册 · Rust + Astro**
 
 [![GitHub release](https://img.shields.io/github/v/release/chizw/ywty?label=release&style=flat-square)](https://github.com/chizw/ywty/releases)
 [![License](https://img.shields.io/github/license/chizw/ywty?style=flat-square)](./LICENSE.md)
-[![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev)
-[![Nuxt](https://img.shields.io/badge/Nuxt-3-00DC82?style=flat-square&logo=nuxt.js&logoColor=white)](https://nuxt.com)
-[![shadcn--vue](https://img.shields.io/badge/shadcn--vue-000000?style=flat-square&logo=shadcnui&logoColor=white)](https://shadcn-vue.com)
+[![Rust](https://img.shields.io/badge/Rust-1.85+-000000?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org)
+[![Astro](https://img.shields.io/badge/Astro-5-BC52EE?style=flat-square&logo=astro&logoColor=white)](https://astro.build)
+[![shadcn--vue](https://img.shields.io/badge/shadcn--vue%20%2F%20shadcn--ui-000000?style=flat-square&logo=shadcnui&logoColor=white)](https://shadcn-vue.com)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/chizw/ywty/ci.yml?label=CI&style=flat-square)](https://github.com/chizw/ywty/actions)
 [![Stars](https://img.shields.io/github/stars/chizw/ywty?style=flat-square)](https://github.com/chizw/ywty/stargazers)
 [![Forks](https://img.shields.io/github/forks/chizw/ywty?style=flat-square)](https://github.com/chizw/ywty/network/members)
@@ -21,7 +21,7 @@
 
 ## ✨ 项目简介
 
-**ywty** 是一款**自托管图床 / 云相册**系统：从经典 Lsky Pro+ 完全重写而来，后端从 PHP/Laravel 迁移到 **Go + Gin + GORM**，前端从 Vue 3 + Vite 升级到 **Nuxt 3 SSR**，UI 组件库采用 **shadcn-vue**（Radix Vue + Tailwind CSS）。
+**ywty** 是一款**自托管图床 / 云相册**系统：从经典 Lsky Pro+ 完全重写而来，后端采用 **Rust + axum + sqlx**，前端为 **Astro 5 SSR + Vue/React Islands**（公开页 Vue，用户中心/后台 React），UI 组件库统一 Tailwind 设计 token。
 
 我们保留了原有的 REST 契约、30+ 张业务表结构和「多驱动」生态，目标是给个人/团队提供**零成本、可扩展、长期可维护**的私有云相册方案。
 
@@ -39,15 +39,14 @@
 
 ### 🔐 鉴权 & 权限
 - JWT（前台用户）+ Session（后台管理员）
-- 三套验证码：图形 / 邮箱 / 短信
-- **RBAC**（Casbin）+ 角色组 + 用户组
+- 两套验证码：图形 / 邮箱
+- **RBAC**（基于 Role 枚举）+ 角色组 + 用户组
 - **API Token**（用户自管理 + 能力授权）
 - **OAuth 社交登录**：GitHub / Google / 微信 / QQ / 钉钉 / Gitee / 微博
 
 ### 📦 存储驱动（9 种可插拔）
 Local · **S3** · 阿里云 **OSS** · 腾讯云 **COS** · 七牛云 · 又拍云 · **FTP** · **SFTP** · **WebDAV**
 - 浏览器直传签名（OSS/S3 跳过服务器中转）
-- 跨存储复制
 - 用户配额 / 容量统计
 
 ### 💳 商业域
@@ -59,14 +58,12 @@ Local · **S3** · 阿里云 **OSS** · 腾讯云 **COS** · 七牛云 · 又拍
 ### 🔌 扩展驱动
 | 类别 | 已支持 |
 |---|---|
-| 短信 | 阿里云 · 腾讯云 · Twilio · 七牛云 · Log |
 | 邮件 | SMTP · 阿里云 DirectMail · Log |
 | 社交登录 | GitHub · Google · 微信 · QQ · 钉钉 · Gitee · 微博 |
-| 图片扫描 | 阿里云内容安全 · 腾讯云 IMS · 自定义 HTTP |
-| 图片处理 | Local（imaging）· 自定义 HTTP |
+| 图片处理 | Local（imaging，缩略图/水印；自定义 HTTP 未实现） |
 
 ### 🗃️ 数据库
-- 一套 GORM 模型覆盖 **30+ 张业务表**
+- sqlx + 手写 SQL 覆盖 **30+ 张业务表**
 - 默认 **SQLite** 轻量化，深度支持 **MySQL**（推荐 MariaDB 10.6.20+）
 - 迁移 CLI：`migrate up / down / status / seed`
 
@@ -75,37 +72,35 @@ Local · **S3** · 阿里云 **OSS** · 腾讯云 **COS** · 七牛云 · 又拍
 ### 后端
 | 技术 | 用途 |
 |---|---|
-| **Go 1.25+** | 主语言 |
-| **Gin** | HTTP 框架 |
-| **GORM v2** | ORM |
-| **Viper** | 配置（YAML + 环境变量） |
-| **Zap** | 日志（按等级 / 文件切割） |
-| **Asynq** | 异步队列（基于 Redis） |
-| **BigCache + Redis** | 多级缓存 |
-| **Casbin** | RBAC |
-| **golang-jwt** | JWT |
-| **disintegration/imaging** | 图像处理 |
-| **asaskevich/govalidator** | 验证 |
+| **Rust 1.85+** | 主语言 |
+| **axum** | HTTP 框架 |
+| **sqlx** |异步 SQL（SQLite/MySQL/PostgreSQL） |
+| **serde** | 序列化（YAML + 环境变量配置） |
+| **tokio** | 异步运行时 |
+| **tokio::sync::mpsc** | 异步图片处理队列 |
+| **Redis** | 可选缓存层 |
+| **jsonwebtoken** | JWT |
+| **argon2** | 密码哈希 |
+| **utoipa** | OpenAPI/Swagger 文档 |
 
 ### 前端
 | 技术 | 用途 |
 |---|---|
-| **Nuxt 3** | SSR / SSG 框架 |
-| **Vue 3** + **TypeScript** | 视图层 |
-| **shadcn-vue** | UI 组件库（42 个组件，基于 Radix Vue） |
-| **Radix Vue** | 无样式原语（Accessible Primitives） |
-| **Tailwind CSS** | 原子化样式 + CSS 变量主题 |
+| **Astro 5** | SSR 框架（node standalone） |
+| **Vue 3.5 Islands** | 公开页（首页/探索/分享/登录） |
+| **React 19 Islands** | 用户中心 + 管理后台 |
+| **shadcn-vue / shadcn/ui** | UI 组件库（Radix 原语） |
+| **Tailwind CSS 3.4** | 原子化样式 + CSS 变量主题（双框架共享 token） |
 | **class-variance-authority** | 组件变体管理 |
-| **@lucide/vue** | 图标库 |
-| **Pinia** | 状态管理 |
-| **Vue I18n** | 国际化（zh-CN / en-US） |
-| **@nuxt/image** | 图片优化 |
+| **@lucide/vue / lucide-react** | 图标库 |
+| **Pinia / Zustand** | 状态管理（Vue / React） |
+| **PhotoSwipe** | 图片灯箱（框架无关） |
 
 ### DevOps
 | 技术 | 用途 |
 |---|---|
 | **Docker** + **Docker Compose** | 容器化 |
-| **GitHub Actions** | CI（gofmt / vet / test / build / Docker 多架构） |
+| **GitHub Actions** | CI（fmt / clippy / test / build / Docker 多架构） |
 | **Nginx** | 反向代理 + HTTPS |
 | **Supervisor** | 进程守护 |
 
@@ -134,8 +129,8 @@ DB_HOST=host.docker.internal REDIS_HOST=host.docker.internal \
 # 本地开发用 SQLite（无需任何数据库容器）
 DB_DRIVER=sqlite docker compose up -d --scale mysql=0 --scale redis=0
 
-# 数据库迁移
-docker compose run --rm migrate
+# 数据库迁移（sqlx migrate）
+cd server-rust && sqlx migrate run
 ```
 
 **默认管理员**：`admin` / `admin123456`（请尽快修改）
@@ -144,18 +139,14 @@ docker compose run --rm migrate
 
 ```bash
 # ---- 后端 ----
-cd server
-go mod download
-cp .env.example .env
-go run ./cmd/migrate       # 初始化数据库 + 种子数据
-go run ./cmd/api           # 启动 API（默认 :8080）
-# 另起一个终端：
-go run ./cmd/worker        # 启动 Worker（队列消费）
+cd server-rust
+cargo build --bin api      # 首次编译
+cargo run --bin api        # 启动 API（默认 :3000）
 
-# ---- 前端 ----
-cd web-nuxt
+# ---- 前端（独立开发模式）----
+cd web-astro
 npm install
-npm run dev                # 启动 Web（默认 :3000）
+npm run dev                # 启动 Web（默认 :4321，/api 反代到 :3000）
 ```
 
 ### 方式 C：生产部署
@@ -180,53 +171,37 @@ cp deploy/supervisor.conf /etc/supervisor/conf.d/ywty.conf
 
 ```
 ywty/
-├── server/                    # Go 后端
-│   ├── cmd/
-│   │   ├── api/              # API 服务入口
-│   │   ├── worker/           # 队列 Worker
-│   │   ├── migrate/          # 数据库迁移 CLI
-│   │   └── import/           # 数据导入工具
-│   ├── configs/              # Viper 配置 + Casbin 模型
-│   ├── internal/
-│   │   ├── auth/             # JWT
-│   │   ├── handler/          # HTTP handlers
-│   │   ├── service/          # 业务服务
-│   │   ├── model/            # GORM 模型（30+ 张表）
-│   │   ├── drivers/          # 支付/存储驱动
-│   │   ├── notify/           # 短信 / 邮件
-│   │   ├── social/           # 社交登录
-│   │   ├── scan/             # 图片扫描
-│   │   ├── process/          # 图片处理
-│   │   ├── jobs/             # 异步任务
-│   │   ├── queue/            # Asynq 封装
-│   │   ├── rbac/             # Casbin 鉴权
-│   │   ├── middleware/       # 限流 / CORS
-│   │   ├── database/         # GORM 工厂
-│   │   ├── errors/           # 业务错误码
-│   │   ├── response/         # 统一响应
-│   │   ├── router/           # 路由注册
-│   │   ├── seed/             # 种子数据
-│   │   ├── license/          # License 管理
-│   │   └── logger/           # Zap
-│   ├── Dockerfile
-│   └── go.mod
-├── web-nuxt/                  # Nuxt 3 前端
-│   ├── pages/                # 公共端 + 用户中心 + 管理后台
-│   ├── layouts/              # 4 套布局
-│   ├── components/           # 通用组件
-│   │   └── ui/               # shadcn-vue UI 组件（42 个）
-│   ├── composables/          # useApi / useAuth / useMessage
-│   ├── stores/               # Pinia 状态
-│   ├── middleware/           # 路由守卫
-│   ├── i18n/                 # 国际化
-│   ├── types/                # TypeScript 类型
-│   ├── server/api/           # Nitro BFF
+├── server-rust/               # Rust 后端
+│   ├── crates/
+│   │   ├── api/              # 薄二进制壳（main.rs）
+│   │   └── core_lib/         # 业务核心库
+│   │       ├── src/
+│   │       │   ├── handlers/ # HTTP 处理器（22 个域）
+│   │       │   ├── services/ # 业务服务层
+│   │       │   ├── models/   # 领域模型
+│   │       │   ├── dto/      # 请求/响应 DTO
+│   │       │   ├── middleware/# auth/cors/rate_limit
+│   │       │   ├── auth/     # JWT + RBAC + 密码哈希
+│   │       │   └── utils/    # 响应信封/分页/验证码
+│   │       └── tests/        # 集成测试
+│   ├── config.yaml            # 统一配置
 │   └── Dockerfile
+├── web-astro/                   # Astro 5 前端（Vue/React Islands）
+│   ├── src/pages/               # 公共端 + 用户中心 + 管理后台
+│   ├── src/layouts/             # Public / Dashboard / Admin 布局
+│   ├── src/components/
+│   │   ├── vue/                 # Vue Islands 组件（公开页 + ui/）
+│   │   └── react/               # React Islands 组件（用户中心/后台 + ui/）
+│   ├── src/lib/                 # 共享 API 客户端 / 认证 / 工具
+│   ├── src/stores/              # Pinia / Zustand 状态
+│   ├── src/middleware.ts        # 路由守卫 + 生产环境 API 反代
+│   └── astro.config.mjs
 ├── deploy/                    # 部署脚本
-│   ├── deploy.sh             # 一键编译 + 构建 + 推送
+│   ├── deploy.sh             # 一键编译（cargo）+ 构建 + 推送
 │   ├── dev-up.sh / dev-down.sh
 │   ├── backup-db.sh          # 多数据库备份
-│   ├── nginx.conf.example    # 反向代理
+│   ├── docker-compose.yml    # 开发环境
+│   ├── nginx.conf            # 反向代理
 │   └── supervisor.conf       # 进程守护
 ├── .github/workflows/         # CI / Release
 ├── docker-compose.yml
@@ -237,16 +212,15 @@ ywty/
 
 ### 开发规范
 
-- 后端遵循 **Uber Go Style Guide**，提交前跑：
+- 后端遵循 **Rust API Guidelines**，提交前跑：
   ```bash
-  gofmt -l .          # 格式检查
-  go vet ./...        # 静态检查
-  go test -race ./...
+  cargo fmt --all -- --check   # 格式检查
+  cargo clippy -- -D warnings  # 静态检查
+  cargo test --workspace       # 测试
   ```
-- 前端遵循 **Vue 3 + TypeScript 规范**，提交前跑：
+- 前端遵循 **Astro + TypeScript 规范**，提交前跑：
   ```bash
-  npm run lint
-  npm run typecheck
+  npx astro check
   npm run build
   ```
 - 提交信息遵循 **Conventional Commits**（`feat:` / `fix:` / `docs:` / `refactor:` / `test:` / `chore:`）
@@ -255,15 +229,12 @@ ywty/
 
 ```bash
 # 查看 API 健康
-curl http://localhost:8080/healthz
-
-# 查看队列状态（需装 asynqmon）
-# docker run -p 8081:8080 hibiken/asynqmon --redis-addr=host.docker.internal:6379
+curl http://localhost:3000/api/v1/healthz
 
 # 实时日志
 docker compose logs -f ywty
 
-# 进入 API 容器调试
+# 进入容器调试
 docker compose exec ywty sh
 ```
 
@@ -271,16 +242,15 @@ docker compose exec ywty sh
 
 ```bash
 # 后端
-cd server
-go test -race -shuffle=on -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out   # 查看覆盖率
+cd server-rust
+cargo test --workspace --verbose
+cargo tarpaulin --out Html   # 查看覆盖率（需安装 cargo-tarpaulin）
 
-# 前端（待补 E2E）
-cd web-nuxt
-npm run test
+# 前端 E2E（待补）
+# 暂无前端测试脚本
 ```
 
-当前覆盖：`errors` · `storage` · `drivers/payment`（含 EPay 签名校验、Mock 驱动单测）。
+当前覆盖：认证、专辑、用户、图片等核心域集成测试（13 项）+ 单元测试（9 项）。
 
 ## 🤝 贡献
 
@@ -323,11 +293,11 @@ npm run test
 | P5 | 商业域 | ✅ |
 | P6 | 扩展驱动 | ✅ |
 | P7 | 运营域 | ✅ |
-| P8 | Nuxt 公共端 | ✅ |
-| P9 | Nuxt 用户中心 | ✅ |
-| P10 | Nuxt 管理后台 | ✅ |
+| P8 | 公共端（Vue Islands） | ✅ |
+| P9 | 用户中心（React Islands） | ✅ |
+| P10 | 管理后台（React Islands） | ✅ |
 | P11 | 测试与部署 | ✅ |
-| P12 | shadcn-vue UI 重构 | ✅ |
+| P12 | 前端迁移 Astro Islands | ✅ |
 | v1.0 | 正式版 | 🎯 2026 Q4 |
 | 未来 | 移动端 App / 多租户 / 联邦 | 💭 |
 
