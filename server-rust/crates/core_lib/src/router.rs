@@ -296,7 +296,7 @@ pub fn create_router(state: AppState) -> Router {
 /// 健康检查
 async fn health_check(
     axum::extract::State(state): axum::extract::State<AppState>,
-) -> axum::response::Result<axum::Json<serde_json::Value>> {
+) -> axum::Json<serde_json::Value> {
     use crate::db::ping;
 
     let db_status = match ping(&state.db).await {
@@ -304,13 +304,13 @@ async fn health_check(
         Err(_) => "error",
     };
 
-    Ok(axum::Json(serde_json::json!({
+    axum::Json(serde_json::json!({
         "status": "ok",
         "app": state.config.app.name,
         "env": state.config.app.env,
         "database": db_status,
         "time": chrono::Utc::now().to_rfc3339(),
-    })))
+    }))
 }
 
 /// Ping
