@@ -7,9 +7,11 @@
  * 此文件是 Tailwind 入口 + 设计 token + 可复用组件类。
  * ============================================================ */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+/* 兼容加载既有 JS 设计 token 配置（v4 推荐 CSS-first，此处保留以最小化迁移面） */
+@config "../../tailwind.config.js";
+/* v3 的 darkMode:'class' 等价声明 */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   :root {
