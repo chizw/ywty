@@ -2,7 +2,7 @@
 import { defineConfig } from 'astro/config'
 import vue from '@astrojs/vue'
 import react from '@astrojs/react'
-import tailwind from '@astrojs/tailwind'
+import tailwindcss from '@tailwindcss/vite'
 import node from '@astrojs/node'
 
 // 后端地址：开发时 Rust 服务默认跑在 3000 端口
@@ -15,15 +15,11 @@ export default defineConfig({
   adapter: node({ mode: 'standalone' }),
   site: process.env.SITE_URL || 'http://localhost:4321',
 
-  // Vue(公开页) + React(用户中心/后台) 双 Islands
-  integrations: [
-    tailwind({
-      // global.css 自带 @tailwind 指令，关闭自动注入避免重复
-      applyBaseStyles: false,
-    }),
-    vue(),
-    react(),
-  ],
+  // Astro 7 默认 compressHTML:'jsx' 会按 JSX 规则吞掉行内元素间距，显式保留 v5/v6 行为
+  compressHTML: true,
+
+  // Vue(公开页) + React(用户中心/后台) 双 Islands；样式走 @tailwindcss/vite（Tailwind v4）
+  integrations: [vue(), react()],
 
   // SSR 输出目录（合并部署时由外层反代到 Astro）
   build: {
@@ -31,6 +27,7 @@ export default defineConfig({
   },
 
   vite: {
+    plugins: [tailwindcss()],
     // 预打包全部依赖：避免 Vite 中途发现新依赖重新优化，
     // 导致已发出的旧 ?v= 哈希 504（Outdated Optimize Dep），进而 island 注水失败
     optimizeDeps: {
