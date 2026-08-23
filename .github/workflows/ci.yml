@@ -7,70 +7,69 @@ on:
     branches: [main, develop]
 
 env:
-  GO_VERSION: "1.25"
+  CARGO_TERM_COLOR: always
   NODE_VERSION: "22"
+  RUSTFLAGS: "-D warnings"
 
 jobs:
   # =========================================
-  # 后端：编译、静态检查、测试
+  # 后端：Rust 编译、Clippy、测试
   # =========================================
   backend:
-    name: Go · build & test
+    name: Rust · check & test
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: server
+        working-directory: server-rust
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
-          go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: server/go.sum
+          components: rustfmt, clippy
 
-      - name: Download modules
-        run: go mod download
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            server-rust/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('server-rust/Cargo.lock') }}
 
-      - name: Verify modules
-        run: go mod verify
-
-      - name: gofmt check
+      - name: Install system dependencies
         run: |
-          if [ "$(gofmt -l . | wc -l)" -ne 0 ]; then
-            echo "Files not formatted:"
-            gofmt -l .
-            exit 1
-          fi
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev libsqlite3-dev
 
-      - name: go vet
-        run: go vet ./...
+      - name: Check formatting
+        run: cargo fmt --all -- --check
 
-      - name: Build all packages
-        run: go build -v ./...
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
 
-      - name: Run unit tests
-        run: go test -race -shuffle=on -timeout 5m -coverprofile=coverage.out ./...
+      - name: Build
+        run: cargo build --workspace --verbose
         env:
-          YWTY_AUTH_JWT_SECRET: ci-test-secret
+          JWT_SECRET: ci-test-secret-key-do-not-use-in-production
 
-      - name: Upload coverage to Codecov
-        if: matrix == false || true
-        uses: codecov/codecov-action@v4
-        with:
-          files: server/coverage.out
-          flags: backend
-          fail_ci_if_error: false
+      - name: Run tests
+        run: cargo test --workspace --verbose
+        env:
+          JWT_SECRET: ci-test-secret-key-do-not-use-in-production
 
   # =========================================
-  # 前端：类型检查、Lint、构建
+  # 前端：类型检查、构建
   # =========================================
   frontend:
-    name: Nuxt · typecheck & build
+    name: Astro · check & build
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: web-nuxt
+        working-directory: web-astro
     steps:
       - uses: actions/checkout@v4
 
@@ -79,23 +78,16 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: web-nuxt/package-lock.json
+          cache-dependency-path: web-astro/package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
       - name: Type check
-        run: npx nuxi typecheck
-        continue-on-error: true
-
-      - name: Lint
-        run: npm run lint
-        continue-on-error: true
+        run: npx astro check
 
       - name: Build
         run: npm run build
-        env:
-          NUXT_API_BASE: ""
 
   # =========================================
   # Docker 镜像构建测试（不推送）

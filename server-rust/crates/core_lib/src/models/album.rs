@@ -5,7 +5,7 @@ use uuid::Uuid;
 use validator::Validate;
 
 /// 相册实体
-#[derive(Debug, Clone, FromRow, Serialize)]
+#[derive(Debug, Clone, FromRow, Serialize, utoipa::ToSchema)]
 pub struct Album {
     pub id: i64,
     pub uuid: String,

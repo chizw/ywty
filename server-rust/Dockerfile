@@ -64,11 +64,11 @@ RUN mkdir -p /app/data /app/uploads && chown -R ywty:yuwty /app
 # 切换到非 root 用户
 USER ywty
 
-# 环境变量
-ENV YWTY_APP_HOST=0.0.0.0
-ENV YWTY_APP_PORT=3000
-ENV YWTY_DATABASE_PATH=./data/ywty.db
-ENV YWTY_STORAGE_ROOT=./uploads
+# 环境变量（短名覆盖 config.yaml，见 crates/core_lib/src/config.rs）
+ENV HOST=0.0.0.0
+ENV PORT=3000
+ENV DB_PATH=/app/data/ywty.db
+ENV STORAGE_ROOT=/app/uploads
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

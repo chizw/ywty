@@ -34,13 +34,12 @@
 
 - **使用 HTTPS**：生产环境必须通过 Nginx / Caddy 终止 TLS
 - **修改默认密钥**：
-  - `YWTY_AUTH_JWT_SECRET` 必须改为强随机值
+  - `JWT_SECRET` 必须改为强随机值（Docker 单容器部署可依赖自动生成并持久化的密钥）
   - 数据库密码、Redis 密码、各云服务 AK/SK 不允许使用默认值
 - **限制管理后台访问**：通过 Nginx 限制 `/admin` 来源 IP
-- **启用速率限制**：`YWTY_RATELIMIT_ENABLE=true`（默认开启）
+- **启用速率限制**：`RATELIMIT_ENABLE=true`（默认开启）
 - **定期备份数据库**：`sqlite` 部署务必做文件系统级备份
 - **最小化驱动权限**：S3 / OSS 等驱动使用子账号 + 最小权限策略
-- **保持依赖更新**：`go get -u` 与 `npm update` 定期执行
 
 ## 🏆 致谢
 

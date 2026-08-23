@@ -4,8 +4,8 @@ use sqlx::FromRow;
 use uuid::Uuid;
 use validator::Validate;
 
-/// 用户实体
-#[derive(Debug, Clone, FromRow, Serialize)]
+/// 用户实体（内部模型，含敏感字段，禁止直接序列化返回）
+#[derive(Debug, Clone, FromRow, utoipa::ToSchema)]
 pub struct User {
     pub id: i64,
     pub uuid: String,
@@ -14,6 +14,7 @@ pub struct User {
     pub password: String,
     pub avatar: Option<String>,
     pub role: String,
+    pub is_super_admin: bool,
     pub status: i32,
     pub capacity_used: i64,
     pub capacity_max: i64,
@@ -28,7 +29,7 @@ pub struct User {
 }
 
 /// 用户注册请求
-#[derive(Debug, Clone, Deserialize, Validate)]
+#[derive(Debug, Clone, Deserialize, Validate, utoipa::ToSchema)]
 pub struct RegisterRequest {
     #[validate(length(min = 3, max = 32, message = "用户名长度必须在 3-32 之间"))]
     pub username: String,
@@ -40,18 +41,19 @@ pub struct RegisterRequest {
     pub captcha_code: Option<String>,
 }
 
-/// 用户登录请求
-#[derive(Debug, Clone, Deserialize, Validate)]
+/// 用户登录请求（支持邮箱 / 用户名 / 手机号）
+#[derive(Debug, Clone, Deserialize, Validate, utoipa::ToSchema)]
 pub struct LoginRequest {
-    #[validate(email(message = "邮箱格式不正确"))]
-    pub email: String,
+    /// 登录账号：邮箱、用户名或手机号
+    pub account: String,
+    #[validate(length(min = 6, max = 64, message = "密码长度必须在 6-64 之间"))]
     pub password: String,
     pub captcha_id: Option<String>,
     pub captcha_code: Option<String>,
 }
 
 /// 更新用户资料请求
-#[derive(Debug, Clone, Deserialize, Validate, Default)]
+#[derive(Debug, Clone, Deserialize, Validate, Default, utoipa::ToSchema)]
 pub struct UpdateProfileRequest {
     #[validate(length(min = 3, max = 32, message = "用户名长度必须在 3-32 之间"))]
     pub username: Option<String>,
@@ -60,7 +62,7 @@ pub struct UpdateProfileRequest {
 }
 
 /// 修改密码请求
-#[derive(Debug, Clone, Deserialize, Validate)]
+#[derive(Debug, Clone, Deserialize, Validate, utoipa::ToSchema)]
 pub struct ChangePasswordRequest {
     pub old_password: String,
     #[validate(length(min = 6, max = 64, message = "密码长度必须在 6-64 之间"))]
@@ -68,7 +70,7 @@ pub struct ChangePasswordRequest {
 }
 
 /// 用户公开信息（对外展示）
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct UserPublic {
     pub id: i64,
     pub uuid: String,
@@ -76,6 +78,7 @@ pub struct UserPublic {
     pub avatar: Option<String>,
     pub bio: Option<String>,
     pub role: String,
+    pub is_super_admin: bool,
     pub created_at: DateTime<Utc>,
 }
 
@@ -88,6 +91,7 @@ impl From<User> for UserPublic {
             avatar: user.avatar,
             bio: None,
             role: user.role,
+            is_super_admin: user.is_super_admin,
             created_at: user.created_at,
         }
     }
@@ -100,7 +104,9 @@ pub struct OAuthAccount {
     pub user_id: i64,
     pub provider: String,
     pub provider_user_id: String,
+    #[serde(skip)]
     pub access_token: Option<String>,
+    #[serde(skip)]
     pub refresh_token: Option<String>,
     pub expires_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
@@ -132,6 +138,7 @@ impl User {
             password,
             avatar: None,
             role: "user".to_string(),
+            is_super_admin: false,
             status: 1,
             capacity_used: 0,
             capacity_max: 104857600, // 100MB 默认容量

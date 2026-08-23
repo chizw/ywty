@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import { TicketsPage } from '../../../components/react/dashboard/TicketsPage.tsx'
+---
+
+<BaseLayout title="工单">
+  <TicketsPage client:load />
+</BaseLayout>

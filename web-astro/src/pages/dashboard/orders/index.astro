@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import { OrdersPage } from '../../../components/react/dashboard/OrdersPage.tsx'
+---
+
+<BaseLayout title="订单">
+  <OrdersPage client:load />
+</BaseLayout>

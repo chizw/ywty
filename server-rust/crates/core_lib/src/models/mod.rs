@@ -1,9 +1,23 @@
 pub mod album;
+pub mod coupon;
+pub mod feedback;
+pub mod group;
+pub mod notice;
 pub mod order;
+pub mod page;
 pub mod photo;
+pub mod plan;
+pub mod ticket;
 pub mod user;
 
 pub use album::{Album, AlbumPhoto};
-pub use order::{Order, Plan};
-pub use photo::{Photo, Tag, Share};
-pub use user::{User, OAuthAccount, ApiToken};
+pub use coupon::{Coupon, ValidateCouponResult};
+pub use feedback::{Feedback, Violation};
+pub use group::Group;
+pub use notice::Notice;
+pub use order::Order;
+pub use page::Page;
+pub use photo::{Photo, Share, Tag};
+pub use plan::{Plan, PlanDetail, PlanPrice};
+pub use ticket::{Ticket, TicketDetail, TicketReply};
+pub use user::{ApiToken, OAuthAccount, User};

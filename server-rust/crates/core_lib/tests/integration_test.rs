@@ -53,6 +53,8 @@ async fn setup_test_app() -> axum::Router {
         queue: None,
         ratelimit: None,
         notify: None,
+        oauth: None,
+        watermark: None,
     };
 
     let state = core_lib::AppState::from_config(config).await.unwrap();
@@ -159,9 +161,14 @@ async fn get_captcha_returns_image() {
     let (status, body) = request_json(app, "GET", "/api/v1/captcha", None).await;
 
     assert_eq!(status, StatusCode::OK);
-    assert!(body["captcha_id"].as_str().is_some());
-    assert!(body["captcha_image"].as_str().unwrap().starts_with("data:image/png;base64,"));
-    assert_eq!(body["expires_in"], 300);
+    assert_eq!(body["code"], 0);
+    let data = &body["data"];
+    assert!(data["captcha_id"].as_str().is_some());
+    assert!(data["captcha_image"]
+        .as_str()
+        .unwrap()
+        .starts_with("data:image/png;base64,"));
+    assert_eq!(data["expires_in"], 300);
 }
 
 #[tokio::test]
@@ -179,7 +186,8 @@ async fn verify_invalid_captcha_returns_false() {
     .await;
 
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["valid"], false);
+    assert_eq!(body["code"], 0);
+    assert_eq!(body["data"]["valid"], false);
 }
 
 // ============================================================================
@@ -202,9 +210,11 @@ async fn register_creates_user_and_returns_token() {
     .await;
 
     assert_eq!(status, StatusCode::OK, "注册失败: {}", body);
-    assert!(body["access_token"].as_str().is_some());
-    assert_eq!(body["user"]["username"], "testuser");
-    assert_eq!(body["user"]["email"], "test@example.com");
+    assert_eq!(body["code"], 0);
+    let data = &body["data"];
+    assert!(data["access_token"].as_str().is_some());
+    assert_eq!(data["user"]["username"], "testuser");
+    assert_eq!(data["user"]["email"], "test@example.com");
 }
 
 #[tokio::test]
@@ -224,21 +234,22 @@ async fn login_with_correct_password_succeeds() {
     )
     .await;
 
-    // 登录
+    // 登录（LoginRequest 使用 account 字段，不是 email）
     let app = setup_test_app().await;
     let (status, body) = request_json(
         app,
         "POST",
         "/api/v1/auth/login",
         Some(serde_json::json!({
-            "email": "login@example.com",
+            "account": "login@example.com",
             "password": "mypassword"
         })),
     )
     .await;
 
-    // 注意：由于是新的内存数据库，用户不存在
+    // 注意：由于是新的内存数据库，用户不存在 → 401 Unauthorized
     assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(body["code"], 40100);
 }
 
 #[tokio::test]
@@ -271,8 +282,13 @@ async fn register_duplicate_email_fails() {
     )
     .await;
 
+    // 重复邮箱 → 400 Bad Request
     assert_eq!(status, StatusCode::BAD_REQUEST);
-    assert!(body["message"].as_str().unwrap().contains("邮箱"));
+    assert_eq!(body["code"], 40000);
+    assert!(
+        body["message"].as_str().unwrap().contains("邮箱")
+            || body["message"].as_str().unwrap().contains("已存在")
+    );
 }
 
 // ============================================================================
@@ -282,8 +298,10 @@ async fn register_duplicate_email_fails() {
 #[tokio::test]
 async fn me_requires_auth() {
     let app = setup_test_app().await;
-    let (status, _) = request_json(app, "GET", "/api/v1/auth/me", None).await;
+    let (status, body) = request_json(app, "GET", "/api/v1/auth/me", None).await;
+    // 未认证 → 401 Unauthorized
     assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(body["code"], 40100);
 }
 
 #[tokio::test]
@@ -303,13 +321,14 @@ async fn register_then_access_me() {
     )
     .await;
 
-    let token = body["access_token"].as_str().unwrap();
+    let token = body["data"]["access_token"].as_str().unwrap();
 
     // 使用 token 访问 /me
     let (status, me_body) = request_with_auth(app, "GET", "/api/v1/auth/me", token, None).await;
     assert_eq!(status, StatusCode::OK);
-    // /auth/me 返回 AuthResponse 格式，username 在 user 对象内
-    assert_eq!(me_body["user"]["username"], "meuser");
+    assert_eq!(me_body["code"], 0);
+    // /auth/me 直接返回 UserPublic（data.username），不再嵌套 user 对象
+    assert_eq!(me_body["data"]["username"], "meuser");
 }
 
 // ============================================================================
@@ -319,14 +338,16 @@ async fn register_then_access_me() {
 #[tokio::test]
 async fn create_album_requires_auth() {
     let app = setup_test_app().await;
-    let (status, _) = request_json(
+    let (status, body) = request_json(
         app,
         "POST",
         "/api/v1/albums",
         Some(serde_json::json!({ "name": "test" })),
     )
     .await;
+    // 未认证 → 401 Unauthorized
     assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(body["code"], 40100);
 }
 
 #[tokio::test]
@@ -346,7 +367,7 @@ async fn create_and_list_albums() {
     )
     .await;
 
-    let token = auth["access_token"].as_str().unwrap();
+    let token = auth["data"]["access_token"].as_str().unwrap();
 
     // 创建相册
     let (status, _) = request_with_auth(
@@ -391,5 +412,5 @@ async fn unknown_route_returns_404() {
     let (status, body) = request_json(app, "GET", "/api/v1/nonexistent", None).await;
 
     assert_eq!(status, StatusCode::NOT_FOUND);
-    assert_eq!(body["code"], "NOT_FOUND");
+    assert_eq!(body["code"], 40400);
 }

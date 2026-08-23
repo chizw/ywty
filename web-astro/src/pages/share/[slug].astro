@@ -1,0 +1,43 @@
+---
+// 分享页：通过 slug 查看分享的图片/相册（SSR 获取 + Vue island 交互）
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import ShareView from '../../components/vue/share/ShareView.vue'
+import { useApi } from '../../lib/api'
+import { getSiteInfo } from '../../lib/site'
+import type { ShareData } from '../../lib/types'
+
+const { slug } = Astro.params
+
+let share: ShareData | null = null
+try {
+  share = await useApi().get<ShareData>(`/s/${slug}`)
+} catch {
+  share = null
+}
+
+const site = await getSiteInfo()
+const sealChar = site.name.slice(-1)
+
+const ogImage = share?.thumbnail_url || share?.url
+---
+
+<BaseLayout
+  title={share?.type === 'photo' ? '图片分享' : share?.type === 'album' ? '相册分享' : '分享'}
+  description={`查看分享内容 · ${site.name}`}
+  image={ogImage}
+>
+  <div class="min-h-screen bg-background">
+    <header class="glass sticky top-0 z-30 border-b border-border">
+      <div class="container-site flex h-16 items-center justify-between">
+        <a href="/" class="flex items-center gap-2.5">
+          <span class="font-display text-lg font-bold tracking-tight text-foreground">{site.name}</span>
+          <span class="seal h-6 w-6 text-[0.6rem]" aria-label={sealChar}>{sealChar}</span>
+        </a>
+        <span class="text-sm text-muted-foreground">分享</span>
+      </div>
+    </header>
+    <main class="container-site max-w-5xl py-8">
+      <ShareView slug={slug ?? ''} initial={share} client:load />
+    </main>
+  </div>
+</BaseLayout>

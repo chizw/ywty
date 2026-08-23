@@ -1,9 +1,10 @@
 //! 存储域 DTO
 
 use serde::Serialize;
+use utoipa::ToSchema;
 
 /// 上传签名响应（用于前端直传）
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct StorageSignResponse {
     /// 上传 URL（本地驱动时为相对路径前缀）
     pub upload_url: String,

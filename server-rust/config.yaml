@@ -13,13 +13,13 @@ database:
   max_idle_conns: 10
 
 redis:
-  addr: "127.0.0.1:6379"
+  addr: ""
   password: null
   db: 0
 
 auth:
   jwt:
-    secret: "3L1gLvGLYRE/0w8gCYh2umacO7AH+avXgOdnyaJYrDEqHpfdi1BgsswoHefp2XyW"
+    secret: "please-change-me-in-production"
     access_expire: 7200
     refresh_expire: 2592000
 
@@ -52,3 +52,24 @@ notify:
     driver: "aliyun"
     access_key: ""
     secret_key: ""
+
+# OAuth 配置（可选，未配置则 OAuth 登录不可用）
+# oauth:
+#   github:
+#     client_id: "your-github-client-id"
+#     client_secret: "your-github-client-secret"
+#     redirect_uri: "http://localhost:3000/api/v1/oauth/github/callback"
+#   google:
+#     client_id: "your-google-client-id"
+#     client_secret: "your-google-client-secret"
+#     redirect_uri: "http://localhost:3000/api/v1/oauth/google/callback"
+
+# 水印配置
+watermark:
+  enabled: false
+  text: "{site_name}"
+  position: "bottom-right"  # top-left | top-right | bottom-left | bottom-right | center
+  opacity: 128               # 0-255
+  font_size: 24.0
+  font_path: null            # null 则使用打包的 CJK 字体
+  mode: "site_name"          # site_name | username | both

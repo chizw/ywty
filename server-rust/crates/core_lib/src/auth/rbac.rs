@@ -17,7 +17,7 @@ pub enum Role {
 }
 
 impl Role {
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse(s: &str) -> Self {
         match s {
             "admin" => Role::Admin,
             "super_admin" => Role::SuperAdmin,
@@ -35,13 +35,13 @@ impl Role {
 
     /// 检查角色是否有权限访问
     pub fn can_access(&self, required: &Role) -> bool {
-        match (self, required) {
-            (Role::SuperAdmin, _) => true,
-            (Role::Admin, Role::Admin) => true,
-            (Role::Admin, Role::User) => true,
-            (Role::User, Role::User) => true,
-            _ => false,
-        }
+        matches!(
+            (self, required),
+            (Role::SuperAdmin, _)
+                | (Role::Admin, Role::Admin)
+                | (Role::Admin, Role::User)
+                | (Role::User, Role::User)
+        )
     }
 }
 
@@ -82,7 +82,7 @@ pub async fn rbac_middleware(
     request: Request,
     next: Next,
 ) -> Result<Response, AppError> {
-    let user_role = Role::from_str(&claims.role);
+    let user_role = Role::parse(&claims.role);
 
     if !user_role.can_access(&guard.required_role) {
         return Err(AppError::Forbidden);
@@ -93,7 +93,7 @@ pub async fn rbac_middleware(
 
 /// 检查是否为管理员
 pub fn require_admin(claims: &Claims) -> Result<(), AppError> {
-    let role = Role::from_str(&claims.role);
+    let role = Role::parse(&claims.role);
     if !role.can_access(&Role::Admin) {
         return Err(AppError::Forbidden);
     }
@@ -102,7 +102,7 @@ pub fn require_admin(claims: &Claims) -> Result<(), AppError> {
 
 /// 检查是否为超级管理员
 pub fn require_super_admin(claims: &Claims) -> Result<(), AppError> {
-    let role = Role::from_str(&claims.role);
+    let role = Role::parse(&claims.role);
     if !role.can_access(&Role::SuperAdmin) {
         return Err(AppError::Forbidden);
     }

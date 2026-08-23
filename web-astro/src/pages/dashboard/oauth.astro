@@ -1,0 +1,8 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { OAuthPage } from '../../components/react/dashboard/OAuthPage.tsx'
+---
+
+<BaseLayout title="三方账号">
+  <OAuthPage client:load />
+</BaseLayout>

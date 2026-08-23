@@ -1,8 +1,8 @@
+use crate::error::AppError;
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
-use crate::error::AppError;
 
 /// 哈希密码
 pub fn hash_password(password: &str) -> crate::AppResult<String> {

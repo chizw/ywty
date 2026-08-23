@@ -1,0 +1,50 @@
+---
+// 单页：about / terms / privacy 等（SSR 拉取）
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import PublicLayout from '../../layouts/PublicLayout.astro'
+import { useApi } from '../../lib/api'
+
+const { slug } = Astro.params
+
+interface PageData {
+  id: number
+  type: string
+  name: string
+  title: string
+  content?: string | null
+  description?: string | null
+  keywords?: string | null
+}
+
+let page: PageData | null = null
+try {
+  page = await useApi().get<PageData>(`/api/v1/pages/${slug}`)
+} catch {
+  page = null
+}
+---
+
+<BaseLayout title={page?.title || slug} description={page?.description || undefined}>
+  <PublicLayout>
+    <section class="container-site max-w-3xl py-12">
+      {page ? (
+        <>
+          <h1 class="text-3xl font-bold text-foreground">{page.title}</h1>
+          <div
+            class="prose mt-6 max-w-none text-[15px] leading-relaxed text-foreground/90
+              [&_h2]:mt-8 [&_h2]:text-xl [&_h2]:font-semibold
+              [&_p]:mt-4 [&_a]:text-primary [&_a]:underline
+              [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6
+              [&_li]:mt-1 [&_strong]:font-semibold"
+            set:html={page.content || ''}
+          />
+        </>
+      ) : (
+        <div class="py-24 text-center text-muted-foreground">
+          页面不存在
+          <a href="/" class="mt-4 block text-sm text-primary hover:underline">返回首页</a>
+        </div>
+      )}
+    </section>
+  </PublicLayout>
+</BaseLayout>

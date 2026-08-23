@@ -34,7 +34,7 @@ pub struct Photo {
 }
 
 /// 上传图片请求
-#[derive(Debug, Clone, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize, Default, utoipa::ToSchema)]
 pub struct UploadPhotoRequest {
     pub album_id: Option<i64>,
     pub is_public: Option<bool>,
@@ -42,7 +42,7 @@ pub struct UploadPhotoRequest {
 }
 
 /// 更新图片请求
-#[derive(Debug, Clone, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize, Default, utoipa::ToSchema)]
 pub struct UpdatePhotoRequest {
     pub album_id: Option<i64>,
     pub is_public: Option<bool>,
@@ -67,7 +67,7 @@ pub struct PhotoPublic {
 }
 
 /// 标签实体
-#[derive(Debug, Clone, FromRow, Serialize)]
+#[derive(Debug, Clone, FromRow, Serialize, utoipa::ToSchema)]
 pub struct Tag {
     pub id: i64,
     pub name: String,
@@ -84,14 +84,19 @@ pub struct PhotoTag {
 }
 
 /// 分享实体
-#[derive(Debug, Clone, FromRow, Serialize)]
+///
+/// `password` 存储访问密码的哈希，序列化时跳过；对外通过 `has_password` 表示是否加密。
+#[derive(Debug, Clone, FromRow, Serialize, utoipa::ToSchema)]
 pub struct Share {
     pub id: i64,
     pub user_id: i64,
     pub shareable_type: String,
     pub shareable_id: i64,
     pub slug: String,
+    #[serde(skip)]
     pub password: Option<String>,
+    #[sqlx(default)]
+    pub has_password: bool,
     pub views: i64,
     pub expires_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
@@ -99,7 +104,7 @@ pub struct Share {
 }
 
 /// 创建分享请求
-#[derive(Debug, Clone, Deserialize, Validate)]
+#[derive(Debug, Clone, Deserialize, Validate, utoipa::ToSchema)]
 pub struct CreateShareRequest {
     pub shareable_type: String,
     pub shareable_id: i64,

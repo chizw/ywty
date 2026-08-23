@@ -3,8 +3,8 @@
 use chrono::Utc;
 use sqlx::SqlitePool;
 
-use crate::dto::user::UserProfile;
 use crate::auth::password::hash_password;
+use crate::dto::user::UserProfile;
 use crate::error::{AppError, AppResult};
 
 #[derive(Clone)]
@@ -94,13 +94,15 @@ impl UserService {
         new_password: &str,
     ) -> AppResult<()> {
         // 查询当前密码
-        let row: Option<(String,)> = sqlx::query_as("SELECT password FROM users WHERE id = ? AND deleted_at IS NULL")
-            .bind(user_id)
-            .fetch_optional(&self.pool)
-            .await?;
+        let row: Option<(String,)> =
+            sqlx::query_as("SELECT password FROM users WHERE id = ? AND deleted_at IS NULL")
+                .bind(user_id)
+                .fetch_optional(&self.pool)
+                .await?;
 
-        let current_hash =
-            row.ok_or_else(|| AppError::NotFound("用户不存在".to_string()))?.0;
+        let current_hash = row
+            .ok_or_else(|| AppError::NotFound("用户不存在".to_string()))?
+            .0;
 
         // 验证旧密码
         if !crate::auth::password::verify_password(old_password, &current_hash)? {
@@ -150,13 +152,15 @@ impl UserService {
 
         // 更新邮箱
         let now = Utc::now().to_rfc3339();
-        sqlx::query("UPDATE users SET email = ?, email_verified_at = ?, updated_at = ? WHERE id = ?")
-            .bind(new_email)
-            .bind(&now)
-            .bind(&now)
-            .bind(user_id)
-            .execute(&self.pool)
-            .await?;
+        sqlx::query(
+            "UPDATE users SET email = ?, email_verified_at = ?, updated_at = ? WHERE id = ?",
+        )
+        .bind(new_email)
+        .bind(&now)
+        .bind(&now)
+        .bind(user_id)
+        .execute(&self.pool)
+        .await?;
 
         // 标记验证码已使用
         sqlx::query("UPDATE verify_codes SET used_at = ? WHERE id = ?")

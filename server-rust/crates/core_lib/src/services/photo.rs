@@ -6,23 +6,19 @@ use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
 
-use crate::dto::photo::{
-    BatchUpdateRequest, PhotoPublicResponse, PhotoResponse, UploadResponse,
-};
+use crate::dto::photo::{BatchUpdateRequest, PhotoPublicResponse, PhotoResponse, UploadResponse};
 
 #[derive(Clone)]
 pub struct PhotoService {
     pool: SqlitePool,
     public_url_prefix: String,
-    upload_root: String,
 }
 
 impl PhotoService {
-    pub fn new(pool: SqlitePool, public_url_prefix: String, upload_root: String) -> Self {
+    pub fn new(pool: SqlitePool, public_url_prefix: String) -> Self {
         Self {
             pool,
             public_url_prefix,
-            upload_root,
         }
     }
 
@@ -104,6 +100,7 @@ impl PhotoService {
     }
 
     /// 创建图片记录（上传后由 handler 调用）
+    #[allow(clippy::too_many_arguments)]
     pub async fn create(
         &self,
         user_id: i64,
@@ -116,11 +113,27 @@ impl PhotoService {
         height: Option<i32>,
         md5: Option<&str>,
         album_id: Option<i64>,
+        is_public: bool,
     ) -> AppResult<UploadResponse> {
-        self.create_with_thumbnail(user_id, filename, original_name, path, size, mime_type, width, height, md5, album_id, None).await
+        self.create_with_thumbnail(
+            user_id,
+            filename,
+            original_name,
+            path,
+            size,
+            mime_type,
+            width,
+            height,
+            md5,
+            album_id,
+            None,
+            is_public,
+        )
+        .await
     }
 
     /// 创建图片记录（带缩略图）
+    #[allow(clippy::too_many_arguments)]
     pub async fn create_with_thumbnail(
         &self,
         user_id: i64,
@@ -134,16 +147,55 @@ impl PhotoService {
         md5: Option<&str>,
         album_id: Option<i64>,
         thumbnail_url: Option<&str>,
+        is_public: bool,
+    ) -> AppResult<UploadResponse> {
+        let url = format!("{}/{}", self.public_url_prefix.trim_end_matches('/'), path);
+        self.create_with_url(
+            user_id,
+            filename,
+            original_name,
+            path,
+            &url,
+            size,
+            mime_type,
+            width,
+            height,
+            md5,
+            album_id,
+            thumbnail_url,
+            is_public,
+        )
+        .await
+    }
+
+    /// 创建图片记录（显式指定最终访问 URL）
+    ///
+    /// 本地驱动时 URL 为 uploads 前缀拼接；远端驱动时由驱动返回公网 URL。
+    #[allow(clippy::too_many_arguments)]
+    pub async fn create_with_url(
+        &self,
+        user_id: i64,
+        filename: &str,
+        original_name: &str,
+        path: &str,
+        url: &str,
+        size: i64,
+        mime_type: &str,
+        width: Option<i32>,
+        height: Option<i32>,
+        md5: Option<&str>,
+        album_id: Option<i64>,
+        thumbnail_url: Option<&str>,
+        is_public: bool,
     ) -> AppResult<UploadResponse> {
         let uuid = Uuid::new_v4().to_string();
-        let url = format!("{}/{}", self.public_url_prefix.trim_end_matches('/'), path);
         let now = Utc::now().to_rfc3339();
 
         let result = sqlx::query(
             r#"
             INSERT INTO photos (uuid, user_id, album_id, filename, original_name, path, url,
                                 thumbnail_url, size, width, height, mime_type, md5, is_public, status, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
             "#,
         )
         .bind(&uuid)
@@ -152,13 +204,14 @@ impl PhotoService {
         .bind(filename)
         .bind(original_name)
         .bind(path)
-        .bind(&url)
+        .bind(url)
         .bind(thumbnail_url)
         .bind(size)
         .bind(width)
         .bind(height)
         .bind(mime_type)
         .bind(md5)
+        .bind(is_public)
         .bind(&now)
         .bind(&now)
         .execute(&self.pool)
@@ -169,7 +222,7 @@ impl PhotoService {
         Ok(UploadResponse {
             id,
             uuid,
-            url,
+            url: url.to_string(),
             thumbnail_url: thumbnail_url.map(String::from),
             size,
             width,
@@ -247,11 +300,7 @@ impl PhotoService {
     }
 
     /// 批量更新
-    pub async fn batch_update(
-        &self,
-        user_id: i64,
-        req: &BatchUpdateRequest,
-    ) -> AppResult<u64> {
+    pub async fn batch_update(&self, user_id: i64, req: &BatchUpdateRequest) -> AppResult<u64> {
         let now = Utc::now().to_rfc3339();
         let mut affected = 0u64;
 
@@ -338,9 +387,9 @@ impl PhotoService {
         .flatten();
 
         let uuid = Uuid::new_v4().to_string();
-        let new_filename = format!("copy_{}", &original.filename);
-        let path = format!("copies/{}", &new_filename);
-        let url = format!("{}/{}", self.public_url_prefix.trim_end_matches('/'), &path);
+        let new_filename = format!("copy_{}", original.filename);
+        let path = format!("copies/{}", new_filename);
+        let url = format!("{}/{}", self.public_url_prefix.trim_end_matches('/'), path);
         let now = Utc::now().to_rfc3339();
 
         let result = sqlx::query(
@@ -380,7 +429,11 @@ impl PhotoService {
     }
 
     /// 公开探索列表
-    pub async fn list_public(&self, page: u64, per_page: u64) -> AppResult<(Vec<PhotoPublicResponse>, i64)> {
+    pub async fn list_public(
+        &self,
+        page: u64,
+        per_page: u64,
+    ) -> AppResult<(Vec<PhotoPublicResponse>, i64)> {
         let offset = (page - 1) * per_page;
 
         let total: i64 = sqlx::query_scalar(

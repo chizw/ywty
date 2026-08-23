@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import { AlbumDetailPage } from '../../../components/react/dashboard/AlbumDetailPage.tsx'
+
+const { id } = Astro.params
+const albumId = Number(id)
+---
+
+<BaseLayout title="相册详情">
+  <AlbumDetailPage id={albumId} client:load />
+</BaseLayout>

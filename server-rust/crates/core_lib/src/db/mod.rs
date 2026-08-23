@@ -17,7 +17,7 @@ use crate::error::AppResult;
 
 /// 创建 SQLite 数据库连接池。
 ///
-/// 追加 `foreign_keys(ON)` + `busy_timeout(5000)` pragma（与 Go 后端一致）。
+/// 追加 `foreign_keys(ON)` + `busy_timeout(5000)` pragma。
 pub async fn create_pool(cfg: &DatabaseConfig) -> AppResult<SqlitePool> {
     let path = cfg.path.clone().unwrap_or_else(|| "ywty.db".to_string());
 
@@ -51,7 +51,7 @@ pub async fn create_pool(cfg: &DatabaseConfig) -> AppResult<SqlitePool> {
     let pool = options
         .connect(&format!("sqlite://{}?mode=rwc", path))
         .await
-        .map_err(|e| crate::error::AppError::Database(e))?;
+        .map_err(crate::error::AppError::Database)?;
 
     Ok(pool)
 }
@@ -62,5 +62,5 @@ pub async fn ping(pool: &SqlitePool) -> AppResult<()> {
         .fetch_one(pool)
         .await
         .map(|_| ())
-        .map_err(|e| crate::error::AppError::Database(e))
+        .map_err(crate::error::AppError::Database)
 }

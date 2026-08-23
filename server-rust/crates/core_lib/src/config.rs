@@ -2,7 +2,10 @@ use serde::Deserialize;
 use std::path::Path;
 
 /// 应用配置
-#[derive(Debug, Clone, Deserialize)]
+///
+/// 手动实现 `Debug`：密钥类字段（JWT / 数据库 / Redis / 存储 / OAuth / SMTP）一律脱敏，
+/// 防止调试日志或 panic 信息倾泻敏感配置。
+#[derive(Clone, Deserialize)]
 pub struct AppConfig {
     pub app: AppConfigApp,
     pub database: DatabaseConfig,
@@ -12,6 +15,32 @@ pub struct AppConfig {
     pub queue: Option<QueueConfig>,
     pub ratelimit: Option<RateLimitConfig>,
     pub notify: Option<NotifyConfig>,
+    pub oauth: Option<OAuthConfig>,
+    pub watermark: Option<WatermarkConfig>,
+}
+
+impl std::fmt::Debug for AppConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mail = self
+            .notify
+            .as_ref()
+            .and_then(|n| n.mail.as_ref())
+            .map(|m| &m.host);
+        f.debug_struct("AppConfig")
+            .field("app", &self.app)
+            .field("database", &"<redacted>")
+            .field("redis", &self.redis.as_ref().map(|r| &r.addr))
+            .field("auth.jwt.secret", &"<redacted>")
+            .field("storage.driver", &self.storage.driver)
+            .field("storage.root", &self.storage.root)
+            .field("oauth", &self.oauth.as_ref().map(|_| "<configured>"))
+            .field("notify.mail.host", &mail)
+            .field(
+                "watermark.enabled",
+                &self.watermark.as_ref().map(|w| w.enabled),
+            )
+            .finish()
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -83,9 +112,6 @@ pub enum StorageDriver {
     Oss,
     Cos,
     Qiniu,
-    Upyun,
-    Ftp,
-    Sftp,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -119,6 +145,7 @@ pub struct QiniuConfig {
     pub bucket: String,
     pub access_key: String,
     pub secret_key: String,
+    pub domain: String, // 七牛绑定的自定义域名（用于生成公开 URL）
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -144,7 +171,6 @@ pub struct RateLimitConfig {
 #[derive(Debug, Clone, Deserialize)]
 pub struct NotifyConfig {
     pub mail: Option<MailConfig>,
-    pub sms: Option<SmsConfig>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -157,29 +183,61 @@ pub struct MailConfig {
     pub from: String,
 }
 
+/// OAuth 全局配置
 #[derive(Debug, Clone, Deserialize)]
-pub struct SmsConfig {
-    pub driver: String,
-    pub access_key: Option<String>,
-    pub secret_key: Option<String>,
+pub struct OAuthConfig {
+    pub github: Option<OAuthProviderConfig>,
+    pub google: Option<OAuthProviderConfig>,
+}
+
+/// 单个 OAuth 提供商配置
+#[derive(Debug, Clone, Deserialize)]
+pub struct OAuthProviderConfig {
+    pub client_id: String,
+    pub client_secret: String,
+    pub redirect_uri: String,
+}
+
+/// 水印配置
+#[derive(Debug, Clone, Deserialize)]
+pub struct WatermarkConfig {
+    pub enabled: bool,
+    pub text: String,
+    pub position: String,
+    pub opacity: u8,
+    pub font_size: f32,
+    pub font_path: Option<String>,
+    pub mode: String,
+}
+
+impl Default for WatermarkConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            text: "{site_name}".to_string(),
+            position: "bottom-right".to_string(),
+            opacity: 128,
+            font_size: 24.0,
+            font_path: None,
+            mode: "site_name".to_string(),
+        }
+    }
 }
 
 impl AppConfig {
-    /// 从文件加载配置
+    /// 从文件加载配置（环境变量覆盖见 [`apply_env_overrides_with`]）
     pub fn from_file<P: AsRef<Path>>(path: P) -> crate::AppResult<Self> {
-        let builder = config::Config::builder()
-            .add_source(config::File::from(path.as_ref()))
-            .add_source(
-                config::Environment::with_prefix("YWTY")
-                    .separator("__")
-                    .try_parsing(true),
-            );
+        let builder = config::Config::builder().add_source(config::File::from(path.as_ref()));
 
         builder
             .build()
             .map_err(|e| crate::AppError::Config(e.to_string()))?
             .try_deserialize()
             .map_err(|e| crate::AppError::Config(e.to_string()))
+            .map(|mut cfg: AppConfig| {
+                apply_env_overrides(&mut cfg);
+                cfg
+            })
     }
 
     /// 获取数据库连接字符串
@@ -205,6 +263,162 @@ impl AppConfig {
     pub fn listen_addr(&self) -> String {
         format!("{}:{}", self.app.host, self.app.port)
     }
+
+    /// 存储公开访问基址（全站唯一推导点）
+    ///
+    /// 优先级：`storage.url` 显式配置 > `{app.base_url}/uploads` > `http://localhost:{port}/uploads`。
+    /// 本地驱动产物存放在 uploads 目录并经该前缀对外提供。
+    pub fn storage_public_url(&self) -> String {
+        if let Some(url) = self
+            .storage
+            .url
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            return url.trim_end_matches('/').to_string();
+        }
+        match self
+            .app
+            .base_url
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            Some(base) => format!("{}/uploads", base.trim_end_matches('/')),
+            None => format!("http://localhost:{}/uploads", self.app.port),
+        }
+    }
+}
+
+/// 短环境变量覆盖层（在 YAML 配置之后应用，便于 Docker 零配置部署）
+///
+/// 规则：
+/// - 仅当环境变量存在且取值非空白时才覆盖对应字段；
+/// - 数值 / 枚举解析失败时忽略该变量，保留原值。
+///
+/// | 环境变量 | 覆盖字段 |
+/// |---|---|
+/// | `PORT` / `HOST` / `APP_ENV` / `APP_NAME` / `APP_URL` | app.port / app.host / app.env / app.name / app.base_url |
+/// | `DB_DRIVER`(`sqlite`\|`mysql`) / `DB_PATH` / `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASSWORD` / `DB_NAME` | database.driver / path / host / port / username / password / database |
+/// | `REDIS_ADDR` / `REDIS_PASSWORD` / `REDIS_DB` | redis.addr / password / db |
+/// | `JWT_SECRET` | auth.jwt.secret |
+/// | `STORAGE_DRIVER`(`local`\|`s3`\|`oss`\|`cos`\|`qiniu`) / `STORAGE_ROOT` / `STORAGE_URL` | storage.driver / root / url |
+/// | `RATELIMIT_ENABLE`(true\|false) | ratelimit.enable |
+fn apply_env_overrides_with<F>(cfg: &mut AppConfig, getenv: F)
+where
+    F: Fn(&str) -> Option<String>,
+{
+    // 统一取值：trim 后为空视为未设置（Docker compose 常产生空值变量）
+    let env = |key: &str| -> Option<String> {
+        getenv(key)
+            .map(|v| v.trim().to_string())
+            .filter(|v| !v.is_empty())
+    };
+
+    if let Some(v) = env("PORT") {
+        if let Ok(port) = v.parse::<u16>() {
+            cfg.app.port = port;
+        }
+    }
+    if let Some(v) = env("HOST") {
+        cfg.app.host = v;
+    }
+    if let Some(v) = env("APP_ENV") {
+        cfg.app.env = v;
+    }
+    if let Some(v) = env("APP_NAME") {
+        cfg.app.name = v;
+    }
+    if let Some(v) = env("APP_URL") {
+        cfg.app.base_url = Some(v);
+    }
+
+    if let Some(v) = env("DB_DRIVER") {
+        match v.to_ascii_lowercase().as_str() {
+            "sqlite" => cfg.database.driver = DatabaseDriver::Sqlite,
+            "mysql" => cfg.database.driver = DatabaseDriver::Mysql,
+            _ => {}
+        }
+    }
+    if let Some(v) = env("DB_PATH") {
+        cfg.database.path = Some(v);
+    }
+    if let Some(v) = env("DB_HOST") {
+        cfg.database.host = Some(v);
+    }
+    if let Some(v) = env("DB_PORT") {
+        if let Ok(port) = v.parse::<u16>() {
+            cfg.database.port = Some(port);
+        }
+    }
+    if let Some(v) = env("DB_USER") {
+        cfg.database.username = Some(v);
+    }
+    if let Some(v) = env("DB_PASSWORD") {
+        cfg.database.password = Some(v);
+    }
+    if let Some(v) = env("DB_NAME") {
+        cfg.database.database = Some(v);
+    }
+
+    if let Some(addr) = env("REDIS_ADDR") {
+        let redis = cfg.redis.get_or_insert(RedisConfig {
+            addr: String::new(),
+            password: None,
+            db: None,
+        });
+        redis.addr = addr;
+    }
+    if let Some(redis) = cfg.redis.as_mut() {
+        if let Some(v) = env("REDIS_PASSWORD") {
+            redis.password = Some(v);
+        }
+        if let Some(v) = env("REDIS_DB") {
+            if let Ok(db) = v.parse::<i64>() {
+                redis.db = Some(db);
+            }
+        }
+    }
+
+    if let Some(v) = env("JWT_SECRET") {
+        cfg.auth.jwt.secret = v;
+    }
+
+    if let Some(v) = env("STORAGE_DRIVER") {
+        match v.to_ascii_lowercase().as_str() {
+            "local" => cfg.storage.driver = StorageDriver::Local,
+            "s3" => cfg.storage.driver = StorageDriver::S3,
+            "oss" => cfg.storage.driver = StorageDriver::Oss,
+            "cos" => cfg.storage.driver = StorageDriver::Cos,
+            "qiniu" => cfg.storage.driver = StorageDriver::Qiniu,
+            _ => {}
+        }
+    }
+    if let Some(v) = env("STORAGE_ROOT") {
+        cfg.storage.root = Some(v);
+    }
+    if let Some(v) = env("STORAGE_URL") {
+        cfg.storage.url = Some(v);
+    }
+    if let Some(v) = env("RATELIMIT_ENABLE") {
+        let enabled = matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "on" | "yes");
+        match cfg.ratelimit.as_mut() {
+            Some(rl) => rl.enable = Some(enabled),
+            None => {
+                cfg.ratelimit = Some(RateLimitConfig {
+                    enable: Some(enabled),
+                    upload_per_minute: None,
+                    api_per_minute: None,
+                })
+            }
+        }
+    }
+}
+
+/// 生产入口：从真实进程环境读取短变量并覆盖配置
+pub fn apply_env_overrides(cfg: &mut AppConfig) {
+    apply_env_overrides_with(cfg, |key| std::env::var(key).ok());
 }
 
 impl Default for AppConfig {
@@ -250,6 +464,67 @@ impl Default for AppConfig {
             queue: None,
             ratelimit: None,
             notify: None,
+            oauth: None,
+            watermark: Some(WatermarkConfig::default()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    /// 构造 mock 取值闭包（避免 std::env::set_var 的 unsafe 与并行测试竞争）
+    fn env_from<'a>(pairs: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<String> + 'a {
+        let map: HashMap<String, String> = pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect();
+        move |key: &str| map.get(key).cloned()
+    }
+
+    #[test]
+    fn short_env_overrides_apply() {
+        let mut cfg = AppConfig::default();
+        apply_env_overrides_with(
+            &mut cfg,
+            env_from(&[
+                ("PORT", "8123"),
+                ("JWT_SECRET", "unit-test-secret"),
+                ("APP_URL", "https://img.example.com"),
+            ]),
+        );
+
+        assert_eq!(cfg.app.port, 8123);
+        assert_eq!(cfg.auth.jwt.secret, "unit-test-secret");
+        assert_eq!(cfg.app.base_url.as_deref(), Some("https://img.example.com"));
+    }
+
+    #[test]
+    fn invalid_or_blank_values_are_ignored() {
+        let mut cfg = AppConfig::default();
+        apply_env_overrides_with(
+            &mut cfg,
+            env_from(&[("PORT", "not-a-number"), ("JWT_SECRET", "   ")]),
+        );
+
+        assert_eq!(cfg.app.port, 3000);
+        assert_eq!(cfg.auth.jwt.secret, "please-change-me-in-production");
+    }
+
+    #[test]
+    fn storage_public_url_prefers_explicit_then_base_url() {
+        let mut cfg = AppConfig::default();
+        assert_eq!(
+            cfg.storage_public_url(),
+            format!("http://localhost:{}/uploads", cfg.app.port)
+        );
+
+        cfg.app.base_url = Some("http://example.com/".to_string());
+        assert_eq!(cfg.storage_public_url(), "http://example.com/uploads");
+
+        cfg.storage.url = Some("https://cdn.example.com".to_string());
+        assert_eq!(cfg.storage_public_url(), "https://cdn.example.com");
     }
 }

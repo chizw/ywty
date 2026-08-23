@@ -1,4 +1,5 @@
 [build]
-jobs = 4
-[target.x86_64-pc-windows-gnu]
-linker = 'C:\Users\29077\.cargo\bin\linker-wrapper.exe'
+target = "x86_64-pc-windows-msvc"
+
+[target.x86_64-pc-windows-msvc]
+# MSVC target - requires Visual Studio Build Tools (already installed)
