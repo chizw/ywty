@@ -22,6 +22,8 @@ pub struct UserBrief {
     pub username: String,
     pub email: String,
     pub avatar: Option<String>,
+    /// 展示用头像：自定义 avatar 优先，否则 WeAvatar（按邮箱 MD5）
+    pub avatar_url: Option<String>,
     pub role: String,
     pub is_super_admin: bool,
     pub created_at: DateTime<Utc>,

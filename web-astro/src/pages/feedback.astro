@@ -1,0 +1,15 @@
+---
+// 意见反馈页（公开）
+import BaseLayout from '../layouts/BaseLayout.astro'
+import PublicLayout from '../layouts/PublicLayout.astro'
+import FeedbackForm from '../components/vue/FeedbackForm.vue'
+import { getSiteInfo } from '../lib/site'
+
+const site = await getSiteInfo()
+---
+
+<BaseLayout title={`意见反馈 · ${site.name}`}>
+  <PublicLayout>
+    <FeedbackForm client:visible />
+  </PublicLayout>
+</BaseLayout>

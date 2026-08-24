@@ -52,6 +52,8 @@ export async function register(payload: {
   email: string
   password: string
   phone?: string
+  captcha_id?: string
+  captcha_code?: string
 }): Promise<TokenPair> {
   const api = useApi()
   const pair = await api.post<TokenPair>('/api/v1/auth/register', payload)

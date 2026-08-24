@@ -26,6 +26,7 @@ const year = new Date().getFullYear()
         <a href="/page/about" class="transition-colors hover:text-foreground">关于</a>
         <a href="/page/terms" class="transition-colors hover:text-foreground">条款</a>
         <a href="/page/privacy" class="transition-colors hover:text-foreground">隐私</a>
+        <a href="/feedback" class="transition-colors hover:text-foreground">意见反馈</a>
       </div>
     </div>
     <p v-if="footer" class="container-site mt-4 whitespace-pre-line text-center text-xs leading-relaxed text-muted-foreground">

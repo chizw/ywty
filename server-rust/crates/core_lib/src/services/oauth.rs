@@ -81,8 +81,8 @@ impl OAuthService {
         }
     }
 
-    /// 获取提供商配置
-    fn provider_config(&self, provider: &str) -> AppResult<OAuthProviderConfig> {
+    /// 获取提供商配置（静态：仅 config.yaml）
+    fn static_provider_config(&self, provider: &str) -> AppResult<OAuthProviderConfig> {
         match provider {
             "github" => self
                 .github_config
@@ -99,9 +99,60 @@ impl OAuthService {
         }
     }
 
+    /// 获取提供商配置：优先读 settings 表（后台可配），缺省回退 config.yaml
+    async fn resolve_provider_config(&self, provider: &str) -> AppResult<OAuthProviderConfig> {
+        let prefix = match provider {
+            "github" => "oauth.github",
+            "google" => "oauth.google",
+            _ => {
+                return Err(AppError::Business(format!(
+                    "不支持的 OAuth 提供商: {}",
+                    provider
+                )))
+            }
+        };
+
+        let client_id =
+            crate::services::settings::get(&self.pool, &format!("{}.client_id", prefix))
+                .await?
+                .filter(|v| !v.trim().is_empty());
+
+        if let Some(id) = client_id {
+            let client_secret =
+                crate::services::settings::get(&self.pool, &format!("{}.client_secret", prefix))
+                    .await?
+                    .unwrap_or_default();
+            let static_cfg = self.static_provider_config(provider).ok();
+            let redirect_uri =
+                crate::services::settings::get(&self.pool, &format!("{}.redirect_uri", prefix))
+                    .await?
+                    .filter(|v| !v.trim().is_empty())
+                    .or_else(|| static_cfg.as_ref().map(|c| c.redirect_uri.clone()))
+                    .unwrap_or_default();
+            return Ok(OAuthProviderConfig {
+                client_id: id,
+                client_secret,
+                redirect_uri,
+            });
+        }
+
+        self.static_provider_config(provider)
+    }
+
+    /// 列出已配置（settings 或 config.yaml 任一来源）的提供商，供前端渲染入口
+    pub async fn configured_providers(&self) -> Vec<(&'static str, &'static str)> {
+        let mut items = Vec::new();
+        for (name, label) in [("github", "GitHub"), ("google", "Google")] {
+            if self.resolve_provider_config(name).await.is_ok() {
+                items.push((name, label));
+            }
+        }
+        items
+    }
+
     /// 获取授权 URL 和 CSRF state
     pub async fn authorize_url(&self, provider: &str) -> AppResult<(String, String)> {
-        let config = self.provider_config(provider)?;
+        let config = self.resolve_provider_config(provider).await?;
         let state = uuid::Uuid::new_v4().to_string();
 
         let url = match provider {
@@ -125,7 +176,7 @@ impl OAuthService {
 
     /// OAuth 回调：交换 code → 获取用户信息 → 查找或创建用户 → 返回用户信息
     pub async fn login_or_register(&self, provider: &str, code: &str) -> AppResult<OAuthUserInfo> {
-        let config = self.provider_config(provider)?;
+        let config = self.resolve_provider_config(provider).await?;
 
         // 1. 用 code 交换 access_token
         let access_token = self.exchange_code(provider, &config, code).await?;

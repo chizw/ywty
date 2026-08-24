@@ -9,14 +9,15 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import { weavatarUrl } from '@/lib/weavatar'
 
 interface Profile {
   id: number
   username: string
   email: string
-  avatar: string | null
-  bio: string | null
+avatar: string | null
+avatar_url: string | null
+bio: string | null
   role: string
   capacity_used: number
   capacity_max: number
@@ -107,10 +108,12 @@ export function SettingsPage() {
       <PageHeader title="设置" description="管理你的账号资料" />
 
       <div className="mb-6 flex items-center gap-4 rounded-md border border-border bg-card p-5">
-        <Avatar className="h-14 w-14">
-          {profile?.avatar ? <AvatarImage src={profile.avatar} /> : null}
-          <AvatarFallback className="text-lg">{(user?.name || user?.username || 'U').slice(0, 1).toUpperCase()}</AvatarFallback>
-        </Avatar>
+        {(() => {
+          const src = profile?.avatar_url || weavatarUrl(user?.email || user?.username || 'user')
+          return (
+            <img src={src} alt={user?.name || user?.username || 'avatar'} className="h-14 w-14 rounded-full object-cover" />
+          )
+        })()}
         <div className="min-w-0 flex-1">
           <p className="font-display text-lg font-semibold">{user?.name || user?.username}</p>
           <p className="text-sm text-muted-foreground">{profile?.email}</p>

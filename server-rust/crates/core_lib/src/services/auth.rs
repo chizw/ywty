@@ -86,6 +86,8 @@ impl AuthService {
         // 签发令牌
         let token_pair = self.jwt.generate_token_pair(user_id, username, "user")?;
 
+        let avatar_url = crate::utils::weavatar_url(email, 200);
+
         Ok(AuthResponse {
             access_token: token_pair.access_token,
             refresh_token: token_pair.refresh_token,
@@ -97,6 +99,7 @@ impl AuthService {
                 username: username.to_string(),
                 email: email.to_string(),
                 avatar: None,
+                avatar_url: Some(avatar_url),
                 role: "user".to_string(),
                 is_super_admin: false,
                 created_at: Utc::now(),
@@ -172,6 +175,12 @@ impl AuthService {
                 .fetch_optional(&self.pool)
                 .await?;
 
+        let avatar_val = avatar.and_then(|a| a.0);
+        let avatar_url = match avatar_val.as_deref() {
+            Some(a) if !a.trim().is_empty() => a.to_string(),
+            _ => crate::utils::weavatar_url(&email, 200),
+        };
+
         Ok(AuthResponse {
             access_token: token_pair.access_token,
             refresh_token: token_pair.refresh_token,
@@ -182,7 +191,8 @@ impl AuthService {
                 uuid,
                 username: username.clone(),
                 email,
-                avatar: avatar.and_then(|a| a.0),
+                avatar: avatar_val,
+                avatar_url: Some(avatar_url),
                 role,
                 is_super_admin,
                 created_at: created_at.map(|c| c.0).unwrap_or_else(Utc::now),
@@ -223,6 +233,12 @@ impl AuthService {
         let (uuid, created_at) =
             uuid_row.unwrap_or_else(|| (Uuid::new_v4().to_string(), Utc::now()));
 
+        let avatar_val = avatar.and_then(|a| a.0);
+        let avatar_url = match avatar_val.as_deref() {
+            Some(a) if !a.trim().is_empty() => a.to_string(),
+            _ => crate::utils::weavatar_url(&email, 200),
+        };
+
         Ok(AuthResponse {
             access_token: token_pair.access_token,
             refresh_token: token_pair.refresh_token,
@@ -233,7 +249,8 @@ impl AuthService {
                 uuid,
                 username: username.clone(),
                 email,
-                avatar: avatar.and_then(|a| a.0),
+                avatar: avatar_val,
+                avatar_url: Some(avatar_url),
                 role,
                 is_super_admin,
                 created_at,
@@ -322,12 +339,18 @@ impl AuthService {
         let (uuid, username, email, avatar, role, is_super_admin, created_at) =
             row.ok_or_else(|| AppError::NotFound("用户不存在".to_string()))?;
 
+        let avatar_url = match avatar.as_deref() {
+            Some(a) if !a.trim().is_empty() => a.to_string(),
+            _ => crate::utils::weavatar_url(&email, 200),
+        };
+
         Ok(UserBrief {
             id: user_id,
             uuid,
             username,
             email,
             avatar,
+            avatar_url: Some(avatar_url),
             role,
             is_super_admin,
             created_at,

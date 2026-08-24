@@ -33,8 +33,16 @@ function open(i: number) {
             class="aspect-[4/3] w-full"
           />
         </div>
-        <div class="mt-1.5 flex items-baseline justify-between gap-2 text-[0.7rem] leading-none">
-          <span class="truncate text-muted-foreground">{{ p.username || p.name }}</span>
+        <div class="mt-1.5 flex items-center justify-between gap-2 text-[0.7rem] leading-none">
+          <img
+            v-if="p.avatar_url"
+            :src="p.avatar_url"
+            :alt="p.username || ''"
+            loading="lazy"
+            class="h-5 w-5 rounded-full object-cover"
+            :title="p.username || ''"
+          />
+          <span class="flex-1" />
           <span v-if="p.views" class="shrink-0 tabular-nums text-muted-foreground/70">{{ p.views }}</span>
         </div>
       </button>

@@ -13,6 +13,8 @@ export interface UserInfo {
   is_super_admin?: boolean
   status?: string
   phone?: string
+  /** 展示用头像（后端生成：自定义优先，否则 WeAvatar 兜底） */
+  avatar_url?: string | null
   created_at?: string
 }
 

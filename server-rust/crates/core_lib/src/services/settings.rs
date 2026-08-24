@@ -39,8 +39,20 @@ pub mod keys {
     /// ICP 备案号（可空）
     pub const SITE_ICP: &str = "site.icp";
 
+    // ---- OAuth 第三方登录 ----
+    pub const OAUTH_GITHUB_CLIENT_ID: &str = "oauth.github.client_id";
+    pub const OAUTH_GITHUB_CLIENT_SECRET: &str = "oauth.github.client_secret";
+    pub const OAUTH_GITHUB_REDIRECT_URI: &str = "oauth.github.redirect_uri";
+    pub const OAUTH_GOOGLE_CLIENT_ID: &str = "oauth.google.client_id";
+    pub const OAUTH_GOOGLE_CLIENT_SECRET: &str = "oauth.google.client_secret";
+    pub const OAUTH_GOOGLE_REDIRECT_URI: &str = "oauth.google.redirect_uri";
+
     /// 敏感键清单：管理接口返回时脱敏为"是否已设置"布尔值
-    pub const SENSITIVE_KEYS: &[&str] = &[MAIL_SMTP_PASSWORD];
+    pub const SENSITIVE_KEYS: &[&str] = &[
+        MAIL_SMTP_PASSWORD,
+        OAUTH_GITHUB_CLIENT_SECRET,
+        OAUTH_GOOGLE_CLIENT_SECRET,
+    ];
 
     /// 允许通过管理接口写入的键白名单
     pub const ALLOWED_KEYS: &[&str] = &[
@@ -59,6 +71,12 @@ pub mod keys {
         SITE_KEYWORDS,
         SITE_FOOTER,
         SITE_ICP,
+        OAUTH_GITHUB_CLIENT_ID,
+        OAUTH_GITHUB_CLIENT_SECRET,
+        OAUTH_GITHUB_REDIRECT_URI,
+        OAUTH_GOOGLE_CLIENT_ID,
+        OAUTH_GOOGLE_CLIENT_SECRET,
+        OAUTH_GOOGLE_REDIRECT_URI,
     ];
 }
 

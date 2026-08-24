@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore, isAdminUser } from '@/lib/react-store'
 import { useSiteInfo } from '@/lib/use-site-info'
+import { weavatarUrl } from '@/lib/weavatar'
 import { Toaster } from './Toaster'
 import { cn } from '@/lib/utils'
 
@@ -94,9 +95,20 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
         <div className="border-t border-border p-3">
           <div className="flex items-center gap-2 px-1 py-1">
-            <span className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-brand text-xs font-medium text-primary-foreground">
-              {(user?.name || user?.username || 'U').slice(0, 1).toUpperCase()}
-            </span>
+            {(() => {
+              // 首帧即可渲染：本地同步计算 WeAvatar 地址
+              const src =
+                user?.avatar_url ||
+                user?.avatar ||
+                weavatarUrl(user?.email || user?.username || 'user')
+              return (
+                <img
+                  src={src}
+                  alt={user?.name || user?.username || 'avatar'}
+                  className="h-7 w-7 flex-shrink-0 rounded-full object-cover"
+                />
+              )
+            })()}
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm text-foreground">{user?.name || user?.username}</p>
               {isAdminUser(user) && <p className="text-[0.65rem] text-muted-foreground">管理员</p>}

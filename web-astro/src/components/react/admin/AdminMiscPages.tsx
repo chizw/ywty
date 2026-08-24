@@ -69,6 +69,11 @@ export function AdminPagesPage() {
   }
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const openCreate = () => {
+    setEditing({})
+    setForm({ ...EMPTY_PAGE_FORM })
+  }
+
   const openEdit = (p: any) => {
     setEditing(p)
     setForm({
@@ -87,23 +92,40 @@ export function AdminPagesPage() {
   }
 
   const save = async () => {
-    if (!editing || !form.name.trim()) return
+    if (!form.name.trim()) return
     setSaving(true)
     try {
-      await api.patch(`/api/v1/admin/pages/${editing.id}`, {
-        page_type: form.page_type,
-        name: form.name.trim(),
-        icon: form.icon,
-        title: form.title,
-        slug: form.slug.trim(),
-        url: form.url.trim(),
-        sort: Number(form.sort) || 0,
-        is_show: Number(form.is_show) ? 1 : 0,
-        keywords: form.keywords,
-        description: form.description,
-        content: form.content,
-      })
-      toast.success('单页已更新')
+      if (editing?.id) {
+        await api.patch(`/api/v1/admin/pages/${editing.id}`, {
+          page_type: form.page_type,
+          name: form.name.trim(),
+          icon: form.icon,
+          title: form.title,
+          slug: form.slug.trim(),
+          url: form.url.trim(),
+          sort: Number(form.sort) || 0,
+          is_show: Number(form.is_show) ? 1 : 0,
+          keywords: form.keywords,
+          description: form.description,
+          content: form.content,
+        })
+        toast.success('单页已更新')
+      } else {
+        await api.post('/api/v1/admin/pages', {
+          page_type: form.page_type,
+          name: form.name.trim(),
+          icon: form.icon,
+          title: form.title,
+          slug: form.slug.trim(),
+          url: form.url.trim(),
+          sort: Number(form.sort) || 0,
+          is_show: Number(form.is_show) ? 1 : 0,
+          keywords: form.keywords,
+          description: form.description,
+          content: form.content,
+        })
+        toast.success('单页已创建')
+      }
       setEditing(null)
       load()
     } catch (e: any) {
@@ -113,19 +135,32 @@ export function AdminPagesPage() {
     }
   }
 
+  const remove = async (p: any) => {
+    if (!window.confirm(`确认删除单页「${p.title || p.name}」？此操作不可恢复。`)) return
+    try {
+      await api.del(`/api/v1/admin/pages/${p.id}`)
+      toast.success('已删除')
+      load()
+    } catch (e: any) {
+      toast.error(e?.message || '删除失败')
+    }
+  }
+
   return (
     <AdminShell>
-      <AdminPageHeader title="单页管理" description={`共 ${items.length} 个`} />
+      <AdminPageHeader title="单页管理" description={`共 ${items.length} 个`}>
+        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4" /> 新建页面</Button>
+      </AdminPageHeader>
       <ListTable
         loading={loading}
         empty="暂无单页"
         head={['标题', 'Slug', '浏览', '显示', '时间', '操作']}
-        rows={items.map((p) => [p.title, <span key="s" className="font-mono text-xs">{p.slug}</span>, p.view_count, <Badge key="b" variant={p.is_show === 1 ? 'success' : 'secondary'}>{p.is_show === 1 ? '显示' : '隐藏'}</Badge>, formatDate(p.created_at), <Button key="a" variant="outline" size="sm" onClick={() => openEdit(p)}>编辑</Button>])}
+        rows={items.map((p) => [p.title, <span key="s" className="font-mono text-xs">{p.slug}</span>, p.view_count, <Badge key="b" variant={p.is_show === 1 ? 'success' : 'secondary'}>{p.is_show === 1 ? '显示' : '隐藏'}</Badge>, formatDate(p.created_at), <span key="a" className="flex gap-2"><Button variant="outline" size="sm" onClick={() => openEdit(p)}>编辑</Button><Button variant="outline" size="sm" className="text-destructive" onClick={() => remove(p)}>删除</Button></span>])}
       />
 
       <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null) }}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>编辑单页</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editing?.id ? '编辑单页' : '新建单页'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
@@ -257,6 +292,17 @@ export function AdminGroupsPage() {
     }
   }
 
+  const removeGroup = async (g: any) => {
+    if (!window.confirm(`确认删除角色组「${g.name}」？该组用户将失去组配额。`)) return
+    try {
+      await api.del(`/api/v1/admin/groups/${g.id}`)
+      toast.success('已删除角色组')
+      load()
+    } catch (e: any) {
+      toast.error(e?.message || '删除失败')
+    }
+  }
+
   return (
     <AdminShell>
       <AdminPageHeader title="角色组" description={`共 ${items.length} 个`}>
@@ -273,7 +319,12 @@ export function AdminGroupsPage() {
           g.is_default === 1 ? '是' : '否',
           g.is_guest === 1 ? '是' : '否',
           formatDate(g.created_at),
-          <Button key="e" size="sm" variant="outline" onClick={() => openEdit(g)}>编辑</Button>,
+          <span key="a" className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => openEdit(g)}>编辑</Button>
+            {g.is_default !== 1 && (
+              <Button variant="outline" size="sm" className="text-destructive" onClick={() => removeGroup(g)}>删除</Button>
+            )}
+          </span>,
         ])}
       />
 
@@ -358,6 +409,17 @@ export function AdminNoticesPage() {
     }
   }
 
+  const removeNotice = async (n: any) => {
+    if (!window.confirm(`确认删除公告「${n.title}」？`)) return
+    try {
+      await api.del(`/api/v1/admin/notices/${n.id}`)
+      toast.success('已删除')
+      load()
+    } catch (e: any) {
+      toast.error(e?.message || '删除失败')
+    }
+  }
+
   return (
     <AdminShell>
       <AdminPageHeader title="通知管理" description={`共 ${items.length} 条`}>
@@ -367,7 +429,7 @@ export function AdminNoticesPage() {
         loading={loading}
         empty="暂无通知"
         head={['标题', '阅读', '时间', '操作']}
-        rows={items.map((n) => [n.title, n.view_count, formatDate(n.created_at), <Button key="a" variant="outline" size="sm" onClick={() => openEdit(n)}>编辑</Button>])}
+        rows={items.map((n) => [n.title, n.view_count, formatDate(n.created_at), <span key="a" className="flex gap-2"><Button variant="outline" size="sm" onClick={() => openEdit(n)}>编辑</Button><Button variant="outline" size="sm" className="text-destructive" onClick={() => removeNotice(n)}>删除</Button></span>])}
       />
 
       <Dialog open={showNew || !!editing} onOpenChange={(o) => { if (!o) closeDialog() }}>
@@ -528,28 +590,177 @@ export function AdminTicketsPage() {
 }
 
 // ---------- 存储策略 ----------
+const EMPTY_STORAGE_FORM = { name: '', provider: 'local', prefix: '', intro: '', options: '' }
+const STORAGE_PROVIDERS = [
+  { value: 'local', label: '本地存储' },
+  { value: 's3', label: 'AWS S3 / 兼容' },
+  { value: 'oss', label: '阿里云 OSS' },
+  { value: 'cos', label: '腾讯云 COS' },
+  { value: 'qiniu', label: '七牛云' },
+]
+const STORAGE_OPTIONS_PLACEHOLDER = `{
+  "endpoint": "https://s3.amazonaws.com",
+  "bucket": "my-bucket",
+  "access_key": "AKIA...",
+  "secret_key": "...",
+  "region": "us-east-1"
+}`
+
 export function AdminStoragePage() {
   const api = useApi()
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState<any | null>(null)
+  const [showNew, setShowNew] = useState(false)
+  const [form, setForm] = useState({ ...EMPTY_STORAGE_FORM })
+  const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true)
     api.get<any>('/api/v1/admin/storages', { raw: true })
       .then((r) => setItems(Array.isArray(r?.data) ? r.data : []))
       .catch(() => setItems([]))
       .finally(() => setLoading(false))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }
+  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const openCreate = () => {
+    setEditing(null)
+    setForm({ ...EMPTY_STORAGE_FORM })
+    setShowNew(true)
+  }
+
+  const openEdit = (s: any) => {
+    setEditing(s)
+    let opts = ''
+    if (s.options) {
+      try { opts = JSON.stringify(JSON.parse(s.options), null, 2) } catch { opts = String(s.options) }
+    }
+    setForm({
+      name: s.name ?? '',
+      provider: s.driver ?? s.provider ?? 'local',
+      prefix: s.prefix ?? '',
+      intro: s.intro ?? '',
+      options: opts,
+    })
+    setShowNew(true)
+  }
+
+  const closeDialog = () => { setShowNew(false); setEditing(null) }
+
+  const submit = async () => {
+    if (!form.name.trim()) return
+    const options = form.options.trim()
+    if (options) {
+      try { JSON.parse(options) } catch {
+        toast.error('options 不是合法的 JSON')
+        return
+      }
+    }
+    setSaving(true)
+    try {
+      if (editing?.id) {
+        // 后端 update 不支持改 driver，仅 name/intro/prefix/options
+        await api.patch(`/api/v1/admin/storages/update/${editing.id}`, {
+          name: form.name.trim(),
+          intro: form.intro,
+          prefix: form.prefix,
+          options: options || null,
+        })
+        toast.success('已保存')
+      } else {
+        await api.post('/api/v1/admin/storages/create', {
+          name: form.name.trim(),
+          provider: form.provider,
+          intro: form.intro,
+          prefix: form.prefix,
+          options: options || null,
+        })
+        toast.success('已创建存储策略')
+      }
+      closeDialog()
+      load()
+    } catch (e: any) {
+      toast.error(e?.message || '保存失败')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const removeStorage = async (s: any) => {
+    if (!window.confirm(`确认删除存储策略「${s.name}」？`)) return
+    try {
+      await api.del(`/api/v1/admin/storages/delete/${s.id}`)
+      toast.success('已删除')
+      load()
+    } catch (e: any) {
+      toast.error(e?.message || '删除失败')
+    }
+  }
 
   return (
     <AdminShell>
-      <AdminPageHeader title="存储策略" description={`共 ${items.length} 个`} />
+      <AdminPageHeader title="存储策略" description={`共 ${items.length} 个`}>
+        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4" /> 新建策略</Button>
+      </AdminPageHeader>
       <ListTable
         loading={loading}
         empty="暂无存储策略"
-        head={['名称', '驱动', '区域', '默认', '状态']}
-        rows={items.map((s) => [s.name || s.driver, s.driver || '-', s.region || '-', s.is_default === 1 ? '是' : '否', <Badge key="b" variant={s.status === 1 || s.enabled ? 'success' : 'secondary'}>{s.status === 1 || s.enabled ? '启用' : '停用'}</Badge>])}
+        head={['名称', '驱动', '前缀', '介绍', '状态', '操作']}
+        rows={items.map((s) => [
+          s.name || '-',
+          <span key="d" className="font-mono text-xs">{s.driver || '-'}</span>,
+          s.prefix || '-',
+          s.intro || '-',
+          <Badge key="b" variant={s.status === 1 || s.enabled ? 'success' : 'secondary'}>{s.status === 1 || s.enabled ? '启用' : '停用'}</Badge>,
+          <span key="a" className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => openEdit(s)}>编辑</Button>
+            <Button variant="outline" size="sm" className="text-destructive" onClick={() => removeStorage(s)}>删除</Button>
+          </span>,
+        ])}
       />
+
+      <Dialog open={showNew} onOpenChange={(o) => { if (!o) closeDialog() }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editing?.id ? '编辑存储策略' : '新建存储策略'}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>名称</Label>
+                <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} autoFocus />
+              </div>
+              <div className="space-y-2">
+                <Label>驱动类型{editing?.id ? '（创建后不可修改）' : ''}</Label>
+                <select
+                  className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm disabled:opacity-60"
+                  value={form.provider}
+                  disabled={!!editing?.id}
+                  onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))}
+                >
+                  {STORAGE_PROVIDERS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>路径前缀</Label>
+                <Input value={form.prefix} onChange={(e) => setForm((f) => ({ ...f, prefix: e.target.value }))} placeholder="留空 = 根路径" />
+              </div>
+              <div className="space-y-2">
+                <Label>介绍</Label>
+                <Input value={form.intro} onChange={(e) => setForm((f) => ({ ...f, intro: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>连接配置（JSON）</Label>
+              <Textarea rows={8} className="font-mono text-xs" value={form.options} onChange={(e) => setForm((f) => ({ ...f, options: e.target.value }))} placeholder={STORAGE_OPTIONS_PLACEHOLDER} />
+              <p className="text-xs text-muted-foreground">local 驱动可留空；远端驱动按需填写 endpoint / bucket / access_key / secret_key 等字段。</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDialog}>取消</Button>
+            <Button onClick={submit} loading={saving} disabled={!form.name.trim()}>{editing?.id ? '保存' : '创建'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminShell>
   )
 }

@@ -27,22 +27,15 @@ interface PlanDetail {
   prices: PlanPrice[]
 }
 
-let plans: Plan[] = []
-let details: (PlanDetail | null)[] = []
+let fullPlans: PlanDetail[] = []
 try {
-  plans = (await useApi().get<Plan[]>('/api/v1/plans')) || []
-  details = await Promise.all(
-    plans.map((p) => useApi().get<PlanDetail>(`/api/v1/plans/${p.id}`).catch(() => null))
-  )
+  // 列表接口已内联价格档，单次请求
+  fullPlans = (await useApi().get<PlanDetail[]>('/api/v1/plans')) || []
 } catch {
-  plans = []
+  fullPlans = []
 }
-
+const plans = fullPlans.map((d) => d.plan)
 const isLoggedIn = !!Astro.locals.auth
-const fullPlans = plans.map((p, i) => ({
-  plan: p,
-  detail: details[i] || null,
-}))
 ---
 
 <BaseLayout title="套餐" description="选择适合你的存储套餐">
@@ -58,8 +51,8 @@ const fullPlans = plans.map((p, i) => ({
         plans.length > 0 ? (
           <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {
-              fullPlans.map(({ plan, detail }) => {
-                const price = detail?.prices?.[0]
+              fullPlans.map(({ plan, prices }) => {
+                const price = prices?.[0]
                 const features = (plan.features || '').split('\n').filter(Boolean)
                 return (
                   <div

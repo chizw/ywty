@@ -1,10 +1,11 @@
-// 图片管理（后台）：表格 + 搜索
+﻿// 图片管理（后台）：表格 + 搜索 + 处置
 import { useEffect, useState } from 'react'
 import { Search } from 'lucide-react'
 import { AdminShell } from './AdminShell'
 import { AdminPageHeader } from './AdminPageHeader'
 import { useApi } from '@/lib/api'
 import { formatBytes, formatDate } from '@/lib/utils'
+import { toast } from '@/lib/react-store'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -46,6 +47,17 @@ export function AdminPhotosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
 
+  const removePhoto = async (p: AdminPhoto) => {
+    if (!window.confirm(`确认删除图片「${p.original_name}」？该图片将立即从列表移除。`)) return
+    try {
+      await api.del(`/api/v1/admin/photos/${p.id}`)
+      toast.success('已删除')
+      load()
+    } catch (e: any) {
+      toast.error(e?.message || '删除失败')
+    }
+  }
+
   const lastPage = Math.max(1, Math.ceil(total / 24))
 
   return (
@@ -70,13 +82,14 @@ export function AdminPhotosPage() {
               <th className="px-4 py-2.5 font-medium">状态</th>
               <th className="px-4 py-2.5 font-medium">浏览</th>
               <th className="px-4 py-2.5 font-medium">上传时间</th>
+              <th className="px-4 py-2.5 font-medium">操作</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">加载中…</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">加载中…</td></tr>
             ) : photos.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">没有图片</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">没有图片</td></tr>
             ) : photos.map((p) => (
               <tr key={p.id} className="border-b border-border last:border-0 hover:bg-muted/30">
                 <td className="px-4 py-3">
@@ -97,6 +110,9 @@ export function AdminPhotosPage() {
                 </td>
                 <td className="px-4 py-3 tabular-nums text-xs text-muted-foreground">{p.views}</td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(p.created_at)}</td>
+                <td className="px-4 py-3">
+                  <Button variant="outline" size="sm" className="text-destructive" onClick={() => removePhoto(p)}>删除</Button>
+                </td>
               </tr>
             ))}
           </tbody>

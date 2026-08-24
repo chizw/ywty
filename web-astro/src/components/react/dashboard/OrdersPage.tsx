@@ -1,8 +1,9 @@
-// 订单列表：订单号 / 金额 / 状态 / 时间，待支付订单可发起支付
+// 订单列表：订单号 / 金额 / 状态 / 时间，待支付订单可发起支付或取消
 import { useEffect, useState } from 'react'
 import { Loader2, ReceiptText, ShieldCheck } from 'lucide-react'
 import { AppShell } from './AppShell'
 import { PageHeader } from './PageHeader'
+import { useConfirm } from './ConfirmDialog'
 import { useApi } from '@/lib/api'
 import { formatDate } from '@/lib/utils'
 import { toast } from '@/lib/react-store'
@@ -90,6 +91,8 @@ export function OrdersPage() {
   const [payingId, setPayingId] = useState<number | null>(null)
   const [cashier, setCashier] = useState<CashierSession | null>(null)
   const [paying, setPaying] = useState(false)
+  const [cancelingId, setCancelingId] = useState<number | null>(null)
+  const { confirm, node } = useConfirm()
 
   const loadOrders = () => {
     api.get<any>('/api/v1/orders', { raw: true })
@@ -146,6 +149,29 @@ export function OrdersPage() {
     }
   }
 
+  /** 取消待支付订单：确认后置为 canceled 并刷新列表 */
+  const cancelOrder = async (order: Order) => {
+    if (order.status !== 'unpaid') return
+    const ok = await confirm({
+      title: '取消订单',
+      message: `确定取消订单 ${order.trade_no}？取消后不可恢复。`,
+      okText: '取消订单',
+      danger: true,
+    })
+    if (!ok) return
+    setCancelingId(order.id)
+    try {
+      await api.post(`/api/v1/orders/${order.id}/cancel`)
+      toast.success('订单已取消')
+      setLoading(true)
+      loadOrders()
+    } catch (e: any) {
+      toast.error(e?.message || '取消失败')
+    } finally {
+      setCancelingId(null)
+    }
+  }
+
   return (
     <AppShell>
       <PageHeader title="订单" description="查看你的套餐订单" />
@@ -186,10 +212,21 @@ export function OrdersPage() {
                   <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(o.created_at)}</td>
                   <td className="px-4 py-3">
                     {o.status === 'unpaid' ? (
-                      <Button size="sm" disabled={payingId !== null} onClick={() => startPay(o)}>
-                        {payingId === o.id && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-                        去支付
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" disabled={payingId !== null || cancelingId !== null} onClick={() => startPay(o)}>
+                          {payingId === o.id && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                          去支付
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          loading={cancelingId === o.id}
+                          disabled={payingId !== null || (cancelingId !== null && cancelingId !== o.id)}
+                          onClick={() => cancelOrder(o)}
+                        >
+                          取消
+                        </Button>
+                      </div>
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
@@ -229,6 +266,8 @@ export function OrdersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {node}
     </AppShell>
   )
 }

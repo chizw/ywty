@@ -1,8 +1,9 @@
 <script setup lang="ts">
-// 全屏图片查看器：上一张/下一张、键盘控制、缩略图导航、下载、点击关闭
+// 全屏图片查看器：上一张/下一张、键盘控制、缩略图导航、下载、举报、点击关闭
 import { computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { X, ChevronLeft, ChevronRight, Download } from '@lucide/vue'
 import Button from '../ui/Button.vue'
+import ReportButton from './ReportButton.vue'
 import { cn } from '../../../lib/utils'
 import type { PublicPhoto as Photo } from '../../../lib/types'
 
@@ -71,6 +72,7 @@ function fileName(photo: Photo, index: number): string {
       <div class="flex items-center justify-between px-4 py-3 text-sm text-white/80">
         <span>{{ index + 1 }} / {{ photos.length }}</span>
         <div class="flex items-center gap-2">
+          <ReportButton v-if="current" target-type="photo" :target-id="current.id" dark />
           <a
             :href="current.url"
             :download="fileName(current, index)"

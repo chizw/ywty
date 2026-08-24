@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // 登录表单（Vue island）
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import Button from '../ui/Button.vue'
 import Input from '../ui/Input.vue'
 import Label from '../ui/Label.vue'
@@ -26,6 +26,34 @@ if (!import.meta.env.SSR) {
 const form = reactive({ account: '', password: '' })
 const loading = ref(false)
 const errorMsg = ref('')
+
+// 已配置的 OAuth 提供商
+const oauthProviders = ref<{ provider: string; name: string }[]>([])
+
+onMounted(async () => {
+  try {
+    const api = (await import('../../../lib/api')).useApi()
+    const r = await api.get<any>('/api/v1/oauth/providers')
+    oauthProviders.value = Array.isArray(r?.providers) ? r.providers : []
+  } catch {
+    oauthProviders.value = []
+  }
+})
+
+function startOAuth(provider: string) {
+  // 登录态下跳到 authorize 会进入绑定流程，这里始终以登录意图发起
+  const url = `/api/v1/oauth/${provider}/authorize`
+  fetch(url, { headers: { Accept: 'application/json' } })
+    .then((r) => r.json())
+    .then((body) => {
+      const target = body?.data?.url
+      if (target) window.location.href = target
+      else errorMsg.value = '获取授权地址失败'
+    })
+    .catch(() => {
+      errorMsg.value = '获取授权地址失败'
+    })
+}
 
 async function onSubmit() {
   if (!form.account || !form.password) {
@@ -55,7 +83,7 @@ async function onSubmit() {
     <form class="mt-7 space-y-5" @submit.prevent="onSubmit">
       <div class="space-y-2">
         <Label for="login-account">账号</Label>
-        <Input id="login-account" v-model="form.account" type="text" required placeholder="用户名 / 邮箱 / 手机号" variant="underline" />
+        <Input id="login-account" v-model="form.account" type="text" required placeholder="用户名 / 邮箱" variant="underline" />
       </div>
       <div class="space-y-2">
         <div class="flex items-center justify-between">
@@ -71,6 +99,23 @@ async function onSubmit() {
 
       <Button type="submit" :loading="loading" class="w-full">登录</Button>
     </form>
+
+    <div v-if="oauthProviders.length" class="mt-6">
+      <div class="flex items-center gap-3 text-xs text-muted-foreground">
+        <span class="h-px flex-1 bg-border" /> 或使用第三方登录 <span class="h-px flex-1 bg-border" />
+      </div>
+      <div class="mt-3 grid gap-2" :class="oauthProviders.length > 1 ? 'grid-cols-2' : 'grid-cols-1'">
+        <Button
+          v-for="p in oauthProviders"
+          :key="p.provider"
+          type="button"
+          variant="outline"
+          @click="startOAuth(p.provider)"
+        >
+          {{ p.name }}
+        </Button>
+      </div>
+    </div>
 
     <p v-if="allowRegister" class="mt-6 text-center text-sm text-muted-foreground">
       还没有账号？

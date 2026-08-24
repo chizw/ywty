@@ -20,6 +20,13 @@ const K = {
   requireEmailVerify: 'security.require_email_verify',
   allowPasswordReset: 'security.allow_password_reset',
   allowRegister: 'security.allow_register',
+  requireCaptcha: 'security.require_captcha',
+  ghClientId: 'oauth.github.client_id',
+  ghClientSecret: 'oauth.github.client_secret',
+  ghRedirectUri: 'oauth.github.redirect_uri',
+  gClientId: 'oauth.google.client_id',
+  gClientSecret: 'oauth.google.client_secret',
+  gRedirectUri: 'oauth.google.redirect_uri',
 } as const
 
 type TextForm = {
@@ -30,11 +37,21 @@ type TextForm = {
   from: string
 }
 
+type OAuthForm = {
+  ghClientId: string
+  ghClientSecret: string
+  ghRedirectUri: string
+  gClientId: string
+  gClientSecret: string
+  gRedirectUri: string
+}
+
 type BoolForm = {
   ssl: boolean
   requireEmailVerify: boolean
   allowPasswordReset: boolean
   allowRegister: boolean
+  requireCaptcha: boolean
 }
 
 export function AdminSettingsPage() {
@@ -49,11 +66,24 @@ export function AdminSettingsPage() {
     password: '',
     from: '',
   })
+  const [oauth, setOauth] = useState<OAuthForm>({
+    ghClientId: '',
+    ghClientSecret: '',
+    ghRedirectUri: '',
+    gClientId: '',
+    gClientSecret: '',
+    gRedirectUri: '',
+  })
+  const [oauthSecretSet, setOauthSecretSet] = useState<{ github: boolean; google: boolean }>({
+    github: false,
+    google: false,
+  })
   const [flags, setFlags] = useState<BoolForm>({
     ssl: true,
     requireEmailVerify: true,
     allowPasswordReset: true,
     allowRegister: true,
+    requireCaptcha: false,
   })
 
   useEffect(() => {
@@ -78,11 +108,23 @@ export function AdminSettingsPage() {
           from: s(K.from),
         }))
         setPasswordSet(data?.[K.password] === true)
+        setOauthSecretSet({
+          github: data?.[K.ghClientSecret] === true,
+          google: data?.[K.gClientSecret] === true,
+        })
+        setOauth((f) => ({
+          ...f,
+          ghClientId: s(K.ghClientId),
+          ghRedirectUri: s(K.ghRedirectUri),
+          gClientId: s(K.gClientId),
+          gRedirectUri: s(K.gRedirectUri),
+        }))
         setFlags({
           ssl: b(K.ssl, true),
           requireEmailVerify: b(K.requireEmailVerify, true),
           allowPasswordReset: b(K.allowPasswordReset, true),
           allowRegister: b(K.allowRegister, true),
+          requireCaptcha: b(K.requireCaptcha, false),
         })
       })
       .catch((e) => toast.error(e?.message || '加载设置失败'))
@@ -102,13 +144,26 @@ export function AdminSettingsPage() {
         [K.requireEmailVerify]: flags.requireEmailVerify,
         [K.allowPasswordReset]: flags.allowPasswordReset,
         [K.allowRegister]: flags.allowRegister,
+        [K.requireCaptcha]: flags.requireCaptcha,
       }
       // 密码留空 = 保持不变
       if (text.password) payload[K.password] = text.password
+      // OAuth：client_id/redirect_uri 总是提交；secret 留空 = 保持不变
+      payload[K.ghClientId] = oauth.ghClientId.trim()
+      payload[K.ghRedirectUri] = oauth.ghRedirectUri.trim()
+      payload[K.gClientId] = oauth.gClientId.trim()
+      payload[K.gRedirectUri] = oauth.gRedirectUri.trim()
+      if (oauth.ghClientSecret) payload[K.ghClientSecret] = oauth.ghClientSecret
+      if (oauth.gClientSecret) payload[K.gClientSecret] = oauth.gClientSecret
       await api.put('/api/v1/admin/settings', payload)
       toast.success('设置已保存')
       setText((f) => ({ ...f, password: '' }))
+      setOauth((f) => ({ ...f, ghClientSecret: '', gClientSecret: '' }))
       setPasswordSet(passwordSet || !!text.password)
+      setOauthSecretSet((s) => ({
+        github: s.github || !!oauth.ghClientSecret,
+        google: s.google || !!oauth.gClientSecret,
+      }))
     } catch (e) {
       toast.error((e as Error)?.message || '保存失败')
     } finally {
@@ -118,6 +173,9 @@ export function AdminSettingsPage() {
 
   const setText_ = (k: keyof TextForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setText((f) => ({ ...f, [k]: e.target.value }))
+
+  const setOauth_ = (k: keyof OAuthForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setOauth((f) => ({ ...f, [k]: e.target.value }))
 
   const setFlag = (k: keyof BoolForm) => (v: boolean | 'indeterminate') =>
     setFlags((f) => ({ ...f, [k]: v === true }))
@@ -174,6 +232,44 @@ export function AdminSettingsPage() {
             </div>
           </section>
 
+          {/* 第三方登录 */}
+          <section className="rounded-md border border-border bg-card p-5">
+            <h3 className="mb-1 text-sm font-medium">第三方登录（OAuth）</h3>
+            <p className="mb-4 text-xs text-muted-foreground">
+              填写 Client ID 即启用对应登录方式（Client Secret 建议一并填写）；回调地址默认 <code>{"{APP_URL}/api/v1/oauth/{provider}/callback"}</code>，与 OAuth 应用后台设置保持一致。保存后即时生效。
+            </p>
+            {(['github', 'google'] as const).map((prov) => {
+              const prefix = prov === 'github' ? 'gh' : 'g'
+              const label = prov === 'github' ? 'GitHub' : 'Google'
+              const secretSet = oauthSecretSet[prov]
+              return (
+                <div key={prov} className="mb-5 last:mb-0 rounded-md border border-border p-4">
+                  <p className="text-sm font-medium mb-3">{label}</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor={`${prefix}-client-id`}>Client ID</Label>
+                      <Input id={`${prefix}-client-id`} placeholder="留空 = 禁用" value={oauth[`${prefix}ClientId` as keyof OAuthForm]} onChange={setOauth_(`${prefix}ClientId` as keyof OAuthForm)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`${prefix}-client-secret`}>Client Secret</Label>
+                      <Input
+                        id={`${prefix}-client-secret`}
+                        type="password"
+                        placeholder={secretSet ? '已设置，留空保持不变' : ''}
+                        value={oauth[`${prefix}ClientSecret` as keyof OAuthForm]}
+                        onChange={setOauth_(`${prefix}ClientSecret` as keyof OAuthForm)}
+                      />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor={`${prefix}-redirect-uri`}>回调地址（选填）</Label>
+                      <Input id={`${prefix}-redirect-uri`} placeholder={`https://your-domain/api/v1/oauth/${prov}/callback`} value={oauth[`${prefix}RedirectUri` as keyof OAuthForm]} onChange={setOauth_(`${prefix}RedirectUri` as keyof OAuthForm)} />
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </section>
+
           {/* 安全开关 */}
           <section className="rounded-md border border-border bg-card p-5">
             <h3 className="mb-1 text-sm font-medium">安全开关</h3>
@@ -198,6 +294,13 @@ export function AdminSettingsPage() {
                 <span>
                   允许注册新账号
                   <span className="block text-xs text-muted-foreground">关闭后注册接口将拒绝新用户注册。</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-sm">
+                <Checkbox checked={flags.requireCaptcha} onCheckedChange={setFlag('requireCaptcha')} id="flag-captcha" className="mt-0.5" />
+                <span>
+                  注册/找回密码需要图形验证码
+                  <span className="block text-xs text-muted-foreground">开启后相关表单会展示图形验证码校验，防止脚本批量提交。</span>
                 </span>
               </label>
             </div>

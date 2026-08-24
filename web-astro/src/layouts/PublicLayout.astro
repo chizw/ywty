@@ -7,10 +7,13 @@ import AppToaster from '../components/vue/layout/AppToaster.vue'
 import { getSiteInfo } from '../lib/site'
 
 const site = await getSiteInfo()
+// 注入登录态，保证 Header SSR 与客户端首帧渲染一致（消除水合闪烁）
+const auth = Astro.locals.auth as { user?: Record<string, unknown> } | null | undefined
+const me = auth?.user ?? null
 ---
 
 <div class="flex min-h-screen flex-col">
-  <AppHeader client:load name={site.name} allow-register={site.allow_register} />
+  <AppHeader client:load name={site.name} allow-register={site.allow_register} authed={!!me} me={me} />
   <main class="flex-1">
     <slot />
   </main>
