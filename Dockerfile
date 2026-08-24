@@ -1,13 +1,11 @@
 # ---------- 运行时镜像（仅打包预编译产物，秒级构建） ----------
 #
 # 构建上下文需由流水线/脚本预先组装：
-#   linux-amd64/api   — x86_64 后端二进制
-#   linux-arm64/api   — aarch64 后端二进制（多架构推送时需要）
+#   linux-amd64/api   — x64 后端二进制
 #   dist/             — Astro 构建产物（含 dist/server/entry.mjs）
 #   config.yaml       — 默认配置（来源 server-rust/config.yaml）
 #
 # 本地组装请使用 deploy/deploy.sh；CI 由 .github/workflows 自动完成。
-# 多架构推送依赖 TARGETARCH 选择对应二进制，全程无需 QEMU 编译。
 
 FROM node:22-alpine AS runtime
 
@@ -16,11 +14,9 @@ RUN apk add --no-cache ca-certificates tzdata curl \
 
 WORKDIR /app
 
-ARG TARGETARCH
-
 COPY config.yaml /app/config.yaml
 COPY dist/ /app/dist/
-COPY linux-${TARGETARCH:-amd64}/api /app/api
+COPY linux-amd64/api /app/api
 
 # 数据目录
 RUN mkdir -p /app/data /app/uploads && chown -R app:app /app/data /app/uploads
