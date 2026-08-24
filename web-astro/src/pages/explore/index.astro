@@ -1,20 +1,8 @@
----
-// 探索页：浏览公开图片（SSR 首屏 + 客户端无限滚动）
+﻿---
+// 探索页：浏览公开图片（静态部署，客户端拉取）
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import PublicLayout from '../../layouts/PublicLayout.astro'
 import PhotoExplore from '../../components/vue/explore/PhotoExplore.vue'
-import { useApi } from '../../lib/api'
-import type { PublicPhoto } from '../../lib/types'
-
-let initial: PublicPhoto[] = []
-try {
-  const res = await useApi().get<PublicPhoto[]>('/api/v1/public/photos', {
-    query: { page: 1, per_page: 24 },
-  })
-  initial = Array.isArray(res) ? res : []
-} catch {
-  initial = []
-}
 ---
 
 <BaseLayout title="探索" description="浏览社区公开图片">
@@ -24,7 +12,7 @@ try {
         <h1 class="font-display text-3xl font-bold tracking-tight">探索</h1>
         <p class="mt-2 text-sm text-muted-foreground">社区公开的图片，随手翻看。</p>
       </div>
-      <PhotoExplore initial={initial} client:load />
+      <PhotoExplore client:load />
     </section>
   </PublicLayout>
 </BaseLayout>

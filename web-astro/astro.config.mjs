@@ -1,18 +1,15 @@
-// https://astro.build/config
+﻿// https://astro.build/config
 import { defineConfig } from 'astro/config'
 import vue from '@astrojs/vue'
 import react from '@astrojs/react'
 import tailwindcss from '@tailwindcss/vite'
-import node from '@astrojs/node'
 
 // 后端地址：开发时 Rust 服务默认跑在 3000 端口
 const BACKEND = process.env.YWTY_API_INTERNAL || 'http://127.0.0.1:3000'
 
 // https://astro.build/config
 export default defineConfig({
-  output: 'server',
-  // SSR 部署：standalone 模式，由外层反代（nginx/Docker）转发
-  adapter: node({ mode: 'standalone' }),
+  output: 'static',
   site: process.env.SITE_URL || 'http://localhost:4321',
 
   // Astro 7 默认 compressHTML:'jsx' 会按 JSX 规则吞掉行内元素间距，显式保留 v5/v6 行为

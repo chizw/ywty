@@ -30,11 +30,11 @@ Guidance for AI agents working in this repo. Docs (`README.md`, `CONTRIBUTING.md
 ## Frontend (web-astro/)
 
 - Scripts: `dev`, `build`, `preview`, `astro`. There is **no lint or test script**. Typecheck: `npx astro check`.
-- Astro 5 SSR (node adapter, output `server`). Public pages are **Vue 3 Islands** (`src/components/vue/`); user center + admin are **React 19 Islands** (`src/components/react/`, shadcn/ui). State: Pinia (Vue) / Zustand (React).
-- API calls go to relative `/api/**`. In dev, vite proxy forwards `/api`, `/uploads`, `/i/`, `/s/`, `/healthz` to the Rust backend (`API_INTERNAL`, default `http://127.0.0.1:3000`). In production the same prefixes must be reverse-proxied by `src/middleware.ts` (vite proxy does NOT work in build output — keep both in sync when adding prefixes).
-- Port gotcha: both the Rust API and the Astro server can default toward port 3000. For side-by-side dev set `PORT` for the backend and point `API_INTERNAL` at it before `npm run dev`; Astro dev listens on 4321.
-- Route guards live in `src/middleware.ts`: unauthenticated `/dashboard/**` and `/admin/**` redirect to `/auth/login`; non-admins are kicked out of `/admin`. Keep new admin/user-center pages under those paths.
-- Auth cookie is `ywty.auth`: `encodeURIComponent(JSON.stringify({access_token, refresh_token, user}))` — parsed in `src/lib/auth.ts`.
+- Astro **static export** (`output: 'static'`, no adapter). Public pages are **Vue 3 Islands** (`src/components/vue/`); user center + admin are **React 19 Islands** (`src/components/react/`), shadcn/ui. State: Pinia (Vue) / Zustand (React).
+- There is NO server middleware — auth guards are client-side in `AppShell`/`AdminShell`; production `/api` `/uploads` `/i` `/s` proxying is done by Caddy (`Caddyfile` at repo root, baked into the image). Parameterized routes (`/s/:slug`, `/dashboard/albums/:id`, …) rely on Caddy rewrites to static shell pages whose islands parse `location.pathname`.
+- API calls go to relative `/api/**`. In dev, vite proxy forwards `/api`, `/uploads`, `/i/`, `/s/`, `/healthz` to the Rust backend (`API_INTERNAL` env or default `http://127.0.0.1:3000`). Astro's runtime config `API_INTERNAL` no longer applies at runtime — only the dev proxy.
+- Port gotcha: Rust API defaults to 3000; Astro dev listens on 4321. For side-by-side dev set `PORT` for the backend and adjust the vite proxy target.
+- Auth cookie is `ywty.auth`: `encodeURIComponent(JSON.stringify({access_token, refresh_token, user}))` — parsed in `src/lib/auth.ts`. Avatar fallback everywhere: `src/lib/weavatar.ts` (frontend md5) mirrors backend `utils::weavatar_url`.
 
 ## CI (.github/workflows/ci.yml)
 

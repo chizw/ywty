@@ -12,6 +12,7 @@ import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Badge } from '../ui/badge'
+import { TicketDetailPage } from './TicketDetailPage'
 
 interface TicketItem {
   id: number
@@ -25,6 +26,8 @@ interface TicketItem {
 const STATUS_LABEL: Record<string, string> = { open: '处理中', closed: '已关闭', resolved: '已解决' }
 
 export function TicketsPage() {
+  // 静态部署：/dashboard/tickets/{id} 由服务器回退到本页，按路径切换详情视图
+  const detailId = typeof window !== 'undefined' ? (window.location.pathname.match(/\/dashboard\/tickets\/(\d+)/) || [])[1] : undefined
   const api = useApi()
   const [tickets, setTickets] = useState<TicketItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -59,6 +62,10 @@ export function TicketsPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (detailId) {
+    return <TicketDetailPage id={Number(detailId)} />
   }
 
   return (
