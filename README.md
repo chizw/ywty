@@ -7,7 +7,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/chizw/ywty?label=release&style=flat-square)](https://github.com/chizw/ywty/releases)
 [![License](https://img.shields.io/github/license/chizw/ywty?style=flat-square)](./LICENSE.md)
 [![Rust](https://img.shields.io/badge/Rust-1.85+-000000?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org)
-[![Astro](https://img.shields.io/badge/Astro-5-BC52EE?style=flat-square&logo=astro&logoColor=white)](https://astro.build)
+[![Astro](https://img.shields.io/badge/Astro-7-BC52EE?style=flat-square&logo=astro&logoColor=white)](https://astro.build)
 [![shadcn--vue](https://img.shields.io/badge/shadcn--vue%20%2F%20shadcn--ui-000000?style=flat-square&logo=shadcnui&logoColor=white)](https://shadcn-vue.com)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/chizw/ywty/ci.yml?label=CI&style=flat-square)](https://github.com/chizw/ywty/actions)
 [![Stars](https://img.shields.io/github/stars/chizw/ywty?style=flat-square)](https://github.com/chizw/ywty/stargazers)
@@ -44,28 +44,28 @@
 - **API Token**（用户自管理 + 能力授权）
 - **OAuth 社交登录**：GitHub / Google / 微信 / QQ / 钉钉 / Gitee / 微博
 
-### 📦 存储驱动（9 种可插拔）
-Local · **S3** · 阿里云 **OSS** · 腾讯云 **COS** · 七牛云 · 又拍云 · **FTP** · **SFTP** · **WebDAV**
+### 📦 存储驱动（5 种可插拔）
+Local · **S3** · 阿里云 **OSS** · 腾讯云 **COS** · 七牛云
+- 上传链路统一走存储驱动，后台可视化增删改策略
 - 浏览器直传签名（OSS/S3 跳过服务器中转）
-- 用户配额 / 容量统计
+- 用户配额 / 容量统计（组配额 + 用户覆盖）
 
 ### 💳 商业域
-- 套餐 / 订阅 / 订单全链路
-- 6 种支付驱动：**支付宝** · 微信 · **PayPal** · **Stripe** · **EPay 彩虹** · Mock
-- 异步通知（签名校验 + 防重放）
+- 套餐 / 订阅 / 订单全链路（后台可视化管理）
+- 支付驱动架构：Mock 完整可用；回调 HMAC 验签 + 金额校验 + 防重放状态机，支付宝/微信等可按 `PaymentDriver` 接口扩展
 - 优惠券（满减 / 折扣 / 固定额）
 
-### 🔌 扩展驱动
+### 🔌 扩展能力
 | 类别 | 已支持 |
 |---|---|
-| 邮件 | SMTP · 阿里云 DirectMail · Log |
-| 社交登录 | GitHub · Google · 微信 · QQ · 钉钉 · Gitee · 微博 |
-| 图片处理 | Local（imaging，缩略图/水印；自定义 HTTP 未实现） |
+| 邮件 | SMTP（后台可视化配置） |
+| 社交登录 | GitHub · Google（后台可视化配置） |
+| 图片处理 | 本地缩略图 / 文字水印 |
 
 ### 🗃️ 数据库
 - sqlx + 手写 SQL 覆盖 **30+ 张业务表**
-- 默认 **SQLite** 轻量化，深度支持 **MySQL**（推荐 MariaDB 10.6.20+）
-- 迁移 CLI：`migrate up / down / status / seed`
+- 默认 **SQLite** 轻量化，深度支持 **MySQL / MariaDB ≥10.6**
+- 迁移在启动时自动执行，无需手动操作
 
 ## 🏗️ 技术栈
 
@@ -86,11 +86,11 @@ Local · **S3** · 阿里云 **OSS** · 腾讯云 **COS** · 七牛云 · 又拍
 ### 前端
 | 技术 | 用途 |
 |---|---|
-| **Astro 5** | SSR 框架（node standalone） |
+| **Astro 7** | SSR 框架（node standalone） |
 | **Vue 3.5 Islands** | 公开页（首页/探索/分享/登录） |
 | **React 19 Islands** | 用户中心 + 管理后台 |
 | **shadcn-vue / shadcn/ui** | UI 组件库（Radix 原语） |
-| **Tailwind CSS 3.4** | 原子化样式 + CSS 变量主题（双框架共享 token） |
+| **Tailwind CSS v4** | 原子化样式 + CSS 变量主题（双框架共享 token） |
 | **class-variance-authority** | 组件变体管理 |
 | **@lucide/vue / lucide-react** | 图标库 |
 | **Pinia / Zustand** | 状态管理（Vue / React） |
@@ -106,32 +106,19 @@ Local · **S3** · 阿里云 **OSS** · 腾讯云 **COS** · 七牛云 · 又拍
 
 ## 🚀 部署
 
-### 方式 A：Docker Compose（推荐）
+### 方式 A：Docker Compose（推荐，零配置）
 
 ```bash
-# 1. 准备环境变量
-cp .env.example .env
-# 编辑 .env：至少改 JWT_SECRET 和 APP_URL
-
-# 2. 一键启动（内置 MySQL + Redis）
+git clone https://github.com/chizw/ywty && cd ywty
 docker compose up -d
 
-# 3. 访问
-open http://localhost:3000
+# 验证
+curl http://127.0.0.1:3000/api/v1/healthz
 ```
 
-**其他场景**：
-```bash
-# 连接宿主机已有 MySQL + Redis
-DB_HOST=host.docker.internal REDIS_HOST=host.docker.internal \
-  docker compose up -d --scale mysql=0 --scale redis=0
-
-# 本地开发用 SQLite（无需任何数据库容器）
-DB_DRIVER=sqlite docker compose up -d --scale mysql=0 --scale redis=0
-
-# 数据库迁移（sqlx migrate）
-cd server-rust && sqlx migrate run
-```
+- JWT 密钥首次启动自动生成并持久化到 `./data`，重启不掉登录态
+- 站点名称、描述、页脚、ICP、注册开关、邮箱服务器、第三方登录等一律登录后台 `/admin/settings` 修改
+- 可选环境变量（`JWT_SECRET`、`APP_URL`、`DB_*` 等）见 [.env.example](./.env.example)
 
 **默认管理员**：`admin` / `admin123456`（请尽快修改）
 
@@ -163,7 +150,7 @@ cp deploy/supervisor.conf /etc/supervisor/conf.d/ywty.conf
 ./deploy/backup-db.sh mysql
 ```
 
-详细的部署配置和参数说明见 [deploy/README.md](./deploy/README.md)。
+详细的部署配置和参数说明见 [deploy/](./deploy/) 目录。
 
 ## 🛠️ 开发
 
@@ -269,8 +256,8 @@ cargo tarpaulin --out Html   # 查看覆盖率（需安装 cargo-tarpaulin）
 
 ## 📐 API 约定
 
-- 基础路径：`/api/v1`、`/api/v2`（双版本兼容）
-- 鉴权：`Authorization: Bearer <access_token>` 或 `X-Token: <token>`
+- 基础路径：`/api/v1`
+- 鉴权：`Authorization: Bearer <access_token>`
 - 响应结构：
   ```json
   { "code": 0, "message": "ok", "data": {...} }
@@ -279,7 +266,7 @@ cargo tarpaulin --out Html   # 查看覆盖率（需安装 cargo-tarpaulin）
   ```json
   { "data": [...], "meta": { "current_page": 1, "total": 100, "per_page": 20 } }
   ```
-- 错误码：业务错误码见 `internal/errors`，HTTP 状态码保持一致
+- 错误码：业务错误码见 `server-rust/crates/core_lib/src/error.rs`
 
 ## 🛣️ 路线图
 
@@ -289,7 +276,7 @@ cargo tarpaulin --out Html   # 查看覆盖率（需安装 cargo-tarpaulin）
 | P1 | 数据库与基础 | ✅ |
 | P2 | 鉴权体系 | ✅ |
 | P3 | 核心域 | ✅ |
-| P4 | 存储驱动（9 种） | ✅ |
+| P4 | 存储驱动（5 种） | ✅ |
 | P5 | 商业域 | ✅ |
 | P6 | 扩展驱动 | ✅ |
 | P7 | 运营域 | ✅ |
