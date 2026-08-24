@@ -32,5 +32,5 @@ services:
       - ./data:/app/data     # SQLite 数据库 + 自动生成的 JWT 密钥（SQLite 模式使用）
       - ./uploads:/app/uploads
 
-# 注意：需使用支持 MySQL 的镜像 tag（如 latest-mysql）时同步修改 image 行。
+# 单镜像内置 SQLite 与 MySQL 双方言二进制，启动时按 DB_DRIVER 自动选择。
 # 站点名称、描述、页脚、注册开关等一律在 /admin/settings 后台修改。
