@@ -1,8 +1,8 @@
-# 贡献指南
+﻿# 贡献指南
 
 感谢你愿意为 **ywty** 做出贡献！🎉
 
-本文档说明如何参与项目开发、提 Issue、提 Pull Request。开始前请先阅读 [README.md](./README.md) 和 [REFACTOR_PLAN.md](./REFACTOR_PLAN.md) 以了解项目结构与路线图。
+本文档说明如何参与项目开发、提 Issue、提 Pull Request。开始前请先阅读 [README.md](./README.md) 和 [AGENTS.md](./AGENTS.md) 以了解项目结构与路线图。
 
 ## 📜 行为准则
 
@@ -36,7 +36,8 @@
 3. **补充测试**（如果是 bug 修复或新功能）
 4. **本地跑通**
    ```bash
-   cd server-rust && cargo build --workspace && cargo clippy -- -D warnings
+   cd server-rust
+cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace
    cd web-astro && npm run build
    ```
 5. **提交** — 建议遵循 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/) 规范
@@ -80,7 +81,7 @@ docs(readme): 更新 Docker Compose 启动说明
 - 优先使用 trait + 注册表模式扩展驱动（存储驱动、支付驱动等）
 - 敏感配置（密钥、AK/SK）必须通过环境变量传入，不允许硬编码
 
-### 前端（Astro 5 + Vue/React Islands + TypeScript）
+### 前端（Astro 7 + Vue/React Islands + TypeScript）
 
 - TypeScript 严格模式，避免 `any`
 - 公开页用 Vue Islands（`src/components/vue/`），用户中心/后台用 React Islands（`src/components/react/`）
