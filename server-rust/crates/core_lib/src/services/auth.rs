@@ -1,7 +1,7 @@
 //! 认证服务
 
+use crate::db::DbPool;
 use chrono::Utc;
-use sqlx::SqlitePool;
 use uuid::Uuid;
 
 use crate::auth::password::{hash_password, verify_password};
@@ -12,13 +12,13 @@ use crate::services::{mail::MailService, settings};
 
 #[derive(Clone)]
 pub struct AuthService {
-    pool: SqlitePool,
+    pool: DbPool,
     jwt: JwtAuth,
     mail: MailService,
 }
 
 impl AuthService {
-    pub fn new(pool: SqlitePool, jwt: JwtAuth, mail: MailService) -> Self {
+    pub fn new(pool: DbPool, jwt: JwtAuth, mail: MailService) -> Self {
         // 邮件服务绑定连接池：发送时优先读 settings 表中的 SMTP 配置，
         // 缺省回退到启动 config（mail 实例本身保持不可变）
         let mail = mail.with_pool(pool.clone());
@@ -63,7 +63,7 @@ impl AuthService {
         let password_hash = hash_password(password)?;
 
         let uuid = Uuid::new_v4().to_string();
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         // 插入用户
         let result = sqlx::query(
@@ -81,7 +81,7 @@ impl AuthService {
         .execute(&self.pool)
         .await?;
 
-        let user_id = result.last_insert_rowid();
+        let user_id = crate::db::last_id(&result);
 
         // 签发令牌
         let token_pair = self.jwt.generate_token_pair(user_id, username, "user")?;
@@ -149,7 +149,7 @@ impl AuthService {
         }
 
         // 更新最后登录时间
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let _ = sqlx::query("UPDATE users SET last_login_at = ?, updated_at = ? WHERE id = ?")
             .bind(&now)
             .bind(&now)
@@ -283,7 +283,7 @@ impl AuthService {
 
         // 更新密码
         let password_hash = hash_password(new_password)?;
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         sqlx::query("UPDATE users SET password = ?, updated_at = ? WHERE email = ?")
             .bind(&password_hash)
             .bind(&now)
@@ -373,13 +373,15 @@ impl AuthService {
         sqlx::query(
             r#"
             INSERT INTO verify_codes (channel, account, event, code, expired_at, created_at, updated_at)
-            VALUES ('email', ?, ?, ?, ?, datetime('now'), datetime('now'))
+            VALUES ('email', ?, ?, ?, ?, ?, ?)
             "#,
         )
         .bind(email)
         .bind(event)
         .bind(&code)
         .bind(expired_at)
+        .bind(crate::db::now_str())
+        .bind(crate::db::now_str())
         .execute(&self.pool)
         .await?;
 

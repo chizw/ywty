@@ -152,7 +152,7 @@ pub async fn update_user(
 
     // 配额覆盖单独落库（services/admin.rs 不感知该字段）
     if let Some(quota) = quota_req {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let result = sqlx::query(
             "UPDATE users SET quota_override = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
         )
@@ -324,5 +324,38 @@ pub async fn assign_rbac_role(
 ) -> AppResult<Json<ApiResponse<serde_json::Value>>> {
     Ok(Json(ApiResponse::success(
         serde_json::json!({ "data": req }),
+    )))
+}
+
+/// 删除指定图片（管理员处置，软删除）
+#[utoipa::path(
+    delete,
+    path = "/api/v1/admin/photos/:id",
+    params(
+        ("id" = i64, Path, description = "图片 ID"),
+    ),
+    responses(
+        (status = 200, description = "成功", body = serde_json::Value),
+    ),
+    tag = "管理"
+)]
+pub async fn delete_photo(
+    State(state): State<AppState>,
+    _admin: AdminUser,
+    Path(id): Path<i64>,
+) -> AppResult<Json<ApiResponse<serde_json::Value>>> {
+    let now = crate::db::now_str();
+    let result =
+        sqlx::query("UPDATE photos SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL")
+            .bind(&now)
+            .bind(id)
+            .execute(&state.db)
+            .await?;
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound("图片不存在".to_string()));
+    }
+    Ok(Json(ApiResponse::success_with_message(
+        serde_json::json!({}),
+        "已删除",
     )))
 }

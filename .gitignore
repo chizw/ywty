@@ -97,3 +97,6 @@ playwright/.cache/
 .vitest/
 __snapshots__/
 *.snap.local
+
+# ---------- 本地工具（不入库） ----------
+db-console/

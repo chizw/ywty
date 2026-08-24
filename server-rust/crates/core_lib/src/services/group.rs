@@ -1,17 +1,17 @@
 //! 群组服务
 
-use sqlx::SqlitePool;
+use crate::db::DbPool;
 
 use crate::error::{AppError, AppResult};
 use crate::models::group::{CreateGroupRequest, Group, UpdateGroupRequest};
 
 #[derive(Clone)]
 pub struct GroupService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl GroupService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -26,16 +26,17 @@ impl GroupService {
         let offset = (page - 1) * per_page;
 
         let rows = sqlx::query_as(
-            "SELECT * FROM groups WHERE deleted_at IS NULL ORDER BY id ASC LIMIT ? OFFSET ?",
+            "SELECT * FROM `groups` WHERE deleted_at IS NULL ORDER BY id ASC LIMIT ? OFFSET ?",
         )
         .bind(per_page)
         .bind(offset)
         .fetch_all(&self.pool)
         .await?;
 
-        let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM groups WHERE deleted_at IS NULL")
-            .fetch_one(&self.pool)
-            .await?;
+        let total: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM `groups` WHERE deleted_at IS NULL")
+                .fetch_one(&self.pool)
+                .await?;
 
         Ok((rows, total))
     }
@@ -43,7 +44,7 @@ impl GroupService {
     /// 获取群组详情
     pub async fn get(&self, id: i64) -> AppResult<Group> {
         let group: Option<Group> =
-            sqlx::query_as("SELECT * FROM groups WHERE id = ? AND deleted_at IS NULL")
+            sqlx::query_as("SELECT * FROM `groups` WHERE id = ? AND deleted_at IS NULL")
                 .bind(id)
                 .fetch_optional(&self.pool)
                 .await?;
@@ -53,7 +54,7 @@ impl GroupService {
 
     /// 创建群组
     pub async fn create(&self, req: &CreateGroupRequest) -> AppResult<Group> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let intro = req.intro.as_deref().unwrap_or("");
         let options = req
             .options
@@ -64,7 +65,7 @@ impl GroupService {
 
         let result = sqlx::query(
             r#"
-            INSERT INTO groups (name, intro, options, is_default, is_guest, max_storage, created_at, updated_at)
+            INSERT INTO `groups` (name, intro, options, is_default, is_guest, max_storage, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             "#,
         )
@@ -79,14 +80,14 @@ impl GroupService {
         .execute(&self.pool)
         .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
         self.get(id).await
     }
 
     /// 更新群组
     pub async fn update(&self, id: i64, req: &UpdateGroupRequest) -> AppResult<Group> {
         let existing = self.get(id).await?;
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         let name = req.name.clone().unwrap_or(existing.name);
         let intro = req.intro.clone().unwrap_or(existing.intro);
@@ -100,7 +101,7 @@ impl GroupService {
         let max_storage = req.max_storage.unwrap_or(existing.max_storage);
 
         sqlx::query(
-            "UPDATE groups SET name = ?, intro = ?, options = ?, is_default = ?, is_guest = ?, max_storage = ?, updated_at = ? WHERE id = ?",
+            "UPDATE `groups` SET name = ?, intro = ?, options = ?, is_default = ?, is_guest = ?, max_storage = ?, updated_at = ? WHERE id = ?",
         )
         .bind(&name)
         .bind(&intro)
@@ -118,9 +119,9 @@ impl GroupService {
 
     /// 删除群组
     pub async fn delete(&self, id: i64) -> AppResult<()> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let result =
-            sqlx::query("UPDATE groups SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL")
+            sqlx::query("UPDATE `groups` SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL")
                 .bind(&now)
                 .bind(id)
                 .execute(&self.pool)

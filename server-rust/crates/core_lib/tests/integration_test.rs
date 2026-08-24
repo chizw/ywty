@@ -1,6 +1,7 @@
 //! ywty server-rust 集成测试
 //!
 //! 使用临时 SQLite 数据库，测试完整的 API 请求/响应流程。
+#![cfg(not(feature = "mysql"))]
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};

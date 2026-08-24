@@ -1,18 +1,18 @@
 //! 点赞/举报服务
 
+use crate::db::DbPool;
 use chrono::Utc;
-use sqlx::SqlitePool;
 
 use crate::error::{AppError, AppResult};
 use crate::models::photo::Report;
 
 #[derive(Clone)]
 pub struct LikeService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl LikeService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -43,7 +43,7 @@ impl LikeService {
             .bind(user_id)
             .bind(target_type)
             .bind(target_id)
-            .bind(Utc::now().to_rfc3339())
+            .bind(crate::db::now_str())
             .execute(&self.pool)
             .await?;
             Ok(true)
@@ -82,11 +82,11 @@ impl LikeService {
 
 #[derive(Clone)]
 pub struct ReportService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl ReportService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -99,7 +99,7 @@ impl ReportService {
         target_id: i64,
         content: &str,
     ) -> AppResult<Report> {
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         let result = sqlx::query(
             r#"
@@ -116,7 +116,7 @@ impl ReportService {
         .execute(&self.pool)
         .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
 
         Ok(Report {
             id,
@@ -169,7 +169,7 @@ impl ReportService {
 
     /// 更新状态
     pub async fn update_status(&self, id: i64, status: i64) -> AppResult<()> {
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let result = sqlx::query("UPDATE reports SET status = ?, updated_at = ? WHERE id = ?")
             .bind(status)
             .bind(&now)

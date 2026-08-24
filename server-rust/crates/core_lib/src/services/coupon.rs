@@ -1,6 +1,6 @@
 //! 优惠券服务
 
-use sqlx::SqlitePool;
+use crate::db::DbPool;
 
 use crate::error::{AppError, AppResult};
 use crate::models::coupon::{
@@ -9,11 +9,11 @@ use crate::models::coupon::{
 
 #[derive(Clone)]
 pub struct CouponService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl CouponService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -56,7 +56,7 @@ impl CouponService {
 
     /// 创建优惠券
     pub async fn create(&self, req: &AdminCouponRequest) -> AppResult<Coupon> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let coupon_type = req.coupon_type.as_deref().unwrap_or("direct");
         let name = req.name.as_deref().unwrap_or("");
         let code = req.code.as_deref().unwrap_or("");
@@ -81,14 +81,14 @@ impl CouponService {
         .execute(&self.pool)
         .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
         self.get(id).await
     }
 
     /// 更新优惠券
     pub async fn update(&self, id: i64, req: &AdminCouponRequest) -> AppResult<Coupon> {
         let existing = self.get(id).await?;
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         let coupon_type = req.coupon_type.clone().unwrap_or(existing.coupon_type);
         let name = req.name.clone().unwrap_or(existing.name);
@@ -116,7 +116,7 @@ impl CouponService {
 
     /// 删除优惠券
     pub async fn delete(&self, id: i64) -> AppResult<()> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let result =
             sqlx::query("UPDATE coupons SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL")
                 .bind(&now)

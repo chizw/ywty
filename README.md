@@ -74,7 +74,7 @@ Local · **S3** · 阿里云 **OSS** · 腾讯云 **COS** · 七牛云 · 又拍
 |---|---|
 | **Rust 1.85+** | 主语言 |
 | **axum** | HTTP 框架 |
-| **sqlx** |异步 SQL（SQLite/MySQL/PostgreSQL） |
+| **sqlx** |异步 SQL（SQLite / MySQL · MariaDB） |
 | **serde** | 序列化（YAML + 环境变量配置） |
 | **tokio** | 异步运行时 |
 | **tokio::sync::mpsc** | 异步图片处理队列 |

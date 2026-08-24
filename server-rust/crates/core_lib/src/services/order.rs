@@ -1,6 +1,6 @@
 //! 订单服务
 
-use sqlx::SqlitePool;
+use crate::db::DbPool;
 
 use crate::error::{AppError, AppResult};
 use crate::models::order::{CreateOrderRequest, Order, ORDER_STATUS_PAID, ORDER_STATUS_UNPAID};
@@ -8,11 +8,11 @@ use crate::services::payment::{NotifyPayload, PaymentDriver, PaymentParams};
 
 #[derive(Clone)]
 pub struct OrderService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl OrderService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -43,7 +43,7 @@ impl OrderService {
 
         let trade_no = Self::generate_trade_no();
         let out_trade_no = Self::generate_trade_no();
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         let result = sqlx::query(
             r#"
@@ -64,7 +64,7 @@ impl OrderService {
         .execute(&self.pool)
         .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
         self.get_by_id(id).await
     }
 
@@ -114,7 +114,7 @@ impl OrderService {
 
     /// 取消订单
     pub async fn cancel(&self, user_id: i64, id: i64) -> AppResult<()> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let result = sqlx::query(
             "UPDATE orders SET status = 'canceled', canceled_at = ? WHERE id = ? AND user_id = ? AND status = 'unpaid'",
         )
@@ -174,7 +174,7 @@ impl OrderService {
             // 幂等：已支付订单重复通知直接返回成功
             ORDER_STATUS_PAID => Ok(PaidOutcome::AlreadyPaid(order)),
             ORDER_STATUS_UNPAID => {
-                let now = chrono::Utc::now().to_rfc3339();
+                let now = crate::db::now_str();
                 let result = sqlx::query(
                     "UPDATE orders SET status = ?, pay_method = ?, paid_at = ?, updated_at = ? WHERE trade_no = ? AND status = ?",
                 )

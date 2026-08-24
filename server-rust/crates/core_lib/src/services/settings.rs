@@ -1,9 +1,9 @@
 //! 全局设置服务（settings 表键值存储）
 //!
-//! 提供对 `settings` 表的读写：以 `&SqlitePool` 为参数的自由函数，
+//! 提供对 `settings` 表的读写：以 `&DbPool` 为参数的自由函数，
 //! 以及常用类型的辅助读取（bool / i64）。键名统一在 [`keys`] 模块中维护。
 
-use sqlx::SqlitePool;
+use crate::db::DbPool;
 
 use crate::error::AppResult;
 
@@ -24,6 +24,8 @@ pub mod keys {
     pub const SECURITY_ALLOW_PASSWORD_RESET: &str = "security.allow_password_reset";
     /// 是否允许注册（默认 true）
     pub const SECURITY_ALLOW_REGISTER: &str = "security.allow_register";
+    /// 是否强制图形验证码（注册/找回密码，默认 false）
+    pub const SECURITY_REQUIRE_CAPTCHA: &str = "security.require_captcha";
 
     // ---- 站点信息 ----
     /// 站点名称（默认"云雾图驿"）
@@ -51,6 +53,7 @@ pub mod keys {
         SECURITY_REQUIRE_EMAIL_VERIFY,
         SECURITY_ALLOW_PASSWORD_RESET,
         SECURITY_ALLOW_REGISTER,
+        SECURITY_REQUIRE_CAPTCHA,
         SITE_NAME,
         SITE_DESCRIPTION,
         SITE_KEYWORDS,
@@ -60,8 +63,8 @@ pub mod keys {
 }
 
 /// 读取单个设置项，不存在时返回 None
-pub async fn get(pool: &SqlitePool, key: &str) -> AppResult<Option<String>> {
-    let row: Option<(String,)> = sqlx::query_as("SELECT value FROM settings WHERE key = ?")
+pub async fn get(pool: &DbPool, key: &str) -> AppResult<Option<String>> {
+    let row: Option<(String,)> = sqlx::query_as("SELECT value FROM settings WHERE `key` = ?")
         .bind(key)
         .fetch_optional(pool)
         .await?;
@@ -69,32 +72,43 @@ pub async fn get(pool: &SqlitePool, key: &str) -> AppResult<Option<String>> {
 }
 
 /// 写入（upsert）单个设置项
-pub async fn set(pool: &SqlitePool, key: &str, value: &str) -> AppResult<()> {
-    sqlx::query(
-        r#"
-        INSERT INTO settings (key, value, updated_at)
-        VALUES (?, ?, datetime('now'))
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
-        "#,
-    )
-    .bind(key)
-    .bind(value)
-    .execute(pool)
-    .await?;
+pub async fn set(pool: &DbPool, key: &str, value: &str) -> AppResult<()> {
+    let now = crate::db::now_str();
+
+    // 冲突处理语法两方言不同：SQLite 用 ON CONFLICT，MySQL/MariaDB 用 ON DUPLICATE KEY
+    #[cfg(feature = "mysql")]
+    let sql = r#"
+        INSERT INTO settings (`key`, value, updated_at)
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = VALUES(updated_at)
+        "#;
+    #[cfg(not(feature = "mysql"))]
+    let sql = r#"
+        INSERT INTO settings (`key`, value, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(`key`) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+        "#;
+
+    sqlx::query(sql)
+        .bind(key)
+        .bind(value)
+        .bind(&now)
+        .execute(pool)
+        .await?;
     Ok(())
 }
 
 /// 读取全部设置项（键升序）
-pub async fn get_all(pool: &SqlitePool) -> AppResult<Vec<(String, String)>> {
+pub async fn get_all(pool: &DbPool) -> AppResult<Vec<(String, String)>> {
     let rows: Vec<(String, String)> =
-        sqlx::query_as("SELECT key, value FROM settings ORDER BY key")
+        sqlx::query_as("SELECT `key`, value FROM settings ORDER BY `key`")
             .fetch_all(pool)
             .await?;
     Ok(rows)
 }
 
 /// 读取布尔设置：值为 "1"/"true"/"on"/"yes" 视为 true；不存在时返回 default
-pub async fn get_bool(pool: &SqlitePool, key: &str, default: bool) -> AppResult<bool> {
+pub async fn get_bool(pool: &DbPool, key: &str, default: bool) -> AppResult<bool> {
     match get(pool, key).await? {
         Some(v) => {
             let v = v.trim().to_ascii_lowercase();
@@ -105,7 +119,7 @@ pub async fn get_bool(pool: &SqlitePool, key: &str, default: bool) -> AppResult<
 }
 
 /// 读取整数设置：解析失败或不存在时返回 default
-pub async fn get_i64(pool: &SqlitePool, key: &str, default: i64) -> AppResult<i64> {
+pub async fn get_i64(pool: &DbPool, key: &str, default: i64) -> AppResult<i64> {
     match get(pool, key).await? {
         Some(v) => Ok(v.trim().parse().unwrap_or(default)),
         None => Ok(default),

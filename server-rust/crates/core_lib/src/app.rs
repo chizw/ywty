@@ -20,7 +20,7 @@ use crate::router;
 #[derive(Clone)]
 pub struct AppState {
     pub config: Arc<AppConfig>,
-    pub db: sqlx::SqlitePool,
+    pub db: crate::db::DbPool,
     pub jwt: Arc<JwtAuth>,
     // 服务
     pub auth_svc: crate::services::auth::AuthService,
@@ -178,9 +178,9 @@ pub async fn run() -> Result<()> {
     // 构建应用状态
     let state = AppState::from_config(config).await?;
 
-    // 运行数据库迁移
+    // 运行数据库迁移（迁移器按编译期 feature 选择方言目录）
     tracing::info!("🔄 运行数据库迁移...");
-    if let Err(e) = sqlx::migrate!("./src/db/migrations").run(&state.db).await {
+    if let Err(e) = crate::db::MIGRATOR.run(&state.db).await {
         tracing::warn!("数据库迁移警告（可忽略）: {}", e);
     }
 
@@ -209,7 +209,7 @@ pub async fn run() -> Result<()> {
 ///
 /// 当用户表为空时，自动创建默认 admin 账号。
 /// 默认凭据：admin / admin123456（生产环境请尽快修改）
-async fn seed_admin_user(db: &sqlx::SqlitePool) {
+async fn seed_admin_user(db: &crate::db::DbPool) {
     let count: i64 = match sqlx::query_scalar("SELECT COUNT(*) FROM users")
         .fetch_one(db)
         .await
@@ -233,8 +233,8 @@ async fn seed_admin_user(db: &sqlx::SqlitePool) {
         }
     };
 
-    let now = chrono::Utc::now().to_rfc3339();
-    let _ = sqlx::query(
+    let now = crate::db::now_str();
+    if let Err(e) = sqlx::query(
         r#"
         INSERT INTO users (uuid, username, email, password, role, is_super_admin, status, created_at, updated_at)
         VALUES (?, 'admin', 'admin@ywty.local', ?, 'admin', 1, 1, ?, ?)
@@ -245,7 +245,11 @@ async fn seed_admin_user(db: &sqlx::SqlitePool) {
     .bind(&now)
     .bind(&now)
     .execute(db)
-    .await;
+    .await
+    {
+        tracing::error!("⚠️ 默认管理员创建失败: {}", e);
+        return;
+    }
 
     tracing::info!("✅ 默认管理员已创建: admin（默认密码，请尽快修改）");
 }

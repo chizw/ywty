@@ -1,18 +1,18 @@
 //! 标签服务
 
+use crate::db::DbPool;
 use chrono::Utc;
-use sqlx::SqlitePool;
 
 use crate::error::{AppError, AppResult};
 use crate::models::photo::Tag;
 
 #[derive(Clone)]
 pub struct TagService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl TagService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -42,7 +42,7 @@ impl TagService {
         }
 
         let slug = Self::make_slug(name);
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         let result = sqlx::query("INSERT INTO tags (name, slug, created_at) VALUES (?, ?, ?)")
             .bind(name)
@@ -51,7 +51,7 @@ impl TagService {
             .execute(&self.pool)
             .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
 
         Ok(Tag {
             id,
@@ -111,7 +111,7 @@ impl TagService {
     pub async fn attach(&self, user_id: i64, tag_id: i64, photo_id: i64) -> AppResult<()> {
         self.check_photo_ownership(user_id, photo_id).await?;
 
-        // 使用 INSERT OR IGNORE 避免重复
+        // 幂等：已绑定则直接返回
         let existing: Option<(i64, i64)> = sqlx::query_as(
             "SELECT photo_id, tag_id FROM photo_tags WHERE photo_id = ? AND tag_id = ?",
         )

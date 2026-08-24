@@ -1,17 +1,17 @@
 //! API Token 服务
 
-use sqlx::SqlitePool;
+use crate::db::DbPool;
 
 use crate::error::{AppError, AppResult};
 use crate::models::user::ApiToken;
 
 #[derive(Clone)]
 pub struct TokenService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl TokenService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -46,9 +46,11 @@ impl TokenService {
             use sha2::{Digest, Sha256};
             format!("{:x}", Sha256::digest(raw_token.as_bytes()))
         };
-        let now = chrono::Utc::now().to_rfc3339();
-        let expires_at =
-            ttl_days.map(|d| (chrono::Utc::now() + chrono::Duration::days(d)).to_rfc3339());
+        let now = crate::db::now_str();
+        let expires_at_dt = ttl_days.map(|d| chrono::Utc::now() + chrono::Duration::days(d));
+        let expires_at_sql = expires_at_dt
+            .as_ref()
+            .map(|t| t.format("%Y-%m-%d %H:%M:%S").to_string());
 
         let result = sqlx::query(
             r#"
@@ -59,13 +61,13 @@ impl TokenService {
         .bind(user_id)
         .bind(name)
         .bind(&token_hash)
-        .bind(&expires_at)
+        .bind(&expires_at_sql)
         .bind(&now)
         .bind(&now)
         .execute(&self.pool)
         .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
 
         let info = ApiToken {
             id,
@@ -74,10 +76,7 @@ impl TokenService {
             token: token_hash,
             scopes: None,
             last_used_at: None,
-            expires_at: expires_at
-                .as_deref()
-                .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
-                .map(|dt| dt.with_timezone(&chrono::Utc)),
+            expires_at: expires_at_dt,
             created_at: chrono::Utc::now(),
             deleted_at: None,
         };
@@ -87,7 +86,7 @@ impl TokenService {
 
     /// 撤销 token
     pub async fn revoke(&self, user_id: i64, id: i64) -> AppResult<()> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let result = sqlx::query(
             "UPDATE personal_access_tokens SET deleted_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NULL",
         )

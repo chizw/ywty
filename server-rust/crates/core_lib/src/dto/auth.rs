@@ -38,9 +38,12 @@ pub struct RefreshRequest {
 pub struct ResetPasswordRequest {
     #[validate(email(message = "邮箱格式不正确"))]
     pub email: String,
-    #[validate(length(min = 6, max = 64, message = "密码长度必须在 6-64 之间"))]
+    #[validate(length(min = 6, max = 64, message = "密码长度需在 6-64 之间"))]
     pub new_password: String,
     pub verify_code: String,
+    /// 图形验证码（security.require_captcha 开启时必填）
+    pub captcha_id: Option<String>,
+    pub captcha_code: Option<String>,
 }
 
 /// 验证码响应（图片验证码，base64 PNG）

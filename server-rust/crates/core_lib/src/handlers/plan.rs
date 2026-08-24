@@ -27,10 +27,10 @@ pub struct ListQuery {
 pub async fn list_public(
     State(state): State<AppState>,
 ) -> AppResult<Json<ApiResponse<serde_json::Value>>> {
-    let plans = state.plan_svc.list_public().await?;
-    Ok(Json(ApiResponse::success(
-        serde_json::json!({ "data": plans }),
-    )))
+    let details = state.plan_svc.list_public_with_prices().await?;
+    let value = serde_json::to_value(details)
+        .map_err(|e| crate::error::AppError::Internal(e.to_string()))?;
+    Ok(Json(ApiResponse::success(value)))
 }
 
 #[utoipa::path(

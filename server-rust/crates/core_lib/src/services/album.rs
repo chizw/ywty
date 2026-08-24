@@ -1,7 +1,6 @@
 //! 相册服务
 
-use chrono::Utc;
-use sqlx::SqlitePool;
+use crate::db::DbPool;
 use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
@@ -11,11 +10,11 @@ use crate::dto::photo::PhotoResponse;
 
 #[derive(Clone)]
 pub struct AlbumService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl AlbumService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -72,7 +71,7 @@ impl AlbumService {
     pub async fn create(&self, user_id: i64, req: &CreateAlbumRequest) -> AppResult<AlbumResponse> {
         let uuid = Uuid::new_v4().to_string();
         let is_public = req.is_public.unwrap_or(false);
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         let result = sqlx::query(
             r#"
@@ -90,7 +89,7 @@ impl AlbumService {
         .execute(&self.pool)
         .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
 
         self.get(user_id, id).await
     }
@@ -104,7 +103,7 @@ impl AlbumService {
     ) -> AppResult<AlbumResponse> {
         self.check_ownership(user_id, album_id).await?;
 
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         if let Some(name) = &req.name {
             sqlx::query("UPDATE albums SET name = ?, updated_at = ? WHERE id = ?")
@@ -149,7 +148,7 @@ impl AlbumService {
     pub async fn delete(&self, user_id: i64, album_id: i64) -> AppResult<()> {
         self.check_ownership(user_id, album_id).await?;
 
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         // 软删除相册
         sqlx::query("UPDATE albums SET deleted_at = ? WHERE id = ?")
@@ -219,7 +218,7 @@ impl AlbumService {
     ) -> AppResult<u64> {
         self.check_ownership(user_id, album_id).await?;
 
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let mut added = 0u64;
 
         for photo_id in photo_ids {
@@ -237,14 +236,15 @@ impl AlbumService {
             }
 
             // 插入关联（忽略已存在）
-            let result = sqlx::query(
+            let sql = crate::db::sql_insert_ignore(
                 "INSERT OR IGNORE INTO album_photos (album_id, photo_id, sort_order, created_at) VALUES (?, ?, 0, ?)",
-            )
-            .bind(album_id)
-            .bind(photo_id)
-            .bind(&now)
-            .execute(&self.pool)
-            .await?;
+            );
+            let result = sqlx::query(&sql)
+                .bind(album_id)
+                .bind(photo_id)
+                .bind(&now)
+                .execute(&self.pool)
+                .await?;
 
             if result.rows_affected() > 0 {
                 added += 1;

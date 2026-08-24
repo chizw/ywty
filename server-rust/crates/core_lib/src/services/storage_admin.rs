@@ -1,12 +1,12 @@
 //! 存储管理服务
 
-use sqlx::SqlitePool;
+use crate::db::DbPool;
 
 use crate::error::{AppError, AppResult};
 
 #[derive(Clone)]
 pub struct StorageAdminService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 /// 存储记录（对应 storages 表的查询行）
@@ -23,7 +23,7 @@ pub struct StorageRecord {
 }
 
 impl StorageAdminService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -47,7 +47,7 @@ impl StorageAdminService {
         prefix: Option<&str>,
         options: Option<&str>,
     ) -> AppResult<StorageRecord> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         let result = sqlx::query(
             r#"
@@ -65,7 +65,7 @@ impl StorageAdminService {
         .execute(&self.pool)
         .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
         self.get_storage(id).await
     }
 
@@ -108,7 +108,7 @@ impl StorageAdminService {
             return Err(AppError::Validation("没有要更新的字段".to_string()));
         }
 
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let sql = format!(
             "UPDATE storages SET {}, updated_at = ? WHERE id = ?",
             updates.join(", ")

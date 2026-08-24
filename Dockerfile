@@ -7,6 +7,9 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
+# 数据库方言：sqlite（默认）| mysql
+ARG DB_FLAVOR=sqlite
+
 COPY Cargo.toml Cargo.lock ./
 COPY crates/api/Cargo.toml ./crates/api/
 COPY crates/core_lib/Cargo.toml ./crates/core_lib/
@@ -21,7 +24,11 @@ COPY crates/ ./crates/
 COPY config.yaml ./config.yaml
 
 RUN touch crates/api/src/main.rs crates/core_lib/src/main.rs && \
-    cargo build --release --bin api
+    if [ "$DB_FLAVOR" = "mysql" ]; then \
+        cargo build --release --bin api --features mysql; \
+    else \
+        cargo build --release --bin api; \
+    fi
 
 # ---------- Stage 2: Astro builder ----------
 FROM node:22-alpine AS web-builder

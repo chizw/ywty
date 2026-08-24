@@ -3,8 +3,8 @@
 //! 实现 GitHub 和 Google 的授权码流程（Authorization Code Grant）。
 //! 支持 CSRF state 验证（Redis 存储 + 签名 Cookie 降级）。
 
+use crate::db::DbPool;
 use serde::Deserialize;
-use sqlx::SqlitePool;
 
 use crate::config::OAuthProviderConfig;
 use crate::error::{AppError, AppResult};
@@ -61,7 +61,7 @@ struct GoogleUser {
 
 #[derive(Clone)]
 pub struct OAuthService {
-    pool: SqlitePool,
+    pool: DbPool,
     http: reqwest::Client,
     github_config: Option<OAuthProviderConfig>,
     google_config: Option<OAuthProviderConfig>,
@@ -69,7 +69,7 @@ pub struct OAuthService {
 
 impl OAuthService {
     pub fn new(
-        pool: SqlitePool,
+        pool: DbPool,
         github_config: Option<OAuthProviderConfig>,
         google_config: Option<OAuthProviderConfig>,
     ) -> Self {
@@ -312,7 +312,7 @@ impl OAuthService {
         provider: &str,
         provider_user_id: &str,
     ) -> AppResult<OAuthAccount> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         // 检查是否已绑定
         let existing: Option<OAuthAccount> =
@@ -350,7 +350,7 @@ impl OAuthService {
             .execute(&self.pool)
             .await?;
 
-            let id = result.last_insert_rowid();
+            let id = crate::db::last_id(&result);
             let acc: OAuthAccount = sqlx::query_as("SELECT * FROM oauth_accounts WHERE id = ?")
                 .bind(id)
                 .fetch_one(&self.pool)
@@ -388,7 +388,7 @@ impl OAuthService {
         &self,
         info: &OAuthUserInfo,
     ) -> AppResult<(i64, String, String)> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let uuid = uuid::Uuid::new_v4().to_string();
 
         // 生成用户名（如果冲突则加随机后缀）
@@ -423,7 +423,7 @@ impl OAuthService {
         .execute(&self.pool)
         .await?;
 
-        let user_id = result.last_insert_rowid();
+        let user_id = crate::db::last_id(&result);
 
         // 绑定 OAuth 账号
         sqlx::query(

@@ -1,17 +1,17 @@
 //! 单页服务
 
-use sqlx::SqlitePool;
+use crate::db::DbPool;
 
 use crate::error::{AppError, AppResult};
 use crate::models::page::{CreatePageRequest, Page, UpdatePageRequest};
 
 #[derive(Clone)]
 pub struct PageService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl PageService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -84,7 +84,7 @@ impl PageService {
 
     /// 创建页面
     pub async fn admin_create(&self, req: &CreatePageRequest) -> AppResult<Page> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let page_type = req.page_type.as_deref().unwrap_or("internal");
         let name = &req.name;
         let icon = req.icon.as_deref().unwrap_or("");
@@ -119,14 +119,14 @@ impl PageService {
         .execute(&self.pool)
         .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
         self.admin_get(id).await
     }
 
     /// 更新页面
     pub async fn admin_update(&self, id: i64, req: &UpdatePageRequest) -> AppResult<Page> {
         let existing = self.admin_get(id).await?;
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         let page_type = req.page_type.clone().unwrap_or(existing.page_type);
         let name = req.name.clone().unwrap_or(existing.name);
@@ -164,7 +164,7 @@ impl PageService {
 
     /// 删除页面
     pub async fn admin_delete(&self, id: i64) -> AppResult<()> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let result =
             sqlx::query("UPDATE pages SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL")
                 .bind(&now)

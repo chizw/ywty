@@ -31,3 +31,12 @@ pub fn client_ip(
         .map(|addr| addr.ip().to_string())
         .unwrap_or_else(|| "0.0.0.0".to_string())
 }
+
+/// WeAvatar 头像地址：对邮箱（或任意稳定标识）做 MD5 后拼接
+///
+/// 用户设置了自定义 avatar 时应优先使用自定义值，本函数用于无头像时的兜底。
+/// `d=mp` 表示无匹配头像时返回 WeAvatar 默认形象图。
+pub fn weavatar_url(identifier: &str, size: u32) -> String {
+    let digest = md5::compute(identifier.trim().to_lowercase());
+    format!("https://weavatar.com/avatar/{:x}?s={size}&d=mp", digest)
+}

@@ -3,6 +3,12 @@ name = "core_lib"
 version.workspace = true
 edition.workspace = true
 
+[features]
+default = []
+# 编译期选择 MySQL/MariaDB 方言：cargo build --features mysql
+# 默认构建为 SQLite；两种构建各自使用纯方言 SQL 与对应迁移集
+mysql = []
+
 [dependencies]
 tokio.workspace = true
 sqlx.workspace = true

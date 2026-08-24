@@ -58,6 +58,7 @@ pub fn create_router(state: AppState) -> Router {
         // 公开优惠券校验
         .route("/coupons/validate", post(coupon::validate))
         // OAuth 公开端点
+        .route("/oauth/providers", get(oauth::providers))
         .route("/oauth/:provider/authorize", get(oauth::authorize))
         .route("/oauth/:provider/callback", get(oauth::callback))
         // 支付回调（公开）
@@ -162,6 +163,7 @@ pub fn create_router(state: AppState) -> Router {
             patch(admin::update_user).delete(admin::delete_user),
         )
         .route("/admin/photos", get(admin::list_all_photos))
+        .route("/admin/photos/:id", delete(admin::delete_photo))
         .route("/admin/groups", get(group::list).post(group::create))
         .route(
             "/admin/groups/:id",
@@ -309,7 +311,7 @@ async fn health_check(
         "app": state.config.app.name,
         "env": state.config.app.env,
         "database": db_status,
-        "time": chrono::Utc::now().to_rfc3339(),
+        "time": crate::db::now_str(),
     }))
 }
 

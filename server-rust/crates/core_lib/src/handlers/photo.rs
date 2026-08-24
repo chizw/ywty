@@ -284,7 +284,7 @@ pub async fn upload(
         let _ = sqlx::query(
             "UPDATE albums SET photo_count = photo_count + 1, updated_at = ? WHERE id = ?",
         )
-        .bind(now.to_rfc3339())
+        .bind(crate::db::now_str())
         .bind(aid)
         .execute(&state.db)
         .await;

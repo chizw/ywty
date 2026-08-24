@@ -1,17 +1,17 @@
 //! 管理员服务
 
-use sqlx::SqlitePool;
+use crate::db::DbPool;
 
 use crate::dto::user::AdminUserResponse;
 use crate::error::{AppError, AppResult};
 
 #[derive(Clone)]
 pub struct AdminService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl AdminService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -149,7 +149,7 @@ impl AdminService {
 
     /// 删除用户（软删用户及其图片/相册/分享）
     pub async fn delete_user(&self, id: i64) -> AppResult<()> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         // 软删用户
         let result = sqlx::query(
             "UPDATE users SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
@@ -211,7 +211,7 @@ impl AdminService {
             return Err(AppError::Validation("没有要更新的字段".to_string()));
         }
 
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         sets.push("updated_at = ?");
         let sql = format!(
             "UPDATE users SET {} WHERE id = ? AND deleted_at IS NULL",
