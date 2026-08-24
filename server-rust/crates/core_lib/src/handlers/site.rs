@@ -20,6 +20,7 @@ pub struct SiteInfo {
     pub icp: String,
     pub allow_register: bool,
     pub require_email_verify: bool,
+    pub captcha_enabled: bool,
 }
 
 /// 公开：站点信息（供前端页头/页脚与 SEO 使用）
@@ -55,6 +56,8 @@ pub async fn info(State(state): State<AppState>) -> AppResult<Json<ApiResponse<S
         settings::get_bool(db, settings::keys::SECURITY_ALLOW_REGISTER, true).await?;
     let require_email_verify =
         settings::get_bool(db, settings::keys::SECURITY_REQUIRE_EMAIL_VERIFY, true).await?;
+    let captcha_enabled =
+        settings::get_bool(db, settings::keys::SECURITY_REQUIRE_CAPTCHA, false).await?;
 
     Ok(Json(ApiResponse::success(SiteInfo {
         name,
@@ -64,5 +67,6 @@ pub async fn info(State(state): State<AppState>) -> AppResult<Json<ApiResponse<S
         icp,
         allow_register,
         require_email_verify,
+        captcha_enabled,
     })))
 }

@@ -1,24 +1,24 @@
 //! 意见反馈 + 违规记录服务
 
+use crate::db::DbPool;
 use chrono::Utc;
-use sqlx::SqlitePool;
 
 use crate::error::{AppError, AppResult};
 use crate::models::feedback::{CreateFeedbackRequest, CreateViolationRequest, Feedback, Violation};
 
 #[derive(Clone)]
 pub struct FeedbackService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl FeedbackService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
     /// 创建反馈（公开）
     pub async fn create(&self, ip: &str, req: &CreateFeedbackRequest) -> AppResult<Feedback> {
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         let result = sqlx::query(
             r#"
@@ -36,7 +36,7 @@ impl FeedbackService {
         .execute(&self.pool)
         .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
 
         Ok(Feedback {
             id,
@@ -91,17 +91,17 @@ impl FeedbackService {
 
 #[derive(Clone)]
 pub struct ViolationService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl ViolationService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
     /// 创建违规记录
     pub async fn create(&self, user_id: i64, req: &CreateViolationRequest) -> AppResult<Violation> {
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         let result = sqlx::query(
             r#"
@@ -117,7 +117,7 @@ impl ViolationService {
         .execute(&self.pool)
         .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
 
         Ok(Violation {
             id,
@@ -175,7 +175,7 @@ impl ViolationService {
             _ => return Err(AppError::Validation("无效的状态值".to_string())),
         }
 
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let result = sqlx::query(
             "UPDATE violations SET status = ?, handled_at = ?, updated_at = ? WHERE id = ?",
         )

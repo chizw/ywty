@@ -1,17 +1,17 @@
 //! 公告服务
 
-use sqlx::SqlitePool;
+use crate::db::DbPool;
 
 use crate::error::{AppError, AppResult};
 use crate::models::notice::{CreateNoticeRequest, Notice, UpdateNoticeRequest};
 
 #[derive(Clone)]
 pub struct NoticeService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl NoticeService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -67,7 +67,7 @@ impl NoticeService {
 
     /// 创建公告
     pub async fn admin_create(&self, req: &CreateNoticeRequest) -> AppResult<Notice> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let sort = req.sort.unwrap_or(0);
 
         let result = sqlx::query(
@@ -84,7 +84,7 @@ impl NoticeService {
         .execute(&self.pool)
         .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
         self.admin_get(id).await
     }
 
@@ -102,7 +102,7 @@ impl NoticeService {
     /// 更新公告
     pub async fn admin_update(&self, id: i64, req: &UpdateNoticeRequest) -> AppResult<Notice> {
         let existing = self.admin_get(id).await?;
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         let title = req.title.clone().unwrap_or(existing.title);
         let content = req.content.clone().unwrap_or_default();
@@ -124,7 +124,7 @@ impl NoticeService {
 
     /// 删除公告
     pub async fn admin_delete(&self, id: i64) -> AppResult<()> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let result =
             sqlx::query("UPDATE notices SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL")
                 .bind(&now)

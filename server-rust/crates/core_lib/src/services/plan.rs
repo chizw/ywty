@@ -1,17 +1,17 @@
 //! 套餐服务
 
-use sqlx::SqlitePool;
+use crate::db::DbPool;
 
 use crate::error::{AppError, AppResult};
-use crate::models::plan::{AdminPlanRequest, Plan, PlanDetail};
+use crate::models::plan::{AdminPlanRequest, Plan, PlanDetail, PlanPrice};
 
 #[derive(Clone)]
 pub struct PlanService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl PlanService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -24,6 +24,37 @@ impl PlanService {
         .await?;
 
         Ok(rows)
+    }
+
+    /// 列出上架套餐（含价格档，单次查询避免 N+1）
+    pub async fn list_public_with_prices(&self) -> AppResult<Vec<PlanDetail>> {
+        let plans = self.list_public().await?;
+        if plans.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let ids: Vec<i64> = plans.iter().map(|p| p.id).collect();
+        let placeholders = vec!["?"; ids.len()].join(", ");
+        let sql = format!(
+            "SELECT * FROM plan_prices WHERE plan_id IN ({placeholders}) ORDER BY price ASC"
+        );
+        let mut query = sqlx::query_as::<_, PlanPrice>(&sql);
+        for id in &ids {
+            query = query.bind(id);
+        }
+        let all_prices = query.fetch_all(&self.pool).await?;
+
+        Ok(plans
+            .into_iter()
+            .map(|plan| {
+                let prices = all_prices
+                    .iter()
+                    .filter(|p| p.plan_id == plan.id)
+                    .cloned()
+                    .collect();
+                PlanDetail { plan, prices }
+            })
+            .collect())
     }
 
     /// 列出所有套餐（管理端）
@@ -56,7 +87,7 @@ impl PlanService {
 
     /// 创建套餐
     pub async fn create(&self, req: &AdminPlanRequest) -> AppResult<Plan> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let name = req.name.as_deref().unwrap_or("");
         let plan_type = req.plan_type.as_deref().unwrap_or("vip");
         let intro = req.intro.as_deref().unwrap_or("");
@@ -83,7 +114,7 @@ impl PlanService {
         .execute(&self.pool)
         .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
 
         // 插入价格
         if let Some(prices) = &req.prices {
@@ -118,7 +149,7 @@ impl PlanService {
             return Err(AppError::NotFound("套餐不存在".to_string()));
         }
 
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         // 动态更新字段
         let mut updates = Vec::new();
@@ -182,7 +213,7 @@ impl PlanService {
 
     /// 删除套餐（软删除）
     pub async fn delete(&self, id: i64) -> AppResult<()> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let result =
             sqlx::query("UPDATE plans SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL")
                 .bind(&now)
@@ -198,7 +229,7 @@ impl PlanService {
 
     /// 切换上架状态
     pub async fn toggle_up(&self, id: i64) -> AppResult<Plan> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         sqlx::query(
             "UPDATE plans SET is_up = CASE WHEN is_up = 1 THEN 0 ELSE 1 END, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
         )

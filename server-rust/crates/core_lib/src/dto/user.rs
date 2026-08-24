@@ -13,6 +13,9 @@ pub struct UserProfile {
     pub username: String,
     pub email: String,
     pub avatar: Option<String>,
+    /// WeAvatar 兜底头像（avatar 为空时由后端按邮箱生成）
+    #[sqlx(default)]
+    pub avatar_url: Option<String>,
     pub bio: Option<String>,
     pub role: String,
     pub capacity_used: i64,

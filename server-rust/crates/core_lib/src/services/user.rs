@@ -1,7 +1,7 @@
 //! 用户服务
 
+use crate::db::DbPool;
 use chrono::Utc;
-use sqlx::SqlitePool;
 
 use crate::auth::password::hash_password;
 use crate::dto::user::UserProfile;
@@ -9,17 +9,17 @@ use crate::error::{AppError, AppResult};
 
 #[derive(Clone)]
 pub struct UserService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl UserService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
     /// 获取用户资料
     pub async fn get_profile(&self, user_id: i64) -> AppResult<UserProfile> {
-        sqlx::query_as::<_, UserProfile>(
+        let mut profile = sqlx::query_as::<_, UserProfile>(
             r#"
             SELECT id, uuid, username, email, avatar, bio, role,
                    capacity_used, capacity_max, plan_id, plan_expires_at,
@@ -30,7 +30,14 @@ impl UserService {
         .bind(user_id)
         .fetch_optional(&self.pool)
         .await?
-        .ok_or_else(|| AppError::NotFound("用户不存在".to_string()))
+        .ok_or_else(|| AppError::NotFound("用户不存在".to_string()))?;
+
+        // 头像兜底：自定义 avatar 优先，否则用 WeAvatar（按邮箱 MD5）
+        profile.avatar_url = Some(match profile.avatar.as_deref() {
+            Some(a) if !a.trim().is_empty() => a.to_string(),
+            _ => crate::utils::weavatar_url(&profile.email, 200),
+        });
+        Ok(profile)
     }
 
     /// 更新用户资料
@@ -41,7 +48,7 @@ impl UserService {
         avatar: Option<&str>,
         bio: Option<&str>,
     ) -> AppResult<UserProfile> {
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         // 如果修改用户名，检查唯一性
         if let Some(name) = username {
@@ -111,7 +118,7 @@ impl UserService {
 
         // 更新密码
         let new_hash = hash_password(new_password)?;
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         sqlx::query("UPDATE users SET password = ?, updated_at = ? WHERE id = ?")
             .bind(&new_hash)
             .bind(&now)
@@ -151,7 +158,7 @@ impl UserService {
         }
 
         // 更新邮箱
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         sqlx::query(
             "UPDATE users SET email = ?, email_verified_at = ?, updated_at = ? WHERE id = ?",
         )

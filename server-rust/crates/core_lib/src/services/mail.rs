@@ -4,10 +4,10 @@
 //! 发送时优先读取 settings 表中的 SMTP 配置（host/port/username/password/from/ssl），
 //! 缺省回退到启动 config.notify.mail；两者皆无时视为禁用（跳过发送）。
 
+use crate::db::DbPool;
 use lettre::message::{header::ContentType, Mailbox, Message};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{AsyncSmtpTransport, AsyncTransport, Tokio1Executor};
-use sqlx::SqlitePool;
 
 use crate::config::MailConfig;
 use crate::error::{AppError, AppResult};
@@ -25,7 +25,7 @@ struct SmtpSettings {
 
 impl SmtpSettings {
     /// 从 settings 表解析（host 非空视为已配置）
-    async fn from_settings(pool: &SqlitePool) -> AppResult<Option<Self>> {
+    async fn from_settings(pool: &DbPool) -> AppResult<Option<Self>> {
         let host = services::settings::get(pool, settings::keys::MAIL_SMTP_HOST)
             .await?
             .unwrap_or_default();
@@ -66,7 +66,7 @@ impl SmtpSettings {
 #[derive(Clone, Default)]
 pub struct MailService {
     fallback: Option<MailConfig>,
-    pool: Option<SqlitePool>,
+    pool: Option<DbPool>,
 }
 
 impl MailService {
@@ -87,7 +87,7 @@ impl MailService {
     }
 
     /// 绑定数据库连接池（发送时从 settings 表读取 SMTP 配置）
-    pub fn with_pool(mut self, pool: SqlitePool) -> Self {
+    pub fn with_pool(mut self, pool: DbPool) -> Self {
         self.pool = Some(pool);
         self
     }

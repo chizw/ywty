@@ -71,14 +71,14 @@ impl std::fmt::Debug for ImageTask {
 pub struct ImageQueue {
     sender: mpsc::Sender<ImageTask>,
     #[allow(dead_code)]
-    pool: sqlx::SqlitePool,
+    pool: crate::db::DbPool,
 }
 
 impl ImageQueue {
     /// 创建队列并启动后台 workers
     ///
     /// `worker_count` 指定并发 worker 数量，建议等于 CPU 核心数。
-    pub fn new(pool: sqlx::SqlitePool, worker_count: usize) -> Self {
+    pub fn new(pool: crate::db::DbPool, worker_count: usize) -> Self {
         let (sender, receiver) = mpsc::channel::<ImageTask>(1024);
         let receiver = Arc::new(Mutex::new(receiver));
 
@@ -94,7 +94,7 @@ impl ImageQueue {
     }
 
     /// 创建未初始化的队列（用于测试/禁用场景）
-    pub fn none(pool: sqlx::SqlitePool) -> Option<Self> {
+    pub fn none(pool: crate::db::DbPool) -> Option<Self> {
         // 仍然创建一个单 worker 队列，但不对外暴露
         Some(Self::new(pool, 1))
     }
@@ -113,7 +113,7 @@ impl ImageQueue {
 async fn worker_loop(
     id: usize,
     receiver: Arc<Mutex<mpsc::Receiver<ImageTask>>>,
-    pool: sqlx::SqlitePool,
+    pool: crate::db::DbPool,
 ) {
     tracing::info!("🖼️ 图片处理 worker #{} 已启动", id);
     loop {
@@ -137,7 +137,7 @@ async fn worker_loop(
 }
 
 /// 处理单个任务
-async fn process_task(task: &ImageTask, pool: &sqlx::SqlitePool) -> crate::AppResult<()> {
+async fn process_task(task: &ImageTask, pool: &crate::db::DbPool) -> crate::AppResult<()> {
     match task {
         ImageTask::Thumbnail {
             photo_id,
@@ -195,12 +195,15 @@ async fn process_task(task: &ImageTask, pool: &sqlx::SqlitePool) -> crate::AppRe
                 };
 
                 // 更新数据库记录
-                sqlx::query("UPDATE photos SET thumbnail_url = ?, updated_at = datetime('now') WHERE id = ?")
+                sqlx::query("UPDATE photos SET thumbnail_url = ?, updated_at = ? WHERE id = ?")
                     .bind(&thumb_url)
+                    .bind(crate::db::now_str())
                     .bind(photo_id)
                     .execute(pool)
                     .await
-                    .map_err(|e| crate::error::AppError::Internal(format!("更新缩略图 URL 失败: {}", e)))?;
+                    .map_err(|e| {
+                        crate::error::AppError::Internal(format!("更新缩略图 URL 失败: {}", e))
+                    })?;
 
                 tracing::debug!(
                     photo_id = photo_id,
@@ -266,12 +269,15 @@ async fn process_task(task: &ImageTask, pool: &sqlx::SqlitePool) -> crate::AppRe
                 };
 
                 // 更新数据库记录
-                sqlx::query("UPDATE photos SET watermark_url = ?, updated_at = datetime('now') WHERE id = ?")
+                sqlx::query("UPDATE photos SET watermark_url = ?, updated_at = ? WHERE id = ?")
                     .bind(&wm_url)
+                    .bind(crate::db::now_str())
                     .bind(photo_id)
                     .execute(pool)
                     .await
-                    .map_err(|e| crate::error::AppError::Internal(format!("更新水印 URL 失败: {}", e)))?;
+                    .map_err(|e| {
+                        crate::error::AppError::Internal(format!("更新水印 URL 失败: {}", e))
+                    })?;
 
                 tracing::debug!(
                     photo_id = photo_id,

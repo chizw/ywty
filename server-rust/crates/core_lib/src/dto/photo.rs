@@ -1,4 +1,4 @@
-//! 图片域 DTO
+﻿//! 图片域 DTO
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -35,6 +35,12 @@ pub struct PhotoPublicResponse {
     pub id: i64,
     pub uuid: String,
     pub username: String,
+    /// 作者头像（WeAvatar 兜底，按作者邮箱生成；不暴露邮箱本身）
+    #[sqlx(default)]
+    pub avatar_url: Option<String>,
+    #[sqlx(default)]
+    #[serde(skip)]
+    pub email: Option<String>,
     pub url: String,
     pub thumbnail_url: Option<String>,
     pub width: Option<i32>,

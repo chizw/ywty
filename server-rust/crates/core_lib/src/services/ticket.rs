@@ -1,17 +1,17 @@
 //! 工单服务
 
-use sqlx::SqlitePool;
+use crate::db::DbPool;
 
 use crate::error::{AppError, AppResult};
 use crate::models::ticket::{CreateTicketRequest, Ticket, TicketDetail, TicketReply};
 
 #[derive(Clone)]
 pub struct TicketService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl TicketService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -80,7 +80,7 @@ impl TicketService {
 
     /// 创建工单
     pub async fn create(&self, user_id: i64, req: &CreateTicketRequest) -> AppResult<Ticket> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let issue_no = Self::generate_issue_no();
         let ticket_type = req.ticket_type.as_deref().unwrap_or("other");
         let level = req.level.as_deref().unwrap_or("low");
@@ -101,7 +101,7 @@ impl TicketService {
         .execute(&self.pool)
         .await?;
 
-        let ticket_id = result.last_insert_rowid();
+        let ticket_id = crate::db::last_id(&result);
 
         // 创建首条回复（工单内容）
         sqlx::query(
@@ -152,7 +152,7 @@ impl TicketService {
 
     /// 关闭工单
     pub async fn close(&self, user_id: i64, id: i64) -> AppResult<()> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let result = sqlx::query(
             "UPDATE tickets SET status = 'closed', updated_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NULL",
         )
@@ -278,7 +278,7 @@ impl TicketService {
             return Err(AppError::NotFound("工单不存在".to_string()));
         }
 
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let result = sqlx::query(
                 r#"
                 INSERT INTO ticket_replies (ticket_id, user_id, is_admin, content, is_notify, created_at, updated_at)
@@ -301,7 +301,7 @@ impl TicketService {
             .execute(&self.pool)
             .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
         let reply: TicketReply = sqlx::query_as("SELECT * FROM ticket_replies WHERE id = ?")
             .bind(id)
             .fetch_one(&self.pool)
@@ -312,7 +312,7 @@ impl TicketService {
 
     /// 管理端更新状态
     pub async fn admin_update_status(&self, id: i64, status: &str) -> AppResult<()> {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let result = sqlx::query(
             "UPDATE tickets SET status = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",
         )

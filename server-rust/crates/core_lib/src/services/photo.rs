@@ -1,7 +1,6 @@
 //! 图片服务
 
-use chrono::Utc;
-use sqlx::SqlitePool;
+use crate::db::DbPool;
 use uuid::Uuid;
 
 use crate::error::{AppError, AppResult};
@@ -10,12 +9,12 @@ use crate::dto::photo::{BatchUpdateRequest, PhotoPublicResponse, PhotoResponse, 
 
 #[derive(Clone)]
 pub struct PhotoService {
-    pool: SqlitePool,
+    pool: DbPool,
     public_url_prefix: String,
 }
 
 impl PhotoService {
-    pub fn new(pool: SqlitePool, public_url_prefix: String) -> Self {
+    pub fn new(pool: DbPool, public_url_prefix: String) -> Self {
         Self {
             pool,
             public_url_prefix,
@@ -189,7 +188,7 @@ impl PhotoService {
         is_public: bool,
     ) -> AppResult<UploadResponse> {
         let uuid = Uuid::new_v4().to_string();
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         let result = sqlx::query(
             r#"
@@ -217,7 +216,7 @@ impl PhotoService {
         .execute(&self.pool)
         .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
 
         Ok(UploadResponse {
             id,
@@ -242,7 +241,7 @@ impl PhotoService {
         // 确认所有权
         self.check_ownership(user_id, photo_id).await?;
 
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         if let Some(aid) = album_id {
             sqlx::query("UPDATE photos SET album_id = ?, updated_at = ? WHERE id = ?")
@@ -269,7 +268,7 @@ impl PhotoService {
     pub async fn delete(&self, user_id: i64, photo_id: i64) -> AppResult<()> {
         self.check_ownership(user_id, photo_id).await?;
 
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         sqlx::query("UPDATE photos SET deleted_at = ? WHERE id = ?")
             .bind(&now)
             .bind(photo_id)
@@ -281,7 +280,7 @@ impl PhotoService {
 
     /// 批量删除
     pub async fn batch_delete(&self, user_id: i64, ids: &[i64]) -> AppResult<u64> {
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let mut affected = 0u64;
 
         for id in ids {
@@ -301,7 +300,7 @@ impl PhotoService {
 
     /// 批量更新
     pub async fn batch_update(&self, user_id: i64, req: &BatchUpdateRequest) -> AppResult<u64> {
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let mut affected = 0u64;
 
         for id in &req.ids {
@@ -355,7 +354,7 @@ impl PhotoService {
             return Err(AppError::NotFound("相册不存在".to_string()));
         }
 
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         sqlx::query("UPDATE photos SET album_id = ?, updated_at = ? WHERE id = ?")
             .bind(album_id)
             .bind(&now)
@@ -390,7 +389,7 @@ impl PhotoService {
         let new_filename = format!("copy_{}", original.filename);
         let path = format!("copies/{}", new_filename);
         let url = format!("{}/{}", self.public_url_prefix.trim_end_matches('/'), path);
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         let result = sqlx::query(
             r#"
@@ -417,7 +416,7 @@ impl PhotoService {
         .await?;
 
         Ok(UploadResponse {
-            id: result.last_insert_rowid(),
+            id: crate::db::last_id(&result),
             uuid,
             url,
             thumbnail_url: original.thumbnail_url,
@@ -442,9 +441,9 @@ impl PhotoService {
         .fetch_one(&self.pool)
         .await?;
 
-        let rows: Vec<PhotoPublicResponse> = sqlx::query_as(
+        let mut rows: Vec<PhotoPublicResponse> = sqlx::query_as(
             r#"
-            SELECT p.id, p.uuid, u.username, p.url, p.thumbnail_url,
+            SELECT p.id, p.uuid, u.username, u.email, p.url, p.thumbnail_url,
                    p.width, p.height, p.size, p.views, p.likes, p.created_at
             FROM photos p
             JOIN users u ON p.user_id = u.id
@@ -457,6 +456,15 @@ impl PhotoService {
         .bind(offset as i64)
         .fetch_all(&self.pool)
         .await?;
+
+        // 作者头像：WeAvatar 兜底（按作者邮箱 MD5，不暴露邮箱本身）
+        for row in &mut rows {
+            let id_src = match row.email.as_deref() {
+                Some(e) if !e.trim().is_empty() => e,
+                _ => row.username.as_str(),
+            };
+            row.avatar_url = Some(crate::utils::weavatar_url(id_src, 80));
+        }
 
         Ok((rows, total))
     }

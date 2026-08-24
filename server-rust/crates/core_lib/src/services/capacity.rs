@@ -1,16 +1,16 @@
 //! 容量服务
 
-use sqlx::SqlitePool;
+use crate::db::DbPool;
 
 use crate::error::AppResult;
 
 #[derive(Clone)]
 pub struct CapacityService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl CapacityService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -81,7 +81,7 @@ impl CapacityService {
         // 2. 角色组：组名与用户 role 同名的组优先
         if let Some(role) = role {
             let limit: Option<Option<i64>> = sqlx::query_scalar(
-                "SELECT max_storage FROM groups WHERE deleted_at IS NULL AND name = ? LIMIT 1",
+                "SELECT max_storage FROM `groups` WHERE deleted_at IS NULL AND name = ? LIMIT 1",
             )
             .bind(&role)
             .fetch_optional(&self.pool)
@@ -93,7 +93,7 @@ impl CapacityService {
 
         // 3. 默认组
         let limit: Option<Option<i64>> = sqlx::query_scalar(
-            "SELECT max_storage FROM groups WHERE deleted_at IS NULL AND is_default = 1 ORDER BY id ASC LIMIT 1",
+            "SELECT max_storage FROM `groups` WHERE deleted_at IS NULL AND is_default = 1 ORDER BY id ASC LIMIT 1",
         )
         .fetch_optional(&self.pool)
         .await?;

@@ -5,7 +5,7 @@ use axum::Json;
 
 use chrono::Utc;
 
-use crate::error::AppResult;
+use crate::error::{AppError, AppResult};
 
 use crate::dto::auth::{
     AuthResponse, CaptchaResponse, CaptchaVerifyRequest, RefreshRequest, ResetPasswordRequest,
@@ -32,6 +32,12 @@ pub async fn register(
     Json(req): Json<crate::models::user::RegisterRequest>,
 ) -> AppResult<Json<ApiResponse<AuthResponse>>> {
     validate_req(&req)?;
+    enforce_captcha(
+        &state,
+        req.captcha_id.as_deref(),
+        req.captcha_code.as_deref(),
+    )
+    .await?;
     let resp = state
         .auth_svc
         .register(&req.username, &req.email, &req.password)
@@ -106,6 +112,12 @@ pub async fn reset_password(
     Json(req): Json<ResetPasswordRequest>,
 ) -> AppResult<Json<ApiResponse<serde_json::Value>>> {
     validate_req(&req)?;
+    enforce_captcha(
+        &state,
+        req.captcha_id.as_deref(),
+        req.captcha_code.as_deref(),
+    )
+    .await?;
     state
         .auth_svc
         .reset_password(&req.email, &req.new_password, &req.verify_code)
@@ -172,12 +184,13 @@ pub async fn get_captcha(
     sqlx::query(
         r#"
         INSERT INTO captchas (captcha_id, code, expired_at, created_at)
-        VALUES (?, ?, ?, datetime('now'))
+        VALUES (?, ?, ?, ?)
         "#,
     )
     .bind(&captcha_id)
     .bind(code.to_lowercase())
     .bind(expired_at)
+    .bind(crate::db::now_str())
     .execute(&state.db)
     .await
     .map_err(|e| crate::error::AppError::Internal(format!("存储验证码失败: {}", e)))?;
@@ -268,4 +281,57 @@ pub async fn send_verify_code(
     Ok(Json(ApiResponse::success(serde_json::json!({
         "message": "验证码已发送"
     }))))
+}
+
+/// 按设置强制校验图形验证码
+///
+/// `security.require_captcha` 开启时，注册/找回密码必须携带有效的图形验证码；
+/// 未开启时完全跳过（零配置默认关闭）。
+pub(crate) async fn enforce_captcha(
+    state: &AppState,
+    captcha_id: Option<&str>,
+    captcha_code: Option<&str>,
+) -> AppResult<()> {
+    let required = crate::services::settings::get_bool(
+        &state.db,
+        crate::services::settings::keys::SECURITY_REQUIRE_CAPTCHA,
+        false,
+    )
+    .await?;
+    if !required {
+        return Ok(());
+    }
+
+    let (Some(id), Some(code)) = (captcha_id, captcha_code) else {
+        return Err(AppError::Validation("请输入图形验证码".to_string()));
+    };
+
+    let now_ts = Utc::now().timestamp();
+    let row: Option<(i64, String, Option<i64>)> = sqlx::query_as(
+        "SELECT id, code, used_at FROM captchas WHERE captcha_id = ? AND expired_at > ? ORDER BY id DESC LIMIT 1",
+    )
+    .bind(id)
+    .bind(now_ts)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|e| AppError::Internal(format!("查询验证码失败: {}", e)))?;
+
+    let Some((db_id, stored_code, used_at)) = row else {
+        return Err(AppError::Validation("图形验证码无效或已过期".to_string()));
+    };
+    if used_at.is_some() {
+        return Err(AppError::Validation(
+            "图形验证码已被使用，请刷新重试".to_string(),
+        ));
+    }
+    if stored_code != code.to_lowercase() {
+        return Err(AppError::Validation("图形验证码错误".to_string()));
+    }
+
+    let _ = sqlx::query("UPDATE captchas SET used_at = ? WHERE id = ?")
+        .bind(now_ts)
+        .bind(db_id)
+        .execute(&state.db)
+        .await;
+    Ok(())
 }

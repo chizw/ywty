@@ -1,18 +1,18 @@
 //! 分享服务
 
+use crate::db::DbPool;
 use chrono::Utc;
-use sqlx::SqlitePool;
 
 use crate::error::{AppError, AppResult};
 use crate::models::photo::{CreateShareRequest, Share};
 
 #[derive(Clone)]
 pub struct ShareService {
-    pool: SqlitePool,
+    pool: DbPool,
 }
 
 impl ShareService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
 
@@ -26,7 +26,7 @@ impl ShareService {
     /// 创建分享
     pub async fn create(&self, user_id: i64, req: &CreateShareRequest) -> AppResult<Share> {
         let slug = Self::generate_slug();
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
 
         // 访问密码以哈希形式入库，绝不存明文
         let password_hash = match &req.password {
@@ -50,7 +50,7 @@ impl ShareService {
         .execute(&self.pool)
         .await?;
 
-        let id = result.last_insert_rowid();
+        let id = crate::db::last_id(&result);
 
         Ok(Share {
             id,
@@ -141,7 +141,7 @@ impl ShareService {
 
     /// 删除分享（仅所有者，软删除）
     pub async fn delete(&self, user_id: i64, id: i64) -> AppResult<()> {
-        let now = Utc::now().to_rfc3339();
+        let now = crate::db::now_str();
         let result = sqlx::query(
             "UPDATE shares SET deleted_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NULL",
         )
