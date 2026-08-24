@@ -197,18 +197,13 @@ pub async fn authorize(
 pub async fn providers(
     State(state): State<AppState>,
 ) -> AppResult<Json<ApiResponse<serde_json::Value>>> {
-    let cfg = state.config.oauth.as_ref();
-    let mut items = Vec::new();
-    if let Some(c) = cfg.and_then(|o| o.github.as_ref()) {
-        if !c.client_id.is_empty() {
-            items.push(serde_json::json!({ "provider": "github", "name": "GitHub" }));
-        }
-    }
-    if let Some(c) = cfg.and_then(|o| o.google.as_ref()) {
-        if !c.client_id.is_empty() {
-            items.push(serde_json::json!({ "provider": "google", "name": "Google" }));
-        }
-    }
+    let items = state
+        .oauth_svc
+        .configured_providers()
+        .await
+        .into_iter()
+        .map(|(provider, name)| serde_json::json!({ "provider": provider, "name": name }))
+        .collect::<Vec<_>>();
     Ok(Json(ApiResponse::success(
         serde_json::json!({ "providers": items }),
     )))

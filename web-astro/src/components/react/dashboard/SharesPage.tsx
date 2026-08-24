@@ -1,9 +1,10 @@
-// 分享管理：列出分享 + 复制链接 + 删除
+// 分享管理：列出分享 + 复制链接 + 编辑（密码/过期时间）+ 删除
 import { useEffect, useState } from 'react'
-import { Share2, Copy, Trash2, ExternalLink, Lock } from 'lucide-react'
+import { Share2, Copy, Trash2, ExternalLink, Lock, Pencil } from 'lucide-react'
 import { AppShell } from './AppShell'
 import { PageHeader } from './PageHeader'
 import { useConfirm } from './ConfirmDialog'
+import { ShareEditDialog } from './ShareEditDialog'
 import { useApi } from '@/lib/api'
 import { toast } from '@/lib/react-store'
 import { formatDate, timeAgo } from '@/lib/utils'
@@ -27,6 +28,7 @@ export function SharesPage() {
 
   const [shares, setShares] = useState<Share[]>([])
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState<Share | null>(null)
 
   const load = () => {
     setLoading(true)
@@ -106,6 +108,9 @@ export function SharesPage() {
                 <Button variant="outline" size="sm" onClick={() => copyLink(s.slug)}>
                   <Copy className="h-3.5 w-3.5" /> 复制链接
                 </Button>
+                <Button variant="ghost" size="icon" aria-label="编辑" onClick={() => setEditing(s)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 <a href={`/share/${s.slug}`} target="_blank" rel="noreferrer">
                   <Button variant="ghost" size="icon" aria-label="打开">
                     <ExternalLink className="h-4 w-4" />
@@ -119,6 +124,8 @@ export function SharesPage() {
           ))}
         </div>
       )}
+
+      <ShareEditDialog share={editing} open={!!editing} onOpenChange={(o) => !o && setEditing(null)} onSaved={load} />
 
       {node}
     </AppShell>

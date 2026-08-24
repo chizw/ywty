@@ -7,6 +7,7 @@ export interface PublicPhoto {
   thumbnail_url?: string | null
   name?: string
   username?: string
+  avatar_url?: string | null
   views?: number
   likes?: number
   width?: number | null

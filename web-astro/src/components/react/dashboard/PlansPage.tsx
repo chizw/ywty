@@ -84,19 +84,18 @@ export function PlansPage() {
 
   useEffect(() => {
     api.get<any>('/api/v1/plans', { raw: true })
-      .then(async (r) => {
-        const list: Plan[] = Array.isArray(r?.data?.data) ? r.data.data : Array.isArray(r?.data) ? r.data : []
-        setPlans(list)
+      .then((r) => {
+        // 列表接口已内联价格档：[{plan, prices}]
+        const list: any[] = Array.isArray(r?.data?.data)
+          ? r.data.data
+          : Array.isArray(r?.data)
+            ? r.data
+            : []
+        setPlans(list.map((d) => d.plan))
         const map: Record<number, PlanPrice[]> = {}
-        await Promise.all(
-          list.map((p) =>
-            api.get<any>(`/api/v1/plans/${p.id}`, { raw: true })
-              .then((d) => {
-                map[p.id] = Array.isArray(d?.data?.prices) ? d.data.prices : []
-              })
-              .catch(() => {})
-          )
-        )
+        for (const d of list) {
+          if (d?.plan?.id != null) map[d.plan.id] = Array.isArray(d.prices) ? d.prices : []
+        }
         setPrices(map)
       })
       .catch(() => setPlans([]))

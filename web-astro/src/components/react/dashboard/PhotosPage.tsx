@@ -6,6 +6,9 @@ import { PageHeader } from './PageHeader'
 import { PhotoUploader } from './PhotoUploader'
 import { Lightbox } from './Lightbox'
 import { useConfirm } from './ConfirmDialog'
+import { ShareCreateDialog } from './ShareCreateDialog'
+import { TagAttachDialog } from './TagAttachDialog'
+import { MoveToAlbumDialog } from './MoveToAlbumDialog'
 import { useApi } from '@/lib/api'
 import { useStatsStore, toast } from '@/lib/react-store'
 import type { MyPhoto, PagedData } from '@/lib/types'
@@ -55,6 +58,11 @@ export function PhotosPage() {
   // 灯箱
   const [lightbox, setLightbox] = useState<number | null>(null)
 
+  // 批量操作对话框
+  const [shareOpen, setShareOpen] = useState(false)
+  const [tagOpen, setTagOpen] = useState(false)
+  const [moveOpen, setMoveOpen] = useState(false)
+
   const fetchPhotos = useCallback(async () => {
     setLoading(true)
     try {
@@ -75,14 +83,19 @@ export function PhotosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, sortBy, sortOrder, filterAlbum, filterTag])
 
-  // 初次加载
-  useEffect(() => {
-    fetchPhotos()
-    api.get<any>('/api/v1/albums').then((r) => setAlbums(Array.isArray(r) ? r : ((r as any)?.data ?? []))).catch(() => {})
+  const reloadTagNames = useCallback(() => {
     api.get<any>('/api/v1/tags').then((r) => {
       const list = Array.isArray(r) ? r : ((r as any)?.data ?? [])
       setTags(list.map((t: any) => t.name))
     }).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 初次加载
+  useEffect(() => {
+    fetchPhotos()
+    api.get<any>('/api/v1/albums').then((r) => setAlbums(Array.isArray(r) ? r : ((r as any)?.data ?? []))).catch(() => {})
+    reloadTagNames()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -242,6 +255,13 @@ export function PhotosPage() {
             已选 <b className="text-brand">{selected.length}</b> 项
           </span>
           <div className="flex-1" />
+          {selected.length === 1 ? (
+            <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>分享</Button>
+          ) : (
+            <Button variant="outline" size="sm" disabled title="仅支持对单张选中图片发起分享">分享</Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setTagOpen(true)}>打标签</Button>
+          <Button variant="outline" size="sm" onClick={() => setMoveOpen(true)}>移入相册</Button>
           <Button variant="outline" size="sm" onClick={() => batchPublic(true)}>批量公开</Button>
           <Button variant="outline" size="sm" onClick={() => batchPublic(false)}>批量私有</Button>
           <Button variant="destructive" size="sm" onClick={batchDelete}>批量删除</Button>
@@ -391,6 +411,26 @@ export function PhotosPage() {
       {lightbox !== null && (
         <Lightbox photos={photos as any} index={lightbox} onClose={() => setLightbox(null)} onIndexChange={setLightbox} />
       )}
+
+      <ShareCreateDialog open={shareOpen} onOpenChange={setShareOpen} photoId={selected.length === 1 ? selected[0] : null} />
+      <TagAttachDialog
+        open={tagOpen}
+        onOpenChange={setTagOpen}
+        photoIds={selected}
+        onSaved={() => {
+          reloadTagNames()
+          fetchPhotos()
+        }}
+      />
+      <MoveToAlbumDialog
+        open={moveOpen}
+        onOpenChange={setMoveOpen}
+        photoIds={selected}
+        onDone={() => {
+          setSelected([])
+          fetchPhotos()
+        }}
+      />
 
       {confirmNode}
     </AppShell>

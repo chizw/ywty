@@ -1,9 +1,19 @@
 <script setup lang="ts">
 // 顶部导航（Vue island）：宋体字标 + 朱印 + 发丝线
+// 登录态由 .astro 布局以 props 注入（SSR/首帧渲染一致，避免水合闪烁）
 import { onMounted, ref, computed } from 'vue'
 import { Moon, Sun, Menu, X, LayoutDashboard } from '@lucide/vue'
 import { authState, isLoggedIn, logout } from '../../../lib/vue-store'
 import { getTheme, toggleTheme } from '../../../lib/theme'
+import { weavatarUrl } from '../../../lib/weavatar'
+
+interface MeInfo {
+  name?: string | null
+  username?: string | null
+  email?: string | null
+  avatar?: string | null
+  avatar_url?: string | null
+}
 
 const props = withDefaults(
   defineProps<{
@@ -11,8 +21,12 @@ const props = withDefaults(
     name?: string
     /** 是否开放注册（false 时隐藏注册入口） */
     allowRegister?: boolean
+    /** 是否已登录（SSR 注入） */
+    authed?: boolean
+    /** 登录用户信息（SSR 注入） */
+    me?: MeInfo | null
   }>(),
-  { name: '', allowRegister: true },
+  { name: '', allowRegister: true, authed: false, me: null },
 )
 
 const sealChar = computed(() => (props.name || '驿').slice(-1))
@@ -27,6 +41,7 @@ const mobileOpen = ref(false)
 const currentPath = ref('')
 
 onMounted(() => {
+  // 客户端挂载后才同步路径与主题（不影响首帧水合一致性）
   theme.value = getTheme()
   currentPath.value = window.location.pathname
 })
@@ -41,7 +56,17 @@ function onLogout() {
 }
 
 const isActive = (to: string) => currentPath.value === to || currentPath.value.startsWith(to + '/')
-const displayName = computed(() => authState.user?.name || authState.user?.username)
+const isLogged = computed(() => props.authed || isLoggedIn())
+const displayName = computed(
+  () => props.me?.name || props.me?.username || authState.user?.name || authState.user?.username,
+)
+const avatarUrl = computed(() => {
+  const m = props.me
+  if (m) return m.avatar_url || m.avatar || weavatarUrl(m.email || m.username || 'user')
+  const u = authState.user as (typeof authState.user & { email?: string }) | null
+  if (!u) return ''
+  return u.avatar_url || u.avatar || weavatarUrl(u.email || u.username || 'user')
+})
 </script>
 
 <template>
@@ -85,12 +110,14 @@ const displayName = computed(() => authState.user?.name || authState.user?.usern
           <Moon v-else class="h-[1.05rem] w-[1.05rem]" />
         </button>
 
-        <template v-if="isLoggedIn()">
-          <a href="/dashboard" class="ml-1 hidden items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors hover:bg-muted sm:flex">
-            <span class="grid h-6 w-6 place-items-center rounded-full bg-brand text-[0.65rem] font-medium text-primary-foreground">
-              {{ (displayName || 'U').slice(0, 1).toUpperCase() }}
-            </span>
-            <span class="max-w-[8rem] truncate">{{ displayName }}</span>
+        <template v-if="isLogged">
+          <a href="/dashboard" class="ml-1 hidden items-center rounded-md px-2 py-1.5 transition-colors hover:bg-muted sm:flex">
+            <img
+              v-if="avatarUrl"
+              :src="avatarUrl"
+              :alt="displayName || 'avatar'"
+              class="h-8 w-8 rounded-full object-cover ring-1 ring-border"
+            />
           </a>
           <button
             class="ml-1 hidden h-9 items-center rounded-md px-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"

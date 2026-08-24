@@ -1,0 +1,9 @@
+---
+// OAuth 回调落地页（浏览器从后端 302 跳转而来，数据在 hash 中）
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import OAuthCallback from '../../components/vue/auth/OAuthCallback.vue'
+---
+
+<BaseLayout title="登录中">
+  <OAuthCallback client:load />
+</BaseLayout>

@@ -70,9 +70,15 @@ function onClick(photo: Photo, index: number) {
             />
           </div>
           <div class="flex items-center justify-between gap-2 text-xs text-white/90">
-            <span class="truncate">
-              {{ p.username || p.name || '' }}
-            </span>
+            <img
+              v-if="p.avatar_url"
+              :src="p.avatar_url"
+              :alt="p.username || ''"
+              loading="lazy"
+              class="h-5 w-5 rounded-full object-cover"
+              :title="p.username || ''"
+            />
+            <span v-else class="truncate">{{ p.username || p.name || '' }}</span>
             <span v-if="p.views" class="shrink-0 opacity-80">{{ p.views }} 浏览</span>
           </div>
         </div>

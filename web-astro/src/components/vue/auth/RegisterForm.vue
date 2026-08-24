@@ -1,9 +1,10 @@
 <script setup lang="ts">
 // 注册表单（Vue island）
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import Button from '../ui/Button.vue'
 import Input from '../ui/Input.vue'
 import Label from '../ui/Label.vue'
+import CaptchaInput from './CaptchaInput.vue'
 import { register } from '../../../lib/vue-store'
 
 withDefaults(
@@ -18,6 +19,21 @@ const form = reactive({ username: '', email: '', password: '', phone: '' })
 const loading = ref(false)
 const errorMsg = ref('')
 
+// 图形验证码（由站点设置开关控制）
+const captchaEnabled = ref(false)
+const captchaId = ref('')
+const captchaCode = ref('')
+
+onMounted(async () => {
+  try {
+    const { useApi } = await import('../../../lib/api')
+    const info = await useApi().get<any>('/api/v1/site/info')
+    captchaEnabled.value = !!info?.captcha_enabled
+  } catch {
+    captchaEnabled.value = false
+  }
+})
+
 async function onSubmit() {
   if (form.username.length < 3) {
     errorMsg.value = '用户名至少 3 个字符'
@@ -31,6 +47,10 @@ async function onSubmit() {
     errorMsg.value = '密码至少 6 位'
     return
   }
+  if (captchaEnabled.value && (!captchaId.value || !captchaCode.value)) {
+    errorMsg.value = '请输入图形验证码'
+    return
+  }
   loading.value = true
   errorMsg.value = ''
   try {
@@ -39,6 +59,8 @@ async function onSubmit() {
       email: form.email,
       password: form.password,
       phone: form.phone || undefined,
+      captcha_id: captchaEnabled.value ? captchaId.value : undefined,
+      captcha_code: captchaEnabled.value ? captchaCode.value : undefined,
     })
     window.location.assign('/dashboard')
   } catch (err: any) {
@@ -72,6 +94,10 @@ async function onSubmit() {
       <div class="space-y-2">
         <Label for="reg-password">密码</Label>
         <Input id="reg-password" v-model="form.password" type="password" required minlength="6" placeholder="至少 6 位" variant="underline" />
+      </div>
+      <div v-if="captchaEnabled" class="space-y-2">
+        <Label>图形验证码</Label>
+        <CaptchaInput v-model:captcha-id="captchaId" v-model:code="captchaCode" />
       </div>
 
       <p v-if="errorMsg" class="text-[13px] text-destructive">{{ errorMsg }}</p>

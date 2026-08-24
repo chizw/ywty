@@ -1,17 +1,36 @@
 <script setup lang="ts">
 // 找回密码表单（Vue island）：邮箱验证 → 重置
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import Button from '../ui/Button.vue'
 import Input from '../ui/Input.vue'
 import Label from '../ui/Label.vue'
 import VerifyCodeInput from './VerifyCodeInput.vue'
+import CaptchaInput from './CaptchaInput.vue'
 import { useApi } from '../../../lib/api'
 
 const form = reactive({ account: '', code: '', password: '' })
 const loading = ref(false)
 const msg = ref('')
 
+// 图形验证码（由站点设置开关控制）
+const captchaEnabled = ref(false)
+const captchaId = ref('')
+const captchaCode = ref('')
+
+onMounted(async () => {
+  try {
+    const info = await useApi().get<any>('/api/v1/site/info')
+    captchaEnabled.value = !!info?.captcha_enabled
+  } catch {
+    captchaEnabled.value = false
+  }
+})
+
 async function submit() {
+  if (captchaEnabled.value && (!captchaId.value || !captchaCode.value)) {
+    msg.value = '请输入图形验证码'
+    return
+  }
   loading.value = true
   msg.value = ''
   try {
@@ -19,6 +38,8 @@ async function submit() {
       email: form.account,
       code: form.code,
       new_password: form.password,
+      captcha_id: captchaEnabled.value ? captchaId.value : undefined,
+      captcha_code: captchaEnabled.value ? captchaCode.value : undefined,
     })
     msg.value = '重置成功，即将跳到登录页'
     setTimeout(() => window.location.assign('/auth/login'), 1000)
@@ -54,6 +75,10 @@ async function submit() {
       <div class="space-y-2">
         <Label for="reset-password">新密码</Label>
         <Input id="reset-password" v-model="form.password" type="password" minlength="6" placeholder="新密码（至少 6 位）" variant="underline" />
+      </div>
+      <div v-if="captchaEnabled" class="space-y-2">
+        <Label>图形验证码</Label>
+        <CaptchaInput v-model:captcha-id="captchaId" v-model:code="captchaCode" />
       </div>
 
       <p v-if="msg" class="text-[13px]" :class="msg.includes('成功') ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'">

@@ -1,9 +1,10 @@
-// 相册列表：卡片 + 新建相册
+// 相册列表：卡片 + 新建相册 + 编辑相册
 import { useEffect, useState } from 'react'
-import { BookImage, Plus } from 'lucide-react'
+import { BookImage, Plus, Pencil } from 'lucide-react'
 import { AppShell } from './AppShell'
 import { PageHeader } from './PageHeader'
 import { useConfirm } from './ConfirmDialog'
+import { AlbumEditDialog } from './AlbumEditDialog'
 import { useApi } from '@/lib/api'
 import { useStatsStore, toast } from '@/lib/react-store'
 import { timeAgo } from '@/lib/utils'
@@ -33,6 +34,7 @@ export function AlbumsPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState({ name: '', description: '' })
+  const [editing, setEditing] = useState<Album | null>(null)
 
   const load = () => {
     setLoading(true)
@@ -111,7 +113,10 @@ export function AlbumsPage() {
                 <span className="tabular-nums">{a.photo_count} 张图片 · {a.views} 浏览</span>
                 <span>{timeAgo(a.created_at)}</span>
               </div>
-              <div className="mt-3 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="mt-3 flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={(e) => { e.preventDefault(); setEditing(a) }}>
+                  <Pencil className="h-3 w-3" /> 编辑
+                </Button>
                 <Button variant="ghost" size="sm" className="h-6 text-xs text-destructive" onClick={(e) => { e.preventDefault(); remove(a) }}>
                   删除
                 </Button>
@@ -143,6 +148,8 @@ export function AlbumsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlbumEditDialog album={editing} open={!!editing} onOpenChange={(o) => !o && setEditing(null)} onSaved={() => { load(); stats.refresh() }} />
 
       {node}
     </AppShell>
