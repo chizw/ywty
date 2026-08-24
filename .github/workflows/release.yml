@@ -141,7 +141,7 @@ jobs:
           mkdir -p ctx/linux-amd64
           cp artifact/api-amd64/api    ctx/linux-amd64/api
           chmod +x ctx/linux-amd64/api
-          cp -r artifact/web-dist/dist ctx/dist
+          cp -r artifact/web-dist      ctx/dist
           cp Caddyfile                 ctx/Caddyfile
           cp server-rust/config.yaml   ctx/config.yaml
 
