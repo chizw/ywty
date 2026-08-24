@@ -107,7 +107,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & push (SQLite 默认)
+      - name: Build & push
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -116,23 +116,8 @@ jobs:
           tags: |
             ghcr.io/chizw/ywty:latest
             ghcr.io/chizw/ywty:v${{ inputs.version }}
-          cache-from: type=gha,scope=sqlite
-          cache-to: type=gha,mode=max,scope=sqlite
-          platforms: linux/amd64,linux/arm64
-
-      - name: Build & push (MySQL/MariaDB)
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          build-args: |
-            DB_FLAVOR=mysql
-          tags: |
-            ghcr.io/chizw/ywty:latest-mysql
-            ghcr.io/chizw/ywty:v${{ inputs.version }}-mysql
-          cache-from: type=gha,scope=mysql
-          cache-to: type=gha,mode=max,scope=mysql
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
 
   # =========================================
