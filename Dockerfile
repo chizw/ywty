@@ -1,41 +1,14 @@
-# ---------- Stage 1: Rust builder ----------
-FROM rust:1-slim-bookworm AS rust-builder
+# ---------- 运行时镜像（仅打包预编译产物，秒级构建） ----------
+#
+# 构建上下文需由流水线/脚本预先组装：
+#   linux-amd64/api   — x86_64 后端二进制
+#   linux-arm64/api   — aarch64 后端二进制（多架构推送时需要）
+#   dist/             — Astro 构建产物（含 dist/server/entry.mjs）
+#   config.yaml       — 默认配置（来源 server-rust/config.yaml）
+#
+# 本地组装请使用 deploy/deploy.sh；CI 由 .github/workflows 自动完成。
+# 多架构推送依赖 TARGETARCH 选择对应二进制，全程无需 QEMU 编译。
 
-RUN apt-get update && apt-get install -y \
-    pkg-config libssl-dev libsqlite3-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-# 先拷贝清单文件，利用 Docker 层缓存预编译依赖
-COPY server-rust/Cargo.toml server-rust/Cargo.lock ./
-COPY server-rust/crates/api/Cargo.toml ./crates/api/
-COPY server-rust/crates/core_lib/Cargo.toml ./crates/core_lib/
-
-RUN mkdir -p crates/api/src crates/core_lib/src && \
-    echo "fn main() {}" > crates/api/src/main.rs && \
-    echo "// placeholder" > crates/core_lib/src/lib.rs && \
-    cargo build --release
-
-# 拷贝真实源码后重新构建（touch 使增量缓存失效）
-COPY server-rust/crates/ ./crates/
-COPY server-rust/config.yaml ./config.yaml
-
-RUN touch crates/api/src/main.rs crates/core_lib/src/lib.rs && \
-    cargo build --release --bin api
-
-# ---------- Stage 2: Astro builder ----------
-FROM node:22-alpine AS web-builder
-WORKDIR /app
-ENV NODE_ENV=production ASTRO_TELEMETRY_DISABLED=1
-COPY web-astro/package.json web-astro/package-lock.json* ./
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --no-audit --no-fund --prefer-offline
-COPY web-astro/ .
-RUN --mount=type=cache,target=/root/.npm \
-    npm run build
-
-# ---------- Stage 3: runtime ----------
 FROM node:22-alpine AS runtime
 
 RUN apk add --no-cache ca-certificates tzdata curl \
@@ -43,12 +16,11 @@ RUN apk add --no-cache ca-certificates tzdata curl \
 
 WORKDIR /app
 
-# Rust 二进制 + 配置
-COPY --from=rust-builder /app/target/release/api /app/api
-COPY --from=rust-builder /app/config.yaml /app/config.yaml
+ARG TARGETARCH
 
-# Astro 构建产物
-COPY --from=web-builder /app/dist /app/dist
+COPY config.yaml /app/config.yaml
+COPY dist/ /app/dist/
+COPY linux-${TARGETARCH:-amd64}/api /app/api
 
 # 数据目录
 RUN mkdir -p /app/data /app/uploads && chown -R app:app /app/data /app/uploads
