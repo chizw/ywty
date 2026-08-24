@@ -30,7 +30,7 @@ uploads/
 
 # ---------- IDE / 编辑器 ----------
 .idea/
-.todo/
+todo/
 .trae/
 .vscode/
 *.iml
