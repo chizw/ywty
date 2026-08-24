@@ -111,4 +111,6 @@ strip = true
 
 [profile.dev]
 opt-level = 0
+# 只保留行号表：回溯仍有 文件:行号，但 Windows 下 PDB 体积可降一个数量级
+debug = "line-tables-only"
 

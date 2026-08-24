@@ -2,35 +2,27 @@ services:
   ywty:
     image: ghcr.io/chizw/ywty:latest
     restart: unless-stopped
-    # 直接共享宿主机网络栈：容器内的 127.0.0.1 就是宿主机的 127.0.0.1，
-    # 可直连宿主机上已在运行、仅监听回环的 MariaDB / MySQL / Redis，
-    # 无需为数据库和缓存单独跑容器。Linux 专用；无需 ports 映射。
     network_mode: host
     environment:
-      # Web 服务仅绑定回环地址，仍由外层 Nginx/Caddy 反代 80/443 → 3000
       HOST: 127.0.0.1
       PORT: "3000"
-      #
-      # JWT 密钥：留空 = 自动生成并持久化到数据卷；集群多实例时固定
+      # JWT 密钥：留空/注释 = 自动生成并持久化到数据卷
       #JWT_SECRET: 替换为强随机密钥
-      # 对外地址（外链生成 / OAuth 回调）
-      #APP_URL: https://img.example.com
-      #
-      # —— 数据库：默认 SQLite（./data/ywty.db），零依赖 ——
-      # 使用宿主机已有 MySQL / MariaDB(≥10.6) 时取消注释并修改：
+      APP_URL: https://img.example.com
+
+      # 数据库：默认 SQLite（./data/ywty.db）
+      # 使用已有 MySQL / MariaDB(≥10.6) 时取消注释并修改：
       #DB_DRIVER: mysql
       #DB_HOST: 127.0.0.1
       #DB_PORT: 3306
       #DB_USER: ywty
-      #DB_PASSWORD: 你的密码
+      #DB_PASSWORD: Your_Password
       #DB_NAME: ywty
-      #
-      # —— Redis 缓存（可选）：复用宿主机已有实例 ——
-      #REDIS_ADDR: 127.0.0.1:6379
-      #REDIS_PASSWORD: 你的密码
-    volumes:
-      - ./data:/app/data     # SQLite 数据库 + 自动生成的 JWT 密钥（SQLite 模式使用）
-      - ./uploads:/app/uploads
 
-# 单镜像内置 SQLite 与 MySQL 双方言二进制，启动时按 DB_DRIVER 自动选择。
-# 站点名称、描述、页脚、注册开关等一律在 /admin/settings 后台修改。
+      #Redis 缓存（可选）
+      #REDIS_ADDR: 127.0.0.1:6379
+      #REDIS_PASSWORD: Your_Password
+
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
