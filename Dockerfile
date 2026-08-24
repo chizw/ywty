@@ -28,16 +28,23 @@ COPY --chmod=0755 <<'EOF' /app/entrypoint.sh
 #!/bin/sh
 set -e
 
-# JWT 密钥解析顺序：环境变量 > 数据卷持久文件 > 自动生成并持久化
-# （零配置可用；持久化保证重启后密钥不变，登录态不失效）
+# JWT 密钥解析顺序：环境变量 > 数据卷持久文件 > 自动生成
+# 持久化失败（卷不可写）时降级为临时密钥并告警，服务仍可正常启动
 if [ -z "$JWT_SECRET" ]; then
-  if [ -f /app/data/.jwt_secret ]; then
-    JWT_SECRET="$(cat /app/data/.jwt_secret)"
+  PERSIST=/app/data/.jwt_secret
+  if [ -f "$PERSIST" ]; then
+    JWT_SECRET="$(cat "$PERSIST")"
+    echo "[entrypoint] JWT secret loaded from $PERSIST"
+  elif mkdir -p /app/data 2>/dev/null && : > "$PERSIST" 2>/dev/null; then
+    JWT_SECRET="$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' | head -c 64)"
+    printf '%s' "$JWT_SECRET" > "$PERSIST"
+    chmod 600 "$PERSIST" 2>/dev/null || true
+    echo "[entrypoint] JWT secret generated and persisted to $PERSIST"
   else
     JWT_SECRET="$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' | head -c 64)"
-    printf '%s' "$JWT_SECRET" > /app/data/.jwt_secret
-    chmod 600 /app/data/.jwt_secret
-    echo "[entrypoint] JWT secret generated and persisted to /app/data/.jwt_secret"
+    echo "[entrypoint] WARNING: $PERSIST is not writable (volume permission denied)."
+    echo "[entrypoint] Using an EPHEMERAL secret — user sessions will break on every restart."
+    echo "[entrypoint] Fix on host: chown -R <uid>:<gid> ./data ./uploads  (或设置 JWT_SECRET 环境变量)"
   fi
 fi
 export JWT_SECRET
