@@ -105,8 +105,8 @@ jobs:
         run: |
           mkdir -p ctx/linux-amd64 ctx/dist
           echo "stub-binary" > ctx/linux-amd64/api
-          mkdir -p ctx/dist/server
-          echo "export default {}" > ctx/dist/server/entry.mjs
+          echo "<html><body>stub</body></html>" > ctx/dist/index.html
+          cp Caddyfile ctx/Caddyfile
           cp server-rust/config.yaml ctx/config.yaml
 
       - name: Build image (no push)

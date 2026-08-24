@@ -56,6 +56,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     hydrate()
     setPath(window.location.pathname)
+
+    // 静态部署无服务端守卫：客户端校验登录
+    if (!useAuthStore.getState().user) {
+      window.location.assign(`/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+      return
+    }
+
     fetchMe().then((me) => {
       if (!me) {
         // token 失效且刷新失败 → 回登录页

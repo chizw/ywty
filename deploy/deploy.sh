@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 # 部署脚本：本地编译后端 + 前端，组装上下文并构建运行时镜像
 # 用法: ./deploy.sh <environment> [tag]
 #   environment: dev | staging | prod
@@ -41,6 +41,8 @@ esac
 CTX="$PROJECT_ROOT/.docker-ctx"
 rm -rf "$CTX"
 mkdir -p "$CTX/linux-$PLATFORM_ARCH"
+
+cp "$PROJECT_ROOT/Caddyfile" "$CTX/Caddyfile"
 cp "$PROJECT_ROOT/server-rust/target/release/api" "$CTX/linux-$PLATFORM_ARCH/api"
 cp -r "$PROJECT_ROOT/web-astro/dist" "$CTX/dist"
 cp "$PROJECT_ROOT/server-rust/config.yaml" "$CTX/config.yaml"

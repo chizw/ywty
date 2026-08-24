@@ -19,7 +19,7 @@ import {
   ExternalLink,
   LogOut,
 } from 'lucide-react'
-import { useAuthStore } from '@/lib/react-store'
+import { useAuthStore, isAdminUser } from '@/lib/react-store'
 import { useSiteInfo } from '@/lib/use-site-info'
 import { Toaster } from '../dashboard/Toaster'
 import { cn } from '@/lib/utils'
@@ -55,9 +55,26 @@ export function AdminShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     hydrate()
     setPath(window.location.pathname)
+
+    // 静态部署无服务端守卫：客户端校验登录与管理员身份
+    const check = (u: ReturnType<typeof useAuthStore.getState>['user']) => {
+      if (!u) {
+        window.location.assign(`/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+        return false
+      }
+      if (!isAdminUser(u)) {
+        window.location.assign('/')
+        return false
+      }
+      return true
+    }
+    hydrate()
+    if (!check(useAuthStore.getState().user)) return
     // 以服务端为准刷新用户信息：旧 cookie 可能缺少 is_super_admin 等字段，
     // 否则角色相关操作按钮会因陈旧缓存而不渲染
-    fetchMe()
+    fetchMe().then((me) => {
+      if (!me || !isAdminUser(me)) window.location.assign('/')
+    })
   }, [hydrate, fetchMe])
 
   return (

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // 分享展示：大图 + 信息卡片 + 下载按钮（密码由后端强制校验，错误密码不返回内容）
-import { ref, computed } from 'vue'
+// 静态部署模式：slug 从路由解析，数据全部客户端拉取
+import { ref, computed, onMounted } from 'vue'
 import { Download, Image as ImageIcon, Folder, Eye, Calendar, Lock } from '@lucide/vue'
 import Button from '../ui/Button.vue'
 import Input from '../ui/Input.vue'
@@ -10,18 +11,48 @@ import { useApi } from '../../../lib/api'
 import type { ShareData } from '../../../lib/types'
 
 const props = defineProps<{
-  slug: string
-  initial: ShareData | null
+  /** 显式传入 slug；为空时从路径 /s/{slug} 或 ?slug= 解析 */
+  slug?: string
+  /** 预取数据（SSR 时代遗留，静态模式下通常为空） */
+  initial?: ShareData | null
 }>()
 
-const share = ref<ShareData | null>(props.initial)
+function resolveSlug(): string {
+  if (props.slug) return props.slug
+  if (typeof window === 'undefined') return ''
+  const q = new URLSearchParams(window.location.search).get('slug')
+  if (q) return q
+  const m = window.location.pathname.match(/\/s\/([^/?#]+)/)
+  return m ? decodeURIComponent(m[1]) : ''
+}
+
+const slug = resolveSlug()
+const loading = ref(!props.initial && !!slug)
+const share = ref<ShareData | null>(props.initial ?? null)
 const password = ref('')
 const errorMsg = ref('')
 const unlocking = ref(false)
-const unlocked = ref(!props.initial?.requires_password)
+const unlocked = ref(!!props.initial && !props.initial.requires_password)
 
-const isPhoto = computed(() => share.value?.type === 'photo')
-const isAlbum = computed(() => share.value?.type === 'album')
+async function load(withPassword?: string) {
+  const api = useApi()
+  const res = await api.get(`/s/${encodeURIComponent(slug)}`, withPassword ? { query: { password: withPassword } } : undefined)
+  if (res) {
+    share.value = res as ShareData
+    unlocked.value = !(res as ShareData).requires_password
+  }
+}
+
+onMounted(async () => {
+  if (!loading.value) return
+  try {
+    await load()
+  } catch {
+    share.value = null
+  } finally {
+    loading.value = false
+  }
+})
 
 async function unlock() {
   if (!password.value) {
@@ -32,7 +63,7 @@ async function unlock() {
   errorMsg.value = ''
   try {
     // 后端校验访问密码，密码错误返回 403
-    const res = await useApi().get(`/s/${props.slug}`, { query: { password: password.value } })
+    const res = await useApi().get(`/s/${encodeURIComponent(slug)}`, { query: { password: password.value } })
     if (res) {
       share.value = res as ShareData
       unlocked.value = true
@@ -43,6 +74,9 @@ async function unlock() {
     unlocking.value = false
   }
 }
+
+const isPhoto = computed(() => share.value?.type === 'photo')
+const isAlbum = computed(() => share.value?.type === 'album')
 
 const infoRows = computed(() => {
   const s = share.value
@@ -57,8 +91,13 @@ const infoRows = computed(() => {
 
 <template>
   <div>
+    <!-- 加载中（静态模式客户端拉取） -->
+    <div v-if="loading" class="py-24 text-center text-muted-foreground">
+      <p class="text-lg">加载中…</p>
+    </div>
+
     <!-- 加载/错误 -->
-    <div v-if="!share" class="py-24 text-center text-muted-foreground">
+    <div v-else-if="!share" class="py-24 text-center text-muted-foreground">
       <p class="text-lg">分享不存在或已过期</p>
       <a href="/" class="mt-4 inline-block text-sm text-primary hover:underline">返回首页</a>
     </div>

@@ -1,22 +1,9 @@
----
+﻿---
 // 首页：editorial hero + 接触印相 + 登记册 + 题跋结尾
 import BaseLayout from '../layouts/BaseLayout.astro'
 import PublicLayout from '../layouts/PublicLayout.astro'
 import HomeStrip from '../components/vue/home/HomeStrip.vue'
 import HeroPlate from '../components/vue/home/HeroPlate.vue'
-import { useApi } from '../lib/api'
-import type { PublicPhoto } from '../lib/types'
-
-// 服务端获取最新公开图片（失败时静默降级为空）
-let latestPhotos: PublicPhoto[] = []
-try {
-  const res = await useApi().get<PublicPhoto[]>('/api/v1/public/photos', {
-    query: { page: 1, per_page: 12 },
-  })
-  latestPhotos = Array.isArray(res) ? res : []
-} catch {
-  latestPhotos = []
-}
 
 const register = [
   {
@@ -88,18 +75,7 @@ const register = [
       </div>
 
       <div class="mt-6">
-        {
-          latestPhotos.length > 0 ? (
-            <HomeStrip photos={latestPhotos} client:visible />
-          ) : (
-            <div class="rounded-[0.35rem] border hairline py-16 text-center">
-              <p class="text-sm text-muted-foreground">这里还空着。</p>
-              <a href="/auth/register" class="mt-3 inline-block text-sm text-brand hover:underline">
-                创建账号，放上第一张图片 →
-              </a>
-            </div>
-          )
-        }
+        <HomeStrip client:visible />
       </div>
     </section>
 

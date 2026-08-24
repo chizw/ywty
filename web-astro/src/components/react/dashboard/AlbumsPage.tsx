@@ -1,10 +1,11 @@
-// 相册列表：卡片 + 新建相册 + 编辑相册
+﻿// 相册列表：卡片 + 新建相册 + 编辑相册
 import { useEffect, useState } from 'react'
 import { BookImage, Plus, Pencil } from 'lucide-react'
 import { AppShell } from './AppShell'
 import { PageHeader } from './PageHeader'
 import { useConfirm } from './ConfirmDialog'
 import { AlbumEditDialog } from './AlbumEditDialog'
+import { AlbumDetailPage } from './AlbumDetailPage'
 import { useApi } from '@/lib/api'
 import { useStatsStore, toast } from '@/lib/react-store'
 import { timeAgo } from '@/lib/utils'
@@ -25,6 +26,8 @@ interface Album {
 }
 
 export function AlbumsPage() {
+  // 静态部署：/dashboard/albums/{id} 由服务器回退到本页，按路径切换详情视图
+  const detailId = typeof window !== 'undefined' ? (window.location.pathname.match(/\/dashboard\/albums\/(\d+)/) || [])[1] : undefined
   const api = useApi()
   const stats = useStatsStore()
   const { confirm, node } = useConfirm()
@@ -77,6 +80,11 @@ export function AlbumsPage() {
     } catch (e: any) {
       toast.error(e?.message || '删除失败')
     }
+  }
+
+  // 静态部署：/dashboard/albums/{id} 回退到本页，按路径渲染详情视图
+  if (detailId) {
+    return <AlbumDetailPage id={Number(detailId)} />
   }
 
   return (

@@ -7,10 +7,13 @@ import PhotoGridSkeleton from '../photo/PhotoGridSkeleton.vue'
 import { useApi } from '../../../lib/api'
 import type { PublicPhoto } from '../../../lib/types'
 
-const props = defineProps<{ initial: PublicPhoto[] }>()
+const props = withDefaults(
+  defineProps<{ initial?: PublicPhoto[] }>(),
+  { initial: () => [] },
+)
 
 const items = ref<PublicPhoto[]>([...props.initial])
-const page = ref(1)
+const page = ref(items.value.length > 0 ? 1 : 0)
 const total = ref(items.value.length)
 const loading = ref(false)
 const done = ref(false)
@@ -30,14 +33,14 @@ async function loadMore() {
   loading.value = true
   try {
     const res = await useApi().get<PublicPhoto[]>('/api/v1/public/photos', {
-      query: { page: page.value + 1, per_page: 24 },
+      query: { page: Math.max(page.value + 1, 1), per_page: 24 },
       raw: true,
     })
     const env = res as any
     const arr = Array.isArray(env?.data) ? (env.data as PublicPhoto[]) : []
     if (arr.length > 0) {
       items.value = [...items.value, ...arr]
-      page.value += 1
+      page.value = Math.max(page.value + 1, 1)
       total.value = Number(env?.meta?.total ?? total.value)
     }
     if (arr.length === 0 || env?.meta?.last_page === page.value) {
@@ -49,6 +52,11 @@ async function loadMore() {
     loading.value = false
   }
 }
+
+// 静态部署：无 SSR 预取数据时，挂载后拉取第一页
+onMounted(() => {
+  if (page.value === 0) loadMore()
+})
 
 let observer: IntersectionObserver | null = null
 const sentinel = ref<HTMLElement | null>(null)
