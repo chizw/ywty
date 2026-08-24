@@ -17,6 +17,8 @@ pub struct StorageRecord {
     pub provider: String,
     pub intro: Option<String>,
     pub prefix: Option<String>,
+    /// 该策略绑定的访问域名（空串 = 本地策略，跟随站点 /uploads）
+    pub access_url: Option<String>,
     pub options: Option<String>,
     pub created_at: String,
     pub updated_at: String,
@@ -30,7 +32,7 @@ impl StorageAdminService {
     /// 列出存储
     pub async fn list_storages(&self) -> AppResult<Vec<StorageRecord>> {
         let rows = sqlx::query_as::<_, StorageRecord>(
-            "SELECT id, name, provider, intro, prefix, options, created_at, updated_at FROM storages ORDER BY id ASC",
+            "SELECT id, name, provider, intro, prefix, access_url, options, created_at, updated_at FROM storages ORDER BY id ASC",
         )
         .fetch_all(&self.pool)
         .await?;
@@ -45,20 +47,22 @@ impl StorageAdminService {
         provider: &str,
         intro: Option<&str>,
         prefix: Option<&str>,
+        access_url: Option<&str>,
         options: Option<&str>,
     ) -> AppResult<StorageRecord> {
         let now = crate::db::now_str();
 
         let result = sqlx::query(
             r#"
-            INSERT INTO storages (name, provider, intro, prefix, options, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO storages (name, provider, intro, prefix, access_url, options, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             "#,
         )
         .bind(name)
         .bind(provider)
         .bind(intro)
         .bind(prefix)
+        .bind(access_url)
         .bind(options)
         .bind(&now)
         .bind(&now)
@@ -72,7 +76,7 @@ impl StorageAdminService {
     /// 获取存储详情
     pub async fn get_storage(&self, id: i64) -> AppResult<StorageRecord> {
         let row: Option<StorageRecord> = sqlx::query_as(
-            "SELECT id, name, provider, intro, prefix, options, created_at, updated_at FROM storages WHERE id = ?",
+            "SELECT id, name, provider, intro, prefix, access_url, options, created_at, updated_at FROM storages WHERE id = ?",
         )
         .bind(id)
         .fetch_optional(&self.pool)
@@ -88,6 +92,7 @@ impl StorageAdminService {
         name: Option<&str>,
         intro: Option<&str>,
         prefix: Option<&str>,
+        access_url: Option<&str>,
         options: Option<&str>,
     ) -> AppResult<()> {
         let mut updates: Vec<&str> = Vec::new();
@@ -100,6 +105,9 @@ impl StorageAdminService {
         if prefix.is_some() {
             updates.push("prefix = ?");
         }
+        if access_url.is_some() {
+            updates.push("access_url = ?");
+        }
         if options.is_some() {
             updates.push("options = ?");
         }
@@ -108,7 +116,7 @@ impl StorageAdminService {
             return Err(AppError::Validation("没有要更新的字段".to_string()));
         }
 
-        let now = crate::db::now_str();
+        let now = chrono::Utc::now().to_rfc3339();
         let sql = format!(
             "UPDATE storages SET {}, updated_at = ? WHERE id = ?",
             updates.join(", ")
@@ -122,6 +130,9 @@ impl StorageAdminService {
             q = q.bind(v);
         }
         if let Some(v) = prefix {
+            q = q.bind(v);
+        }
+        if let Some(v) = access_url {
             q = q.bind(v);
         }
         if let Some(v) = options {

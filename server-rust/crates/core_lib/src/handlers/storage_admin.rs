@@ -14,6 +14,8 @@ pub struct CreateStorageRequest {
     pub provider: String,
     pub intro: Option<String>,
     pub prefix: Option<String>,
+    /// 该策略绑定的访问域名（本地策略留空）
+    pub access_url: Option<String>,
     pub options: Option<String>,
 }
 
@@ -22,6 +24,7 @@ pub struct UpdateStorageRequest {
     pub name: Option<String>,
     pub intro: Option<String>,
     pub prefix: Option<String>,
+    pub access_url: Option<String>,
     pub options: Option<String>,
 }
 
@@ -84,6 +87,7 @@ pub async fn create_storage(
             &req.provider,
             req.intro.as_deref(),
             req.prefix.as_deref(),
+            req.access_url.as_deref(),
             req.options.as_deref(),
         )
         .await?;
@@ -117,6 +121,7 @@ pub async fn update_storage(
             req.name.as_deref(),
             req.intro.as_deref(),
             req.prefix.as_deref(),
+            req.access_url.as_deref(),
             req.options.as_deref(),
         )
         .await?;
