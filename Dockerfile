@@ -1,5 +1,5 @@
 # ---------- Stage 1: Rust builder ----------
-FROM rust:1.85-slim-bookworm AS rust-builder
+FROM rust:1-slim-bookworm AS rust-builder
 
 RUN apt-get update && apt-get install -y \
     pkg-config libssl-dev libsqlite3-dev \
@@ -7,26 +7,22 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY Cargo.toml Cargo.lock ./
-COPY crates/api/Cargo.toml ./crates/api/
-COPY crates/core_lib/Cargo.toml ./crates/core_lib/
+# 先拷贝清单文件，利用 Docker 层缓存预编译依赖
+COPY server-rust/Cargo.toml server-rust/Cargo.lock ./
+COPY server-rust/crates/api/Cargo.toml ./crates/api/
+COPY server-rust/crates/core_lib/Cargo.toml ./crates/core_lib/
 
 RUN mkdir -p crates/api/src crates/core_lib/src && \
     echo "fn main() {}" > crates/api/src/main.rs && \
-    echo "fn main() {}" > crates/core_lib/src/main.rs
+    echo "// placeholder" > crates/core_lib/src/lib.rs && \
+    cargo build --release
 
-RUN cargo build --release 2>/dev/null || true
+# 拷贝真实源码后重新构建（touch 使增量缓存失效）
+COPY server-rust/crates/ ./crates/
+COPY server-rust/config.yaml ./config.yaml
 
-COPY crates/ ./crates/
-COPY config.yaml ./config.yaml
-
-# 同一镜像内置两种方言二进制，由入口脚本按 DB_DRIVER 运行时选择：
-#   SQLite（默认零依赖） 与 MySQL/MariaDB
-RUN touch crates/api/src/main.rs crates/core_lib/src/main.rs && \
-    cargo build --release --bin api && \
-    cp target/release/api /app/api-sqlite && \
-    cargo build --release --bin api --features mysql && \
-    cp target/release/api /app/api-mysql
+RUN touch crates/api/src/main.rs crates/core_lib/src/lib.rs && \
+    cargo build --release --bin api
 
 # ---------- Stage 2: Astro builder ----------
 FROM node:22-alpine AS web-builder
@@ -47,9 +43,8 @@ RUN apk add --no-cache ca-certificates tzdata curl \
 
 WORKDIR /app
 
-# Rust 二进制（双方言）+ 配置
-COPY --from=rust-builder /app/api-sqlite /app/api-sqlite
-COPY --from=rust-builder /app/api-mysql /app/api-mysql
+# Rust 二进制 + 配置
+COPY --from=rust-builder /app/target/release/api /app/api
 COPY --from=rust-builder /app/config.yaml /app/config.yaml
 
 # Astro 构建产物
@@ -81,17 +76,8 @@ export JWT_SECRET
 APP_URL="${APP_URL:-http://localhost:3000}"
 export APP_URL
 
-# 按配置选择方言二进制：DB_DRIVER=mysql → MariaDB/MySQL；其余（默认）→ SQLite
-if [ "$DB_DRIVER" = "mysql" ]; then
-  echo "[entrypoint] database driver: mysql/mariadb"
-  API_BIN=/app/api-mysql
-else
-  echo "[entrypoint] database driver: sqlite"
-  API_BIN=/app/api-sqlite
-fi
-
 # 后台启动 API（独立端口，由 Astro 中间件反代对外）
-PORT="${API_PORT:-3001}" "$API_BIN" &
+PORT="${API_PORT:-3001}" /app/api &
 
 # 前台启动 Astro SSR（PORT 即对外端口，默认 3000）
 exec node /app/dist/server/entry.mjs
