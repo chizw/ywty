@@ -1,101 +1,32 @@
-# =========================================
-# ywty .gitignore
-# =========================================
-
-# ---------- 构建产物 ----------
-bin/
-dist/
-build/
-.next/
-.turbo/
-
-# ---------- 日志 ----------
-*.log
-logs/
-
-# ---------- 数据库 / 运行时数据 ----------
-*.db
-*.sqlite
-*.sqlite3
-*.db-journal
-*.db-wal
-*.db-shm
-storage/
-uploads/
-
-# ---------- 环境配置 ----------
-.env
-.env.*
-!.env.example
-
-# ---------- IDE / 编辑器 ----------
-.idea/
-todo/
-.trae/
-.vscode/
-*.iml
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
-desktop.ini
-*~
-._*
-
-# ---------- 依赖目录 ----------
-node_modules/
-vendor/
-jspm_packages/
-bower_components/
-
-# ---------- 前端缓存 ----------
-.npm/
-.yarn/
-.pnp.*
-.pnpm-store/
-.parcel-cache/
-.eslintcache
-.stylelintcache
-
-# ---------- Rust 产物 ----------
-target/
-*.rlib
-*.rmeta
-*.d
-
-# ---------- OS / 杂项 ----------
-*.tmp
-*.bak
-*.orig
-*.rej
-*.patch
-*.diff
-.cache/
-.tmp/
-*.zip
-*.tar.gz
-*.rar
-*.7z
-*.iso
-*.dmg
-*.pkg
-
-# ---------- 本机临时产物（不入库） ----------
-build.bat
-build_log.txt
-check_output.txt
-server-rust/test.png
-cookies.txt
-refresh.json
-
-# ---------- 测试 / 临时文件 ----------
-tmp/
-temp/
-test-output/
-test-results/
-playwright-report/
-playwright/.cache/
-.vitest/
-__snapshots__/
-*.snap.local
-
+*.DS_Store
+/.phpunit.cache
+/node_modules
+/public/hot
+/public/storage*
+/public/uploads*
+/public/i
+/storage/*.key
+/vendor
+/.env
+/.env.backup
+/.env.production
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+/.fleet
+/.idea
+/.vscode
+/installed.lock
+/upgrading.lock
+/upgrade.zip
+/data
+/.cursor
+CLAUDE.md
+/.claude
+/.zcode
+/runtime
+/_ide_helper.php
+/.phpstorm.meta.php
