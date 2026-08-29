@@ -266,7 +266,7 @@ func Store(gdb *gorm.DB, in StoreInput) (*model.Photo, error) {
 		if in.UserID != nil {
 			uidVal = *in.UserID
 		}
-		insertIgnore(gdb, "INSERT INTO `taggables` (`tag_id`, `user_id`, `taggable_type`, `taggable_id`) VALUES (?, ?, 'photo', ?)", tagID, uidVal, photo.ID)
+		insertIgnore(gdb, "INSERT INTO `taggables` (`tag_id`, `user_id`, `taggable_type`, `taggable_id`) VALUES (?, ?, 'App\\Models\\Photo', ?)", tagID, uidVal, photo.ID)
 	}
 	return &photo, nil
 }
@@ -334,7 +334,7 @@ func DeletePhoto(gdb *gorm.DB, cfg *config.Config, photo *model.Photo) error {
 	}
 	_ = gdb.Exec("DELETE FROM `photos` WHERE `id` = ?", photo.ID).Error
 	_ = gdb.Exec("DELETE FROM `album_photo` WHERE `photo_id` = ?", photo.ID).Error
-	_ = gdb.Exec("DELETE FROM `taggables` WHERE `taggable_type` = 'photo' AND `taggable_id` = ?", photo.ID).Error
+	_ = gdb.Exec("DELETE FROM `taggables` WHERE `taggable_type` = 'App\\Models\\Photo' AND `taggable_id` = ?", photo.ID).Error
 	// 缩略图（public 磁盘）
 	_ = gdb.Exec("DELETE FROM `photos` WHERE `id` = ?", photo.ID).Error
 	tp := filepath.Join("storage/app/public", filepath.FromSlash("thumbnails/"+photo.Pathname))

@@ -582,3 +582,79 @@ func TestUploadFlow(t *testing.T) {
 		t.Fatalf("v1 upload 异常: %+v", legacy)
 	}
 }
+
+func TestShareFlow(t *testing.T) {
+	e := newEnv(t)
+	_, _, cookies := e.installAndLogin(t, "admin", "password123")
+
+	// 上传公开图片
+	body, ctype := multipartBody(t, "file", "share.png", makePNG(t, 40, 40), map[string]string{
+		"storage_id": "1", "is_public": "1",
+	})
+	req, _ := http.NewRequest(http.MethodPost, e.ts.URL+"/api/v2/upload", body)
+	req.Header.Set("Content-Type", ctype)
+	req.AddCookie(cookies[0])
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var upEnv envelope
+	_ = json.NewDecoder(resp.Body).Decode(&upEnv)
+	_ = resp.Body.Close()
+	var up struct {
+		ID int64 `json:"id"`
+	}
+	_ = json.Unmarshal(upEnv.Data, &up)
+
+	// 创建分享
+	sb, _ := json.Marshal(map[string]any{"type": "photo", "ids": []int64{up.ID}, "content": "看看这张"})
+	req2, _ := http.NewRequest(http.MethodPost, e.ts.URL+"/api/v2/user/shares", bytes.NewReader(sb))
+	req2.Header.Set("Content-Type", "application/json")
+	req2.AddCookie(cookies[0])
+	resp2, _ := http.DefaultClient.Do(req2)
+	var shEnv envelope
+	_ = json.NewDecoder(resp2.Body).Decode(&shEnv)
+	_ = resp2.Body.Close()
+	if resp2.StatusCode != 201 || shEnv.Status != "success" {
+		t.Fatalf("创建分享失败: %d %s", resp2.StatusCode, shEnv.Message)
+	}
+	var sh struct {
+		Slug string `json:"slug"`
+	}
+	_ = json.Unmarshal(shEnv.Data, &sh)
+	if sh.Slug == "" {
+		t.Fatal("应返回 slug")
+	}
+
+	// 公开访问分享
+	resp3, showEnv := e.get(t, "/api/v2/shares/"+sh.Slug)
+	if resp3.StatusCode != 200 || showEnv.Status != "success" {
+		t.Fatalf("访问分享失败: %d %s", resp3.StatusCode, showEnv.Message)
+	}
+	var show struct {
+		IsValid bool   `json:"is_valid"`
+		Content string `json:"content"`
+	}
+	_ = json.Unmarshal(showEnv.Data, &show)
+	if !show.IsValid || show.Content != "看看这张" {
+		t.Fatalf("分享内容异常: %+v", show)
+	}
+
+	// 分享图片列表
+	_, phEnv := e.get(t, "/api/v2/shares/"+sh.Slug+"/photos")
+	var ph struct {
+		IsValid bool             `json:"is_valid"`
+		Data    []map[string]any `json:"data"`
+		Meta    map[string]any   `json:"meta"`
+	}
+	_ = json.Unmarshal(phEnv.Data, &ph)
+	if !ph.IsValid || len(ph.Data) != 1 {
+		t.Fatalf("分享图片列表异常: %+v raw=%s", ph, string(phEnv.Data))
+	}
+
+	// 广场默认关闭
+	resp5, expEnv := e.get(t, "/api/v2/explore/photos")
+	if resp5.StatusCode != 404 || expEnv.Message != "Gallery feature is disabled" {
+		t.Fatalf("explore 开关异常: %d %s", resp5.StatusCode, expEnv.Message)
+	}
+}

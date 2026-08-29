@@ -215,3 +215,87 @@ type PersonalAccessToken struct {
 }
 
 func (PersonalAccessToken) TableName() string { return "personal_access_tokens" }
+
+// ---------- shares / shareables ----------
+
+type Share struct {
+	ID        int64      `gorm:"primaryKey;column:id"`
+	UserID    int64      `gorm:"column:user_id"`
+	Type      string     `gorm:"column:type"`
+	Slug      string     `gorm:"column:slug"`
+	Content   *string    `gorm:"column:content"`
+	Password  string     `gorm:"column:password"`
+	ViewCount int64      `gorm:"column:view_count"`
+	ExpiredAt *time.Time `gorm:"column:expired_at"`
+	CreatedAt *time.Time `gorm:"column:created_at"`
+	UpdatedAt *time.Time `gorm:"column:updated_at"`
+}
+
+func (Share) TableName() string { return "shares" }
+
+type Shareable struct {
+	ID            int64  `gorm:"primaryKey;column:id"`
+	ShareID       int64  `gorm:"column:share_id"`
+	ShareableType string `gorm:"column:shareable_type"`
+	ShareableID   int64  `gorm:"column:shareable_id"`
+}
+
+func (Shareable) TableName() string { return "shareables" }
+
+// ---------- likes / reports / violations ----------
+
+type Like struct {
+	ID           int64      `gorm:"primaryKey;column:id"`
+	UserID       int64      `gorm:"column:user_id"`
+	LikeableType string     `gorm:"column:likeable_type"`
+	LikeableID   int64      `gorm:"column:likeable_id"`
+	CreatedAt    *time.Time `gorm:"column:created_at"`
+	UpdatedAt    *time.Time `gorm:"column:updated_at"`
+}
+
+func (Like) TableName() string { return "likes" }
+
+type Report struct {
+	ID             int64          `gorm:"primaryKey;column:id"`
+	ReportUserID   *int64         `gorm:"column:report_user_id"`
+	ReportableType string         `gorm:"column:reportable_type"`
+	ReportableID   int64          `gorm:"column:reportable_id"`
+	Content        *string        `gorm:"column:content"`
+	Status         string         `gorm:"column:status"`
+	HandledAt      *time.Time     `gorm:"column:handled_at"`
+	IPAddress      *string        `gorm:"column:ip_address"`
+	CreatedAt      *time.Time     `gorm:"column:created_at"`
+	UpdatedAt      *time.Time     `gorm:"column:updated_at"`
+	DeletedAt      gorm.DeletedAt `gorm:"column:deleted_at"`
+}
+
+func (Report) TableName() string { return "reports" }
+
+type Violation struct {
+	ID        int64          `gorm:"primaryKey;column:id"`
+	UserID    *int64         `gorm:"column:user_id"`
+	PhotoID   *int64         `gorm:"column:photo_id"`
+	Reason    string         `gorm:"column:reason"`
+	Status    string         `gorm:"column:status"`
+	HandledAt *time.Time     `gorm:"column:handled_at"`
+	CreatedAt *time.Time     `gorm:"column:created_at"`
+	UpdatedAt *time.Time     `gorm:"column:updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at"`
+}
+
+func (Violation) TableName() string { return "violations" }
+
+// ---------- notices ----------
+
+type Notice struct {
+	ID        int64          `gorm:"primaryKey;column:id"`
+	Title     string         `gorm:"column:title"`
+	Content   *string        `gorm:"column:content"`
+	ViewCount int64          `gorm:"column:view_count"`
+	Sort      int32          `gorm:"column:sort"`
+	CreatedAt *time.Time     `gorm:"column:created_at"`
+	UpdatedAt *time.Time     `gorm:"column:updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at"`
+}
+
+func (Notice) TableName() string { return "notices" }

@@ -85,6 +85,40 @@ func apiRouter(cfg *config.Config, gdb *gorm.DB, d *deps) http.Handler {
 				up.Use(d.uploadVerify, d.uploadFrequencyLimit)
 				up.Post("/upload", d.handleUpload)
 			})
+
+			// 站内公告 / 页面
+			pub.Get("/notices", d.handleNoticesIndex)
+			pub.Get("/notices/{id}", d.handleNoticeShow)
+			pub.Get("/pages", d.handlePagesIndex)
+			pub.Get("/pages/{slug}", d.handlePageShow)
+
+			// 分享（公共访问）
+			pub.Get("/shares/{slug}", d.handleShareShow)
+			pub.Get("/shares/{slug}/photos", d.handleSharePhotos)
+			pub.Post("/shares/{slug}/report", d.handleShareReport)
+
+			// 探索（广场）
+			pub.Route("/explore", func(ex chi.Router) {
+				ex.Use(d.requireExplore)
+				ex.Get("/photos", d.handleExplorePhotos)
+				ex.Get("/photos/{id}", d.handleExplorePhotoShow)
+				ex.Post("/photos/{id}/report", d.handleExplorePhotoReport)
+				ex.Get("/users/{username}", d.handleExploreUserProfile)
+				ex.Get("/users/{username}/photos", d.handleExploreUserPhotos)
+				ex.Get("/users/{username}/albums", d.handleExploreUserAlbums)
+				ex.Post("/users/{username}/report", d.handleExploreUserReport)
+				ex.Get("/albums", d.handleExploreAlbums)
+				ex.Get("/albums/{id}", d.handleExploreAlbumShow)
+				ex.Get("/albums/{id}/photos", d.handleExploreAlbumPhotos)
+				ex.Post("/albums/{id}/report", d.handleExploreAlbumReport)
+				ex.Group(func(ea chi.Router) {
+					ea.Use(authx.Auth(gdb, cfg), authx.CheckTokenPermission)
+					ea.Post("/photos/{id}/like", d.handleExplorePhotoLike)
+					ea.Delete("/photos/{id}/unlike", d.handleExplorePhotoUnlike)
+					ea.Post("/albums/{id}/like", d.handleExploreAlbumLike)
+					ea.Delete("/albums/{id}/unlike", d.handleExploreAlbumUnlike)
+				})
+			})
 		})
 
 		// 登录用户（auth + 令牌权限检查）
@@ -126,7 +160,18 @@ func apiRouter(cfg *config.Config, gdb *gorm.DB, d *deps) http.Handler {
 			u.Post("/user/albums/{id}/tags", d.handleAlbumTagsAttach)
 			u.Delete("/user/albums/{id}/tags", d.handleAlbumTagsRemove)
 
-			// 分享/工单/订单路由在 M3-M4 挂载
+			// 我的分享
+			u.Get("/user/shares", d.handleUserShares)
+			u.Post("/user/shares", d.handleUserSharesStore)
+			u.Get("/user/shares/{id}", d.handleUserShareShow)
+			u.Put("/user/shares/{id}", d.handleUserShareUpdate)
+			u.Delete("/user/shares", d.handleUserSharesDestroy)
+
+			// 分享点赞（登录用户）
+			u.Post("/shares/{slug}/like", d.handleShareLike)
+			u.Delete("/shares/{slug}/unlike", d.handleShareUnlike)
+
+			// 工单/订单路由在 M4 挂载
 		})
 	})
 	r.Mount("/v2", v2)

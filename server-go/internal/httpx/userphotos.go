@@ -66,7 +66,7 @@ func (d *deps) photoRow(gdb photoRowDeps, p *model.Photo) map[string]any {
 	}
 	d.gdb.Raw(
 		"SELECT t.`id`, t.`name` FROM `tags` t INNER JOIN `taggables` tt ON tt.tag_id = t.id "+
-			"WHERE tt.taggable_type = 'photo' AND tt.taggable_id = ?", p.ID,
+			"WHERE tt.taggable_type = 'App\\Models\\Photo' AND tt.taggable_id = ?", p.ID,
 	).Scan(&trows)
 	for _, t := range trows {
 		tags = append(tags, map[string]any{"id": t.ID, "name": t.Name})
@@ -235,7 +235,7 @@ func (d *deps) mutatePhotoTags(w http.ResponseWriter, req *http.Request, attach 
 			continue
 		}
 		if !attach {
-			d.gdb.Exec("DELETE FROM `taggables` WHERE `taggable_type` = 'photo' AND `taggable_id` = ? "+
+			d.gdb.Exec("DELETE FROM `taggables` WHERE `taggable_type` = 'App\\Models\\Photo' AND `taggable_id` = ? "+
 				"AND `tag_id` IN (SELECT `id` FROM `tags` WHERE `name` = ?)", photo.ID, name)
 			continue
 		}
@@ -303,7 +303,7 @@ func (d *deps) albumRow(a *model.Album) map[string]any {
 	}
 	d.gdb.Raw(
 		"SELECT t.`id`, t.`name` FROM `tags` t INNER JOIN `taggables` tt ON tt.tag_id = t.id "+
-			"WHERE tt.taggable_type = 'album' AND tt.taggable_id = ?", a.ID,
+			"WHERE tt.taggable_type = 'App\\Models\\Album' AND tt.taggable_id = ?", a.ID,
 	).Scan(&trows)
 	for _, t := range trows {
 		tags = append(tags, map[string]any{"id": t.ID, "name": t.Name})
@@ -498,7 +498,7 @@ func (d *deps) mutateAlbumTags(w http.ResponseWriter, req *http.Request, attach 
 			continue
 		}
 		if !attach {
-			d.gdb.Exec("DELETE FROM `taggables` WHERE `taggable_type` = 'album' AND `taggable_id` = ? "+
+			d.gdb.Exec("DELETE FROM `taggables` WHERE `taggable_type` = 'App\\Models\\Album' AND `taggable_id` = ? "+
 				"AND `tag_id` IN (SELECT `id` FROM `tags` WHERE `name` = ?)", album.ID, name)
 			continue
 		}
