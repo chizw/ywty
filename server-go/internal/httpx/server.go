@@ -25,7 +25,7 @@ func New(cfg *config.Config, gdb *gorm.DB, d *deps) http.Handler {
 	})
 
 	mux.Mount("/api", apiRouter(cfg, gdb, d))
-	mux.Handle("/*", staticHandler(cfg, gdb))
+	mux.Handle("/*", combinedStatic(cfg, gdb))
 
 	return mux
 }

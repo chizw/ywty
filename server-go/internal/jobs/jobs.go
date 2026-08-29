@@ -2,7 +2,6 @@
 package jobs
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -23,6 +22,22 @@ func Register(q *queue.Queue, gdb *gorm.DB, c *cache.Cache, cfg *config.Config) 
 		// 短信驱动在 M5 接入
 		return errors.New("短信服务尚未配置")
 	})
+	q.Register("generate_thumbnail", func(data []byte) error {
+		return generateThumbnail(gdb, cfg, data)
+	})
+	q.Register("handle_photo", func(data []byte) error {
+		var in struct {
+			PhotoID int64  `json:"photo_id"`
+			Options string `json:"options"`
+		}
+		if err := jsonUnmarshal(data, &in); err != nil {
+			return err
+		}
+		return RunHandlePhoto(gdb, cfg, in.PhotoID, in.Options)
+	})
+	q.Register("auto_delete_photo", func(data []byte) error {
+		return autoDeletePhoto(gdb, cfg, data)
+	})
 }
 
 type sendCodeMailData struct {
@@ -36,7 +51,7 @@ type sendCodeMailData struct {
 // 解析组的邮件驱动 → 生成验证码（cache: mail_code:{event}:{email}，TTL 900）→ SMTP 发送。
 func sendCodeMail(gdb *gorm.DB, c *cache.Cache, cfg *config.Config, data []byte) error {
 	var in sendCodeMailData
-	if err := json.Unmarshal(data, &in); err != nil {
+	if err := jsonUnmarshal(data, &in); err != nil {
 		return fmt.Errorf("任务参数解析失败: %w", err)
 	}
 	smtpCfg, err := mailx.ResolveSMTP(gdb, in.GroupID)

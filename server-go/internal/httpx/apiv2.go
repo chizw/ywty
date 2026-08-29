@@ -80,7 +80,11 @@ func apiRouter(cfg *config.Config, gdb *gorm.DB, d *deps) http.Handler {
 			pub.Post("/sms/reset_password", d.handleSmsResetPassword)
 			pub.Post("/mail/reset_password", d.handleMailResetPassword)
 
-			// 分享/广场等公共路由在 M3 挂载；M2 挂载 upload
+			// 上传（游客允许时也走此路由；前置校验 + 频率限制）
+			pub.Group(func(up chi.Router) {
+				up.Use(d.uploadVerify, d.uploadFrequencyLimit)
+				up.Post("/upload", d.handleUpload)
+			})
 		})
 
 		// 登录用户（auth + 令牌权限检查）
@@ -103,17 +107,47 @@ func apiRouter(cfg *config.Config, gdb *gorm.DB, d *deps) http.Handler {
 			u.Delete("/user/tokens/{id}", d.handleTokensDestroy)
 			u.Get("/user/tokens/permissions", d.handleTokensPermissions)
 
-			// 相册/照片/分享/工单/订单路由在 M2-M4 挂载
+			// 照片
+			u.Get("/user/photos", d.handleUserPhotos)
+			u.Get("/user/photos/{id}", d.handleUserPhotoShow)
+			u.Put("/photos/update", d.handlePhotosUpdate)
+			u.Delete("/photos", d.handlePhotosDestroy)
+			u.Post("/user/photos/{id}/tags", d.handlePhotoTagsAttach)
+			u.Delete("/user/photos/{id}/tags", d.handlePhotoTagsRemove)
+
+			// 相册
+			u.Get("/user/albums", d.handleUserAlbums)
+			u.Post("/user/albums", d.handleAlbumsStore)
+			u.Get("/user/albums/{id}", d.handleUserAlbumShow)
+			u.Put("/user/albums/{id}", d.handleUserAlbumUpdate)
+			u.Delete("/user/albums/{id}", d.handleUserAlbumDestroy)
+			u.Post("/user/albums/{id}/photos", d.handleAlbumAddPhotos)
+			u.Delete("/user/albums/{id}/photos", d.handleAlbumRemovePhotos)
+			u.Post("/user/albums/{id}/tags", d.handleAlbumTagsAttach)
+			u.Delete("/user/albums/{id}/tags", d.handleAlbumTagsRemove)
+
+			// 分享/工单/订单路由在 M3-M4 挂载
 		})
 	})
 	r.Mount("/v2", v2)
 
-	// ---------- /api/v1 legacy（PicGo 等旧客户端，M2 实现） ----------
+	// ---------- /api/v1 legacy（ywty 1.x / PicGo 客户端） ----------
 	v1 := chi.NewRouter()
 	v1.NotFound(notFound)
 	v1.MethodNotAllowed(notFound)
 	v1.Group(func(g chi.Router) {
-		g.Use(requireInstalled(cfg, gdb), authx.Initialize(gdb, cfg))
+		g.Use(requireInstalled(cfg, gdb), authx.OptionalAuth(gdb, cfg), authx.Initialize(gdb, cfg))
+		g.Post("/upload", d.v1Upload)
+		g.Group(func(a chi.Router) {
+			a.Use(authx.Auth(gdb, cfg), authx.CheckTokenPermission)
+			a.Get("/strategies", d.v1Strategies)
+			a.Post("/images/tokens", d.v1ImageTokens)
+			a.Get("/images", d.v1ImagesIndex)
+			a.Delete("/images/{key}", d.v1ImageDestroy)
+			a.Get("/albums", d.v1AlbumsIndex)
+			a.Delete("/albums/{id}", d.v1AlbumDestroy)
+			a.Get("/profile", d.v1Profile)
+		})
 	})
 	r.Mount("/v1", v1)
 

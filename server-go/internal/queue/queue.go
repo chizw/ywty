@@ -43,6 +43,29 @@ type payload struct {
 	Name string          `json:"displayName"` // PHP 版遗留 payload 标记
 }
 
+// DispatchAt 写入队列并指定可执行时间（延迟任务，秒级时间戳）。
+func (q *Queue) DispatchAt(name string, data any, availableAt int64) error {
+	var raw json.RawMessage
+	if data != nil {
+		b, err := json.Marshal(data)
+		if err != nil {
+			return err
+		}
+		raw = b
+	} else {
+		raw = json.RawMessage("{}")
+	}
+	body, err := json.Marshal(payload{Job: name, Data: raw})
+	if err != nil {
+		return err
+	}
+	now := time.Now().Unix()
+	return q.db.Exec(
+		"INSERT INTO `jobs` (`queue`, `payload`, `attempts`, `reserved_at`, `available_at`, `created_at`) "+
+			"VALUES ('default', ?, 0, NULL, ?, ?)", body, availableAt, now,
+	).Error
+}
+
 // Dispatch 写入队列。
 func (q *Queue) Dispatch(name string, data any) error {
 	var raw json.RawMessage

@@ -9,6 +9,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"image"
+	"image/color"
+	"image/png"
+	"mime/multipart"
 	"time"
 
 	"github.com/chizw/ywty/server-go/internal/cache"
@@ -392,5 +396,189 @@ func TestAuthFlow(t *testing.T) {
 	resp7, _ := e.get(t, "/api/v2/user/profile")
 	if resp7.StatusCode != 401 {
 		t.Fatalf("unauthenticated profile: %d", resp7.StatusCode)
+	}
+}
+
+// ---------- M2 上传链路 ----------
+
+func makePNG(t *testing.T, w, h int) []byte {
+	t.Helper()
+	img := image.NewRGBA(image.Rect(0, 0, w, h))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			img.Set(x, y, color.RGBA{R: uint8(x * 7 % 255), G: uint8(y * 5 % 255), B: 128, A: 255})
+		}
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+func multipartBody(t *testing.T, fieldName, filename string, data []byte, fields map[string]string) (*bytes.Buffer, string) {
+	t.Helper()
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	fw, err := mw.CreateFormFile(fieldName, filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fw.Write(data); err != nil {
+		t.Fatal(err)
+	}
+	for k, v := range fields {
+		_ = mw.WriteField(k, v)
+	}
+	_ = mw.Close()
+	return &buf, mw.FormDataContentType()
+}
+
+func TestUploadFlow(t *testing.T) {
+	e := newEnv(t)
+
+	// 安装 + 管理员登录
+	_, _, cookies := e.installAndLogin(t, "admin", "password123")
+
+	// 上传 PNG
+	pngData := makePNG(t, 64, 48)
+	body, ctype := multipartBody(t, "file", "测试图片.png", pngData, map[string]string{
+		"storage_id": "1", "is_public": "1",
+	})
+	req, _ := http.NewRequest(http.MethodPost, e.ts.URL+"/api/v2/upload", body)
+	req.Header.Set("Content-Type", ctype)
+	req.AddCookie(cookies[0])
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var upEnv envelope
+	_ = json.NewDecoder(resp.Body).Decode(&upEnv)
+	_ = resp.Body.Close()
+	if resp.StatusCode != 200 || upEnv.Status != "success" {
+		t.Fatalf("upload: %d %s %s", resp.StatusCode, upEnv.Status, upEnv.Message)
+	}
+	var up struct {
+		ID        int64  `json:"id"`
+		Pathname  string `json:"pathname"`
+		Extension string `json:"extension"`
+		PublicURL string `json:"public_url"`
+		Width     int    `json:"width"`
+		Height    int    `json:"height"`
+		MD5       string `json:"md5"`
+	}
+	_ = json.Unmarshal(upEnv.Data, &up)
+	if up.ID == 0 || up.Pathname == "" || up.Width != 64 || up.Height != 48 {
+		t.Fatalf("upload 数据异常: %+v", up)
+	}
+
+	// 物理文件存在（默认组本地储存 root = {dir}/uploads）
+	physical := filepath.Join(e.cfg.UploadsDir, filepath.FromSlash(up.Pathname))
+	if _, err := os.Stat(physical); err != nil {
+		t.Fatalf("物理文件不存在: %s", physical)
+	}
+
+	// 图片直出路由（prefix=uploads）
+	imgResp, err := http.Get(e.ts.URL + "/uploads/" + up.Pathname)
+	if err != nil {
+		t.Fatal(err)
+	}
+	imgBody := new(bytes.Buffer)
+	_, _ = imgBody.ReadFrom(imgResp.Body)
+	_ = imgResp.Body.Close()
+	if imgResp.StatusCode != 200 || !bytes.Equal(imgBody.Bytes(), pngData) {
+		t.Fatalf("图片直出异常: %d len=%d", imgResp.StatusCode, imgBody.Len())
+	}
+
+	// 缩略图任务（队列 200ms 轮询）
+	deadline := time.Now().Add(3 * time.Second)
+	thumbOK := false
+	for time.Now().Before(deadline) {
+		tr, err := http.Get(e.ts.URL + "/storage/thumbnails/" + up.Pathname)
+		if err == nil {
+			if tr.StatusCode == 200 {
+				thumbOK = true
+			}
+			_ = tr.Body.Close()
+		}
+		if thumbOK {
+			break
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	if !thumbOK {
+		t.Fatal("缩略图未生成")
+	}
+
+	// 列表
+	req2, _ := http.NewRequest(http.MethodGet, e.ts.URL+"/api/v2/user/photos", nil)
+	req2.AddCookie(cookies[0])
+	resp2, _ := http.DefaultClient.Do(req2)
+	var listEnv envelope
+	_ = json.NewDecoder(resp2.Body).Decode(&listEnv)
+	_ = resp2.Body.Close()
+	var list struct {
+		Data []map[string]any `json:"data"`
+		Meta struct {
+			Total int64 `json:"total"`
+		} `json:"meta"`
+	}
+	_ = json.Unmarshal(listEnv.Data, &list)
+	if list.Meta.Total != 1 || len(list.Data) != 1 {
+		t.Fatalf("photos 列表异常: %+v", list)
+	}
+
+	// 更新 + 删除
+	ub, _ := json.Marshal(map[string]any{"ids": []int64{up.ID}, "name": "新名字"})
+	req3, _ := http.NewRequest(http.MethodPut, e.ts.URL+"/api/v2/photos/update", bytes.NewReader(ub))
+	req3.Header.Set("Content-Type", "application/json")
+	req3.AddCookie(cookies[0])
+	resp3, _ := http.DefaultClient.Do(req3)
+	_ = resp3.Body.Close()
+
+	db2, _ := json.Marshal(map[string]any{"ids": []int64{up.ID}})
+	req4, _ := http.NewRequest(http.MethodDelete, e.ts.URL+"/api/v2/photos", bytes.NewReader(db2))
+	req4.Header.Set("Content-Type", "application/json")
+	req4.AddCookie(cookies[0])
+	resp4, _ := http.DefaultClient.Do(req4)
+	var delEnv envelope
+	_ = json.NewDecoder(resp4.Body).Decode(&delEnv)
+	_ = resp4.Body.Close()
+	if resp4.StatusCode != 200 {
+		t.Fatalf("删除失败: %d %s", resp4.StatusCode, delEnv.Message)
+	}
+	if _, err := os.Stat(physical); !os.IsNotExist(err) {
+		t.Fatal("删除后物理文件应被清理")
+	}
+
+	// legacy v1：strategies + profile + 上传
+	req5, _ := http.NewRequest(http.MethodGet, e.ts.URL+"/api/v1/strategies", nil)
+	req5.AddCookie(cookies[0])
+	resp5, _ := http.DefaultClient.Do(req5)
+	var sEnv struct {
+		Status bool `json:"status"`
+		Data   struct {
+			Strategies []map[string]any `json:"strategies"`
+		} `json:"data"`
+	}
+	_ = json.NewDecoder(resp5.Body).Decode(&sEnv)
+	_ = resp5.Body.Close()
+	if !sEnv.Status || len(sEnv.Data.Strategies) == 0 {
+		t.Fatalf("v1 strategies 异常: %+v", sEnv)
+	}
+
+	body6, ctype6 := multipartBody(t, "file", "legacy.jpg", makePNG(t, 32, 32), nil)
+	req6, _ := http.NewRequest(http.MethodPost, e.ts.URL+"/api/v1/upload", body6)
+	req6.Header.Set("Content-Type", ctype6)
+	req6.AddCookie(cookies[0])
+	resp6, _ := http.DefaultClient.Do(req6)
+	var legacy struct {
+		Status bool           `json:"status"`
+		Data   map[string]any `json:"data"`
+	}
+	_ = json.NewDecoder(resp6.Body).Decode(&legacy)
+	_ = resp6.Body.Close()
+	if !legacy.Status || legacy.Data["key"] == nil {
+		t.Fatalf("v1 upload 异常: %+v", legacy)
 	}
 }
