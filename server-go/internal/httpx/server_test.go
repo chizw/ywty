@@ -375,11 +375,19 @@ func TestAuthFlow(t *testing.T) {
 	}
 
 	// 登录 + 错误密码
-	resp5, _, loginCookies := e.postJSONCookie(t, "/api/v2/login", map[string]any{
-		"username": "newuser", "password": "password123",
+	resp5, loginEnv, loginCookies := e.postJSONCookie(t, "/api/v2/login", map[string]any{
+		"login_type": "username", "username": "newuser", "password": "password123",
 	})
-	if resp5.StatusCode != 200 {
-		t.Fatalf("login: %d", resp5.StatusCode)
+	if resp5.StatusCode != 200 || loginEnv.Status != "success" {
+		t.Fatalf("login: %d %s %s", resp5.StatusCode, loginEnv.Status, loginEnv.Message)
+	}
+	var loginData struct {
+		Name  string `json:"name"`
+		Token string `json:"token"`
+	}
+	_ = json.Unmarshal(loginEnv.Data, &loginData)
+	if loginData.Token == "" {
+		t.Fatal("登录应返回访问令牌")
 	}
 	if len(loginCookies) == 0 {
 		t.Fatal("登录应下发会话 cookie")

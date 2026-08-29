@@ -33,56 +33,98 @@ type deps struct {
 
 // ---------- POST /api/v2/login（原版登录流程等价） ----------
 
+// handleLogin 账号密码登录：按 login_type 解析身份字段，验证通过后签发
+// 访问令牌，响应 R envelope + data{name, token}（SPA 以 Bearer 方式携带）。
 func (d *deps) handleLogin(w http.ResponseWriter, req *http.Request) {
 	var body struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
+		LoginType string `json:"login_type"`
+		Username  string `json:"username"`
+		Password  string `json:"password"`
+		Remember  bool   `json:"remember"`
 	}
-	if err := readBody(req, &body); err != nil || strings.TrimSpace(body.Username) == "" {
-		r.ErrorData(w, http.StatusUnprocessableEntity, "The given data was invalid.",
-			map[string]any{"errors": map[string][]string{"username": {"用户名 不能为空。"}}})
+	if err := readBody(req, &body); err != nil {
+		r.Error(w, "请求体解析失败")
 		return
 	}
-	body.Username = strings.ToLower(strings.TrimSpace(body.Username))
+	if body.LoginType == "" {
+		body.LoginType = "username"
+	}
+	identity := strings.TrimSpace(body.Username)
 
-	// 登录限流：username+ip 每分钟 5 次（对齐 fortify 'login' limiter）
+	v := validate.New()
+	if !validate.Required(identity) {
+		v.Add("username", "用户名", "不能为空。")
+	}
+	if !validate.Required(body.Password) {
+		v.Add("password", "密码", "不能为空。")
+	}
+	if !validate.In(body.LoginType, "username", "email", "phone") {
+		v.Add("login_type", "登录类型", "不存在。")
+	}
+	if v.Fail() {
+		v.Respond(w)
+		return
+	}
+
+	// 登录限流：身份+ip 每分钟 5 次（对齐原版 'login' limiter）
 	ip := authx.ClientIP(req)
-	limiterKey := "login:" + body.Username + "|" + ip
+	limiterKey := "login:" + identity + "|" + ip
 	if n, _ := d.cache.GetInt(limiterKey); n >= 5 {
 		r.ErrorWithCode(w, http.StatusTooManyRequests, "Too Many Attempts.")
 		return
 	}
 	d.cache.Increment(limiterKey, 60)
 
+	// 按 login_type 定位用户
 	var user model.User
-	err := d.gdb.Where("username = ?", body.Username).First(&user).Error
+	query := d.gdb
+	switch body.LoginType {
+	case "email":
+		query = query.Where("email = ?", strings.ToLower(identity))
+	case "phone":
+		query = query.Where("phone = ?", identity)
+	default:
+		query = query.Where("username = ?", strings.ToLower(identity))
+	}
+	err := query.First(&user).Error
 	if err != nil || user.ID == 0 ||
 		bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password)) != nil {
-		r.ErrorData(w, http.StatusUnprocessableEntity, "The given data was invalid.",
+		r.ErrorData(w, http.StatusUnprocessableEntity, "These credentials do not match our records.",
 			map[string]any{"errors": map[string][]string{
 				"username": {"These credentials do not match our records."},
 			}})
 		return
 	}
-
-	sid, err := authx.CreateSession(d.gdb, user.ID, ip, req.UserAgent())
-	if err != nil {
-		r.Error(w, "登录会话创建失败")
+	if user.Status != "normal" {
+		r.Error(w, "账号已被冻结，请联系管理员")
 		return
+	}
+
+	// 签发访问令牌（明文仅返回一次）
+	plain, err := authx.CreateToken(d.gdb, user.ID, "login", []string{"*"}, nil)
+	if err != nil {
+		r.Error(w, "登录失败，请稍后重试")
+		return
+	}
+
+	// 同步建立会话（兼容需要 cookie 的场景）
+	if sid, err := authx.CreateSession(d.gdb, user.ID, ip, req.UserAgent()); err == nil {
+		http.SetCookie(w, &http.Cookie{
+			Name:     authx.SessionCookieName(d.cfg),
+			Value:    sid,
+			Path:     "/",
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+			MaxAge:   120 * 60,
+		})
 	}
 	d.cache.Forget(limiterKey)
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     authx.SessionCookieName(d.cfg),
-		Value:    sid,
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   120 * 60,
-	})
-	// 原版登录响应：{"two_factor": false}
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]any{"two_factor": false})
+	name := user.Name
+	if name == "" {
+		name = user.Username
+	}
+	r.Success(w, map[string]any{"name": name, "token": plain})
 }
 
 // ---------- POST /api/v2/logout ----------
