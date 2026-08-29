@@ -18,9 +18,11 @@ import (
 // imageExtPattern 对齐 PHP web.php 的图片扩展名正则。
 var imageExtPattern = regexp.MustCompile(`(?i)\.(jpg|jpeg|webp|avif|bmp|gif|png|tif|tiff|jp2|j2k|jp2k|jpf|jpm|jpg2|j2c|jpc|jpx|heic|heif)$`)
 
-// combinedStatic 图片直出 + 静态资源 + SPA fallback（对齐 nginx try_files → Laravel 的流转）。
+// combinedStatic 图片直出 + 静态资源 + 管理后台 + SPA fallback
+// （对齐 nginx try_files → Laravel 的流转）。
 func combinedStatic(cfg *config.Config, gdb *gorm.DB) http.HandlerFunc {
 	inner := staticHandler(cfg, gdb)
+	adminHandler := adminStaticHandler(cfg)
 	return func(w http.ResponseWriter, req *http.Request) {
 		if imageExtPattern.MatchString(req.URL.Path) &&
 			serveStorageImage(cfg, gdb, w, req) {
@@ -34,7 +36,38 @@ func combinedStatic(cfg *config.Config, gdb *gorm.DB) http.HandlerFunc {
 				return
 			}
 		}
+		// /admin/* → 管理后台 SPA
+		if _, ok := strings.CutPrefix(req.URL.Path, "/admin"); ok {
+			adminHandler(w, req)
+			return
+		}
 		inner.ServeHTTP(w, req)
+	}
+}
+
+// adminStaticHandler 管理后台静态托管（SPA fallback 到 admin/index.html）。
+func adminStaticHandler(cfg *config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		upath := path.Clean("/" + req.URL.Path)
+		if rel, ok := strings.CutPrefix(upath, "/admin/"); ok && rel != "" {
+			fp := filepath.Join(cfg.AdminStaticDir, filepath.FromSlash(rel))
+			if info, err := os.Stat(fp); err == nil && !info.IsDir() {
+				http.ServeFile(w, req, fp)
+				return
+			}
+		}
+		index := filepath.Join(cfg.AdminStaticDir, "index.html")
+		raw, err := os.ReadFile(index)
+		if err != nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("<!doctype html><html><head><meta charset=\"utf-8\"><title>admin</title></head>" +
+				"<body>管理后台未构建：请在 admin/ 目录执行 npm install && npm run build。</body></html>"))
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
+		_, _ = w.Write(raw)
 	}
 }
 

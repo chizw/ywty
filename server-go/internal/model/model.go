@@ -410,3 +410,16 @@ type TicketReply struct {
 }
 
 func (TicketReply) TableName() string { return "ticket_replies" }
+
+type Driver struct {
+	ID        int64          `gorm:"primaryKey;column:id"`
+	Type      string         `gorm:"column:type"`
+	Name      string         `gorm:"column:name"`
+	Intro     string         `gorm:"column:intro"`
+	Options   types.JSON     `gorm:"column:options"`
+	CreatedAt *time.Time     `gorm:"column:created_at"`
+	UpdatedAt *time.Time     `gorm:"column:updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at"`
+}
+
+func (Driver) TableName() string { return "drivers" }

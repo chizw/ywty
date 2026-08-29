@@ -14,6 +14,14 @@ COPY web/ ./
 # 不跑 post-build 的 PHP 目录拷贝步骤
 RUN npm run build-only
 
+# ---------- Stage 1b: 管理后台构建 ----------
+FROM node:22-alpine AS admin
+WORKDIR /src/admin
+COPY admin/package.json admin/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY admin/ ./
+RUN npm run build
+
 # ---------- Stage 2: Go 后端构建 ----------
 FROM golang:1.26-alpine AS build
 WORKDIR /src/server-go
@@ -27,6 +35,7 @@ RUN apk add --no-cache vips ca-certificates tzdata
 WORKDIR /app
 COPY --from=build /out/ywty /app/ywty
 COPY --from=web /src/web/dist/ /app/public/
+COPY --from=admin /src/admin/dist/ /app/admin/
 COPY LICENSE.md CHANGELOG.md /app/
 
 ENV HOST=0.0.0.0 \

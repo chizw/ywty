@@ -22,6 +22,8 @@ type Config struct {
 	UploadsDir string // UPLOADS_DIR，本地存储根目录兜底值
 	StaticDir  string // STATIC_DIR，前端主题静态资源目录
 
+	AdminStaticDir string // ADMIN_STATIC_DIR，管理后台静态资源目录
+
 	DBDriver      string // DB_DRIVER: sqlite | mysql
 	DBPath        string // DB_PATH，SQLite 文件路径，默认 {DATA_DIR}/ywty.db
 	DBHost        string
@@ -44,27 +46,28 @@ func Load() (*Config, error) {
 	_ = loadDotEnv(".env")
 
 	cfg := &Config{
-		Host:          getEnv("HOST", "127.0.0.1"),
-		Port:          getEnv("PORT", "3000"),
-		AppURL:        strings.TrimRight(getEnv("APP_URL", "http://localhost"), "/"),
-		AppName:       getEnv("APP_NAME", "ywty"),
-		DataDir:       getEnv("DATA_DIR", "data"),
-		UploadsDir:    getEnv("UPLOADS_DIR", "uploads"),
-		StaticDir:     getEnv("STATIC_DIR", "public"),
-		DBDriver:      strings.ToLower(getEnv("DB_DRIVER", "sqlite")),
-		DBHost:        getEnv("DB_HOST", "127.0.0.1"),
-		DBPort:        getEnv("DB_PORT", "3306"),
-		DBUser:        getEnv("DB_USER", getEnv("DB_USERNAME", "root")),
-		DBPassword:    getEnv("DB_PASSWORD", ""),
-		DBName:        getEnv("DB_NAME", getEnv("DB_DATABASE", "ywty")),
-		RedisAddr:     getEnv("REDIS_ADDR", ""),
-		RedisPassword: getEnv("REDIS_PASSWORD", ""),
-		AppKey:        getEnv("APP_KEY", ""),
-		JWTSecret:     getEnv("JWT_SECRET", getEnv("JWT_SECRET_FILE", "")),
-		LicenseKey:    getEnv("APP_LICENSE_KEY", "LICENSE_KEY", ""),
-		AdminUsername: getEnv("ADMIN_USERNAME", ""),
-		AdminEmail:    getEnv("ADMIN_EMAIL", ""),
-		AdminPassword: getEnv("ADMIN_PASSWORD", ""),
+		Host:           getEnv("HOST", "127.0.0.1"),
+		Port:           getEnv("PORT", "3000"),
+		AppURL:         strings.TrimRight(getEnv("APP_URL", "http://localhost"), "/"),
+		AppName:        getEnv("APP_NAME", "ywty"),
+		DataDir:        getEnv("DATA_DIR", "data"),
+		UploadsDir:     getEnv("UPLOADS_DIR", "uploads"),
+		StaticDir:      getEnv("STATIC_DIR", "public"),
+		AdminStaticDir: getEnv("ADMIN_STATIC_DIR", "admin/dist"),
+		DBDriver:       strings.ToLower(getEnv("DB_DRIVER", "sqlite")),
+		DBHost:         getEnv("DB_HOST", "127.0.0.1"),
+		DBPort:         getEnv("DB_PORT", "3306"),
+		DBUser:         getEnv("DB_USER", getEnv("DB_USERNAME", "root")),
+		DBPassword:     getEnv("DB_PASSWORD", ""),
+		DBName:         getEnv("DB_NAME", getEnv("DB_DATABASE", "ywty")),
+		RedisAddr:      getEnv("REDIS_ADDR", ""),
+		RedisPassword:  getEnv("REDIS_PASSWORD", ""),
+		AppKey:         getEnv("APP_KEY", ""),
+		JWTSecret:      getEnv("JWT_SECRET", getEnv("JWT_SECRET_FILE", "")),
+		LicenseKey:     getEnv("APP_LICENSE_KEY", "LICENSE_KEY", ""),
+		AdminUsername:  getEnv("ADMIN_USERNAME", ""),
+		AdminEmail:     getEnv("ADMIN_EMAIL", ""),
+		AdminPassword:  getEnv("ADMIN_PASSWORD", ""),
 	}
 
 	if cfg.DBDriver != "sqlite" && cfg.DBDriver != "mysql" {

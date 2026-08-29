@@ -16,6 +16,8 @@
 /node_modules
 /web/node_modules
 /web/dist
+/admin/node_modules
+/admin/dist
 /runtime
 /data
 /uploads

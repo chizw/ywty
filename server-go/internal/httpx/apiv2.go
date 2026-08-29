@@ -201,6 +201,70 @@ func apiRouter(cfg *config.Config, gdb *gorm.DB, d *deps) http.Handler {
 	})
 	r.Mount("/v2", v2)
 
+	// ---------- /api/admin（管理后台 API） ----------
+	admin := chi.NewRouter()
+	admin.NotFound(notFound)
+	admin.MethodNotAllowed(notFound)
+	admin.Post("/login", d.handleAdminLogin)
+	admin.Group(func(a chi.Router) {
+		a.Use(authx.Auth(gdb, cfg), d.adminAuth)
+		a.Get("/dashboard", d.handleAdminDashboard)
+
+		a.Get("/users", d.handleAdminUsers)
+		a.Put("/users/{id}", d.handleAdminUserUpdate)
+		a.Delete("/users/{id}", d.handleAdminUserDelete)
+
+		a.Get("/photos", d.handleAdminPhotos)
+		a.Delete("/photos/{id}", d.handleAdminPhotoDelete)
+		a.Put("/photos/{id}/status", d.handleAdminPhotoStatus)
+
+		a.Get("/notices", d.handleAdminNotices)
+		a.Post("/notices", d.handleAdminNotices)
+		a.Put("/notices/{id}", d.handleAdminNoticeUpdate)
+		a.Delete("/notices/{id}", d.handleAdminNoticeDelete)
+
+		a.Get("/pages", d.handleAdminPages)
+		a.Post("/pages", d.handleAdminPages)
+		a.Put("/pages/{id}", d.handleAdminPageUpdate)
+		a.Delete("/pages/{id}", d.handleAdminPageDelete)
+
+		a.Get("/plans", d.handleAdminPlans)
+		a.Post("/plans", d.handleAdminPlans)
+		a.Put("/plans/{id}", d.handleAdminPlanUpdate)
+		a.Delete("/plans/{id}", d.handleAdminPlanDelete)
+
+		a.Get("/coupons", d.handleAdminCoupons)
+		a.Post("/coupons", d.handleAdminCoupons)
+		a.Put("/coupons/{id}", d.handleAdminCouponUpdate)
+		a.Delete("/coupons/{id}", d.handleAdminCouponDelete)
+
+		a.Get("/orders", d.handleAdminOrders)
+		a.Get("/reports", d.handleAdminReports)
+		a.Put("/reports/{id}", d.handleAdminReportUpdate)
+		a.Get("/feedbacks", d.handleAdminFeedbacks)
+
+		a.Get("/tickets", d.handleAdminTickets)
+		a.Get("/tickets/{id}/replies", d.handleAdminTicketReplies)
+		a.Post("/tickets/{id}/reply", d.handleAdminTicketReply)
+
+		a.Get("/settings", d.handleAdminSettings)
+		a.Put("/settings", d.handleAdminSettingsUpdate)
+
+		a.Get("/storages", d.handleAdminStorages)
+		a.Post("/storages", d.handleAdminStorages)
+		a.Put("/storages/{id}", d.handleAdminStorageUpdate)
+		a.Delete("/storages/{id}", d.handleAdminStorageDelete)
+
+		a.Get("/drivers", d.handleAdminDrivers)
+		a.Post("/drivers", d.handleAdminDrivers)
+		a.Put("/drivers/{id}", d.handleAdminDriverUpdate)
+		a.Delete("/drivers/{id}", d.handleAdminDriverDelete)
+
+		a.Get("/groups", d.handleAdminGroups)
+		a.Put("/groups/{id}", d.handleAdminGroupUpdate)
+	})
+	r.Mount("/admin", admin)
+
 	// ---------- /api/v1 legacy（ywty 1.x / PicGo 客户端） ----------
 	v1 := chi.NewRouter()
 	v1.NotFound(notFound)

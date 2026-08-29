@@ -150,12 +150,12 @@ func (d *deps) handleTicketReplies(w http.ResponseWriter, req *http.Request) {
 	var total int64
 	d.gdb.Raw("SELECT count(*) FROM `ticket_replies` WHERE `ticket_id` = ? AND `deleted_at` IS NULL", t.ID).Scan(&total)
 	var rows []struct {
-		ID        int64
-		UserID    int64
-		Content   string
-		ReadAt    *time.Time
-		CreatedAt *time.Time
-		UserName  string
+		ID         int64
+		UserID     int64
+		Content    string
+		ReadAt     *time.Time
+		CreatedAt  *time.Time
+		UserName   string
 		UserAvatar string
 	}
 	d.gdb.Raw(
