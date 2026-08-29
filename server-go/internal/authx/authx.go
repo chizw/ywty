@@ -1,5 +1,4 @@
-// Package authx 移植 Sanctum 令牌认证、会话认证、CheckTokenPermission
-// 与 Initialize（角色组解析）的完整语义。
+// Package authx 令牌认证、会话认证、接口权限检查与角色组解析。
 package authx
 
 import (
@@ -23,7 +22,7 @@ import (
 
 const tokenableType = "App\\Models\\User"
 
-// TokenableType Sanctum tokenable 类型（与 PHP Eloquent 类名一致）。
+// TokenableType 原版 tokenable 类型值（数据库兼容）。
 const TokenableType = "App\\Models\\User"
 
 // Token personal_access_tokens 行（仅认证所需字段）。
@@ -64,7 +63,7 @@ func With(req *http.Request, c *Ctx) context.Context {
 
 // ---------- 令牌 ----------
 
-// HashToken 等价 Sanctum：sha256(plainTextToken) 的 hex。
+// HashToken 令牌哈希：sha256(plainTextToken) 的 hex（与原版一致）。
 func HashToken(plain string) string {
 	sum := sha256.Sum256([]byte(plain))
 	return hex.EncodeToString(sum[:])
@@ -157,7 +156,7 @@ func findToken(gdb *gorm.DB, plain string) (*Token, error) {
 
 // ---------- 会话 ----------
 
-// SessionCookieName 对齐 Laravel：SESSION_COOKIE 或 slug(APP_NAME)+"_session"。
+// SessionCookieName 会话 cookie 名：SESSION_COOKIE 或 slug(APP_NAME)+"_session"。
 func SessionCookieName(cfg *config.Config) string {
 	if cfg != nil {
 		if v := envOr("SESSION_COOKIE", ""); v != "" {
@@ -253,7 +252,7 @@ func Auth(gdb *gorm.DB, cfg *config.Config) func(http.Handler) http.Handler {
 	}
 }
 
-// OptionalAuth 尽力解析认证信息但不强制（对齐 Sanctum 对公共路由的行为）。
+// OptionalAuth 尽力解析认证信息但不强制（公共路由使用）。
 func OptionalAuth(gdb *gorm.DB, cfg *config.Config) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -398,7 +397,7 @@ func RoutePermission(path, method string) (Permission, bool) {
 	return "", false
 }
 
-// CheckTokenPermission 对齐 PHP 中间件：会话认证跳过；'*' 全通过；BASIC 强制附加。
+// CheckTokenPermission 权限检查：会话认证跳过；'*' 全通过；basic 强制附加。
 func CheckTokenPermission(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		ctx := From(req)
@@ -419,7 +418,7 @@ func CheckTokenPermission(next http.Handler) http.Handler {
 			next.ServeHTTP(w, req)
 			return
 		}
-		// 等价 PHP：BASIC 总是被强制附加到能力列表
+		// basic 权限总是被强制附加到能力列表
 		hasBasic := has(PermBasic)
 		allowed := func(p Permission) bool { return has(p) || (hasBasic && p == PermBasic) }
 		perm, ok := RoutePermission(strings.TrimPrefix(req.URL.Path, "/"), req.Method)

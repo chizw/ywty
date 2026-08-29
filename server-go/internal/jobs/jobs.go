@@ -1,4 +1,4 @@
-// Package jobs 队列任务处理器注册（对应 PHP app/Jobs）。
+// Package jobs 队列任务处理器注册。
 package jobs
 
 import (
@@ -57,7 +57,7 @@ type sendCodeMailData struct {
 	SiteName string `json:"site_name"`
 }
 
-// sendCodeMail 对齐 SendCodeMailJob → MailService::sendCode：
+// sendCodeMail 发送验证码邮件任务：
 // 解析组的邮件驱动 → 生成验证码（cache: mail_code:{event}:{email}，TTL 900）→ SMTP 发送。
 func sendCodeMail(gdb *gorm.DB, c *cache.Cache, cfg *config.Config, data []byte) error {
 	var in sendCodeMailData

@@ -1,4 +1,4 @@
-// Package captchax 图形验证码（math 模式），对齐 mews/captcha 的 'math' 配置：
+// Package captchax 图形验证码（math 模式），对齐原版 'math' 配置：
 // 120x36、TTL 60 秒、响应 {sensitive, key, img(dataURI)}。
 package captchax
 
@@ -22,7 +22,7 @@ func New(c *cache.Cache) *Service {
 	}
 }
 
-// Create 生成新验证码，返回 PHP Captcha::create('math', true) 同构的响应体。
+// Create 生成新验证码，返回与原版一致的响应体。
 func (s *Service) Create() map[string]any {
 	id, q, a := s.drv.GenerateIdQuestionAnswer()
 	item, err := s.drv.DrawCaptcha(q)

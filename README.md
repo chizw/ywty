@@ -1,7 +1,6 @@
 # ywty（云雾图驿）
 
-基于 **ywty - **（PHP/Laravel）的 **Go 重写版本**。
-PHP 原版源码保留在本仓库根目录作为移植参照；活跃开发在 [`server-go/`](server-go/)。
+自托管图床 / 云上相册系统，Go 1.26 实现的单二进制服务。
 
 ```
 Docker 镜像：node 构建 web + admin → golang 构建 server-go → alpine(+vips) 运行
@@ -12,31 +11,21 @@ Docker 镜像：node 构建 web + admin → golang 构建 server-go → alpine(+
 
 | 目录 | 说明 |
 | --- | --- |
-| `server-go/` | Go 1.26 单二进制（HTTP 服务 + 数据库队列 worker + 调度） |
-| `web/` | 用户端 Vue 3 SPA（与 PHP 版共用，构建产物由 Go 托管） |
+| `server-go/` | Go 单二进制：HTTP 服务 + 数据库队列 worker + 调度 |
+| `web/` | 用户端 Vue 3 SPA（构建产物由 Go 托管） |
 | `admin/` | 管理后台 Vue 3 SPA（Vue + Naive UI，挂 `/admin`） |
-| `app/` 等根目录 PHP | PHP 版参照实现（基线，不再演进） |
+| `server-go/internal/db/migrations/` | SQLite/MySQL 双方言 schema（37 张表） |
 
-## Go 版里程碑状态
+## 功能
 
-- ✅ M0：骨架、双方言迁移（37 表对齐 Laravel schema）、安装流程、静态托管
-- ✅ M1：Sanctum 令牌认证、会话、API 权限映射、验证码、configs/group、用户资料/令牌
-- ✅ M2：上传管线（命名/容量/频率限制）、纯 Go 图像处理 + vips 外挂、图片直出、相册、legacy v1
-- ✅ M3：分享（密码/过期）、广场、公告、页面、举报、点赞
-- ✅ M4：套餐/订单/优惠码、支付 SPI（EPay：RSA-SHA256）、支付回调、延时取消
-- ✅ M5：储存驱动扩展——S3 兼容（s3/oss/cos，minio-go）+ WebDAV（七牛/又拍/FTP/SFTP 后续）
-- ✅ M6：`/api/admin` + admin SPA（用户/图片/公告/页面/订单/优惠码/工单/设置/储存/驱动）
-- ⏳ 后续：支付宝/微信原生支付驱动、短信与内容审核、OAuth 登录、七牛/又拍/FTP/SFTP
-
-## 与 PHP 版的兼容承诺
-
-- **数据库**：表结构与 Laravel 迁移逐列对齐；PHP 版数据库可直接被 Go 版使用（启动时自动检测，
-  旧库自动修补 `users.email` 可空约束）
-- **API**：`openapi.json` 的 90 个路径 + `/api/v1` 旧客户端契约；响应 envelope
-  `{status, message, data, time}` 逐键一致
-- **认证**：Sanctum 令牌（sha256 存储、`{id}|{plain}` 明文）与 bcrypt 密码直接互认
-- **加密设置**：`settings` 加密字段使用 Laravel Crypt（AES-256-CBC）格式，APP_KEY 可沿用
-- 已知差异：未匹配 API 路径返回 HTTP 200 + `{"status":"error"}`（CI 冒烟约定；PHP 为 404）
+- 上传管线：格式/大小/容量/频率校验、`{Ymd}/{md5}` 等命名规则、内容指纹去重
+- 图像处理：缩略图、缩放/裁剪/旋转、文字与图片水印（九宫格/平铺/透明度）、可选 vips 外挂 heic/avif/webp
+- 相册 / 标签 / 分享（密码、过期、slug）/ 图片广场
+- 用户体系：注册登录、会话与访问令牌（细粒度接口权限）、邮箱/手机绑定、工单
+- 商业化：套餐 / 订单 / 优惠码 / 容量与角色组发放、EPay 支付（RSA-SHA256）与回调
+- 管理后台：仪表盘、用户、图片审核、公告/页面、套餐/订单/优惠码、工单、设置、储存与驱动管理
+- 储存驱动：本地、S3 兼容（AWS/MinIO/OSS/COS/R2）、WebDAV
+- 旧版 1.x 接口兼容（PicGo 等客户端）
 
 ## 快速开始（Docker）
 
@@ -48,8 +37,8 @@ docker compose up -d --build
 ```
 
 - 服务端口：`PORT`（默认 3000），健康检查 `/healthz`
-- 用户端：`/`（web 主题），管理后台：`/admin`
-- 数据卷：`./data`（SQLite + app_key + installed.lock）、`./uploads`（本地储存）
+- 用户端：`/`，管理后台：`/admin`
+- 数据卷：`./data`（SQLite + installed.lock）、`./uploads`（本地储存）
 
 ### 环境变量
 
@@ -57,16 +46,21 @@ docker compose up -d --build
 | --- | --- | --- |
 | `HOST` / `PORT` | 127.0.0.1 / 3000 | 监听地址 |
 | `APP_URL` | http://localhost | 站点 URL（生成图片链接等） |
+| `APP_NAME` | ywty | 站点名称 |
 | `DB_DRIVER` | sqlite | `sqlite` / `mysql`（MariaDB ≥ 10.6） |
 | `DB_PATH` | `{DATA_DIR}/ywty.db` | SQLite 文件路径 |
 | `DB_HOST/PORT/USER/PASSWORD/NAME` | — | MySQL 连接 |
 | `DATA_DIR` | data | 数据目录 |
 | `UPLOADS_DIR` | uploads | 本地储存兜底根目录 |
-| `STATIC_DIR` | public | 前端主题目录 |
+| `STATIC_DIR` | web/dist | 前端主题目录 |
 | `ADMIN_STATIC_DIR` | admin/dist | 管理后台目录 |
-| `APP_KEY` | 自动生成 | Laravel APP_KEY（`base64:...`，迁移旧库必填） |
 | `APP_LICENSE_KEY` + `ADMIN_*` | — | 环境变量一键安装 |
 | `REDIS_ADDR/PASSWORD` | — | 预留（当前使用 DB cache/queue） |
+
+## 响应契约
+
+统一 envelope：`{"status": "success"|"error", "message": "...", "data": ..., "time": unix秒}`。
+业务错误 HTTP 状态码默认 200，校验错误 422，未认证 401，限流 429。
 
 ## 本地开发
 
@@ -74,12 +68,13 @@ docker compose up -d --build
 # Go 后端
 cd server-go && go test ./... && go run ./cmd/ywty
 
-# 前端主题（产物输出到 public/）
+# 用户端主题（产物 web/dist）
 cd web && npm install && npm run build
 
-# 管理后台
+# 管理后台（产物 admin/dist）
 cd admin && npm install && npm run build
 ```
 
-## 原版
+## 致谢
 
+- [Lsky Pro](https://www.lsky.pro) —— 本项目的数据库结构、接口契约与产品形态参考自 Lsky Pro 社区，特此致谢。

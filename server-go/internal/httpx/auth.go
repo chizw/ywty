@@ -31,7 +31,7 @@ type deps struct {
 	captcha *captchax.Service
 }
 
-// ---------- POST /api/v2/login（Fortify 等价） ----------
+// ---------- POST /api/v2/login（原版登录流程等价） ----------
 
 func (d *deps) handleLogin(w http.ResponseWriter, req *http.Request) {
 	var body struct {
@@ -80,7 +80,7 @@ func (d *deps) handleLogin(w http.ResponseWriter, req *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   120 * 60,
 	})
-	// Fortify LoginResponse: response()->json(['two_factor' => false])
+	// 原版登录响应：{"two_factor": false}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{"two_factor": false})
 }
@@ -97,7 +97,7 @@ func (d *deps) handleLogout(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// ---------- POST /api/v2/register（CreateNewUser 等价） ----------
+// ---------- POST /api/v2/register（原版注册流程等价） ----------
 
 func (d *deps) handleRegister(w http.ResponseWriter, req *http.Request) {
 	var body map[string]any
@@ -223,14 +223,14 @@ func (d *deps) handleRegister(w http.ResponseWriter, req *http.Request) {
 		_ = d.gdb.Create(&model.UserCapacity{UserID: user.ID, Capacity: float64(initialCapacity), From: "system"}).Error
 	}
 
-	// 自动登录（Fortify guard->login）
+	// 自动登录
 	if sid, err := authx.CreateSession(d.gdb, user.ID, ip, req.UserAgent()); err == nil {
 		http.SetCookie(w, &http.Cookie{
 			Name: authx.SessionCookieName(d.cfg), Value: sid, Path: "/",
 			HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: 120 * 60,
 		})
 	}
-	// Fortify RegisterResponse: new JsonResponse('', 201)
+	// 原版注册响应：201 空响应体
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -330,7 +330,7 @@ func (d *deps) checkUnique(table, column, value string, exceptID int64) bool {
 	return count == 0
 }
 
-// smsVerify 短信验证码（M5 接入真实短信后生效，缓存键与 PHP SmsService 一致）。
+// smsVerify 短信验证码（接入真实短信后生效，缓存键与原版一致）。
 func smsVerify(c *cache.Cache, event, phone, code string) bool {
 	stored, ok := c.Get("sms_code:" + event + ":" + phone)
 	return ok && stored == code

@@ -15,8 +15,7 @@ var mysqlInitSQL string
 var sqliteInitSQL string
 
 // laravelMigrations 是 database/migrations/ 的文件名清单（按执行顺序）。
-// Go 版建库后会把这些名字写入 Laravel 风格的 migrations 表（batch 1），
-// 保证 PHP 侧工具链（migrate:status 等）视角一致。
+// Go 版建库后会把这些名字写入原版风格的 migrations 记录表（batch 1）。
 var laravelMigrations = []string{
 	"0001_01_01_000001_create_cache_table.php",
 	"0001_01_01_000002_create_jobs_table.php",
@@ -56,12 +55,12 @@ var laravelMigrations = []string{
 }
 
 // Migrate 初始化 schema：
-//   - users 表已存在（PHP 版安装过 / Go 版装过）→ 跳过建表，仅做兼容性修补；
-//   - 否则执行 0001_init.sql 全量建表，并写入 Laravel 风格 migrations 记录。
+//   - users 表已存在（原版安装过 / Go 版装过）→ 跳过建表，仅做兼容性修补；
+//   - 否则执行 0001_init.sql 全量建表，并写入原版风格 migrations 记录。
 func Migrate(gdb *gorm.DB, driver string) error {
 	if tableExists(gdb, "users") {
 		if driver == "mysql" {
-			// 兼容 2025_04_29 之前安装的 PHP 版：users.email 当时是 NOT NULL
+			// 兼容早期安装的旧库：users.email 当时是 NOT NULL
 			return ensureEmailNullable(gdb)
 		}
 		return nil
@@ -80,7 +79,7 @@ func Migrate(gdb *gorm.DB, driver string) error {
 	return seedMigrationsTable(gdb, driver)
 }
 
-// ensureEmailNullable 对旧 PHP 库做 users.email 可空修补（对齐 2025_04_29 迁移后的状态）。
+// ensureEmailNullable 对旧库做 users.email 可空修补（对齐最终 schema 状态）。
 func ensureEmailNullable(gdb *gorm.DB) error {
 	var nullable string
 	err := gdb.Raw(

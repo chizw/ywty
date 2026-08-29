@@ -1,4 +1,4 @@
-// Package orderx 订单/套餐/优惠码业务（对齐 OrderService + UserOrderService）。
+// Package orderx 订单/套餐/优惠码业务。
 package orderx
 
 import (

@@ -35,7 +35,7 @@ func ParseHexColor(s string) (color.Color, error) {
 	return color.Black, nil
 }
 
-// RenderText 把文字渲染为带透明的 RGBA 图片（近似 PHP 水印文本图层）。
+// RenderText 把文字渲染为带透明的 RGBA 图片（水印文本图层）。
 func RenderText(text, fontPath string, sizePx float64, colorHex string) (image.Image, error) {
 	if text == "" {
 		return nil, errors.New("imageproc: 空水印文本")

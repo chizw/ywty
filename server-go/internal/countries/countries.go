@@ -5,7 +5,7 @@ package countries
 import "strings"
 
 type Country struct {
-	ID   string `json:"id"`   // 小写 ISO 代码（对齐 PHP strtolower）
+	ID   string `json:"id"`   // 小写 ISO 代码
 	Name string `json:"name"` // 英文显示名
 	Code int    `json:"code"` // 国际区号
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/studio-b12/gowebdav"
 )
 
-// WebDAV 适配器（对齐 PHP WebdavStorage：base_uri/username/password/auth_type + root 前缀）。
+// WebDAV 适配器（base_uri/username/password/auth_type + root 前缀）。
 type WebDAV struct {
 	client *gowebdav.Client
 	root   string

@@ -13,7 +13,7 @@ import (
 	"github.com/chizw/ywty/server-go/internal/validate"
 )
 
-// photoRow 列表/详情序列化（对齐 UserPhotoResource）。
+// photoRow 列表/详情序列化。
 func (d *deps) photoRow(gdb photoRowDeps, p *model.Photo) map[string]any {
 	out := map[string]any{
 		"id": p.ID, "name": p.Name, "intro": p.Intro,
@@ -279,7 +279,7 @@ func (d *deps) handleUserAlbums(w http.ResponseWriter, req *http.Request) {
 	r.Success(w, pagination.New(out, total, p))
 }
 
-// albumRow 序列化（对齐 UserAlbumResource：tags + covers + photo_count）。
+// albumRow 序列化（tags + covers + photo_count）。
 func (d *deps) albumRow(a *model.Album) map[string]any {
 	var photoCount int64
 	d.gdb.Raw("SELECT count(*) FROM `album_photo` ap INNER JOIN `photos` ph ON ph.id = ap.photo_id AND ph.deleted_at IS NULL "+

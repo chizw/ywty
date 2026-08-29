@@ -1,4 +1,4 @@
-// Package validate 提供 Laravel 风格的请求校验错误收集：
+// Package validate 提供请求校验错误收集（原版格式）：
 // 失败时以 {"message": "The given data was invalid.", "data": {"errors": {字段: [消息]}}} 422 输出。
 package validate
 

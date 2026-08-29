@@ -20,7 +20,7 @@ import (
 //   - 其余 → 404
 //
 // index.html 的 <title> 使用 site.title - site.subtitle 动态注入，
-// 对齐 PHP SendThemeController 渲染 blade 的行为。
+// 与原版主题标题注入行为一致。
 func staticHandler(cfg *config.Config, gdb *gorm.DB) http.HandlerFunc {
 	titleCache := &titleCache{ttl: 10 * time.Second}
 

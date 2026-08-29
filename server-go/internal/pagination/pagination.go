@@ -1,5 +1,4 @@
-// Package pagination 输出与 Laravel LengthAwarePaginator + Resource collection
-// ->response()->getData() 相同的 JSON 结构：{data, links, meta}。
+// Package pagination 输出与原版一致的 JSON 分页结构：{data, links, meta}。
 package pagination
 
 import (
@@ -33,7 +32,7 @@ type Params struct {
 	Path    string
 }
 
-// FromRequest 读取分页参数，默认 per_page=20（与 PHP paginate 默认一致）。
+// FromRequest 读取分页参数，默认 per_page=20。
 func FromRequest(req *http.Request) Params {
 	p := Params{PerPage: 20, Page: 1, Path: req.URL.Path, Q: req.URL.Query().Get("q")}
 	if v := req.URL.Query().Get("per_page"); v != "" {

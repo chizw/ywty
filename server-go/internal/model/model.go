@@ -1,4 +1,4 @@
-// Package model 定义 GORM 模型。列名与 PHP 版数据库完全一致（"完全兼容"约束）。
+// Package model 定义 GORM 模型。列名与原版数据库完全一致（完全兼容约束）。
 package model
 
 import (

@@ -5,12 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" -- && run-s pre-build post-build",
+    "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
-    "pre-build": "shx rm -rf ../public/themes/default",
-    "post-build": "shx mv dist/index.html ../resources/views/themes/default/index.blade.php && shx mv dist/config.json ../resources/views/themes/default/config.json && shx cp -r dist/* ../public/ && shx rm -rf dist",
     "openapi-ts": "openapi-ts"
   },
   "dependencies": {
@@ -25,6 +23,7 @@
     "copy-image-clipboard": "^2.1.2",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.13",
+    "mitt": "^3.0.1",
     "photoswipe": "^5.4.4",
     "pinia": "^2.1.7",
     "uuid": "^11.1.0",
@@ -50,14 +49,12 @@
     "npm-run-all2": "^6.1.2",
     "postcss": "^8.4.38",
     "rollup-plugin-visualizer": "^5.14.0",
-    "shx": "^0.3.4",
     "tailwindcss": "^3.4.3",
     "terser": "^5.39.0",
     "typescript": "~5.4.0",
     "vfonts": "^0.0.3",
     "vite": "^6.3.4",
     "vite-plugin-compression": "^0.5.1",
-    "vite-plugin-imagemin": "^0.6.1",
     "vue-tsc": "^2.0.11"
   }
 }

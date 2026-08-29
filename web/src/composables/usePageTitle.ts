@@ -13,7 +13,7 @@ export function usePageTitle() {
     pageTitle.value = translatedTitle
     
     // 获取网站名称
-    const siteName = configStore.configs?.site.title || 'ywty - '
+    const siteName = configStore.configs?.site.title || 'ywty'
     
     // 设置文档标题
     document.title = translatedTitle ? `${translatedTitle} - ${siteName}` : siteName

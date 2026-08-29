@@ -1,5 +1,5 @@
-// Package cache 基于 cache 表（Laravel database cache store 同表结构）的缓存实现，
-// 带进程内加速层。PHP 版写入的序列化值会被视为未命中（缓存是临时数据，无需互读）。
+// Package cache 基于 cache 表的缓存实现，带进程内加速层。
+// 原版写入的序列化值会被视为未命中（缓存是临时数据，无需互读）。
 package cache
 
 import (
@@ -26,7 +26,7 @@ func New(gdb *gorm.DB) *Cache {
 	return &Cache{db: gdb}
 }
 
-// keyHash 与 PHP 版 mews/captcha 的 get_cache_key 类似：长 key 做 sha1 截断。
+// keyHash 长 key 做 sha1 截断，避免超长缓存键。
 func (c *Cache) keyHash(key string) string {
 	if len(key) <= 128 {
 		return key

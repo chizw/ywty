@@ -1,5 +1,5 @@
-// Package payment 支付驱动 SPI（对齐 app/Contracts/PaymentAbstract + Drivers/Payment）。
-// M4 实现 EPay（RSA-SHA256 签名）；Alipay/WeChat/UniPay/PayPal 在 M5 接入。
+// Package payment 支付驱动 SPI。
+// 已实现 EPay（RSA-SHA256 签名）；Alipay/WeChat/UniPay/PayPal 在后续版本接入。
 package payment
 
 import (
@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-// CreateOrderDTO 下单参数（对齐 App\DTOs\CreateOrderDto）。
+// CreateOrderDTO 下单参数。
 type CreateOrderDTO struct {
 	OutTradeNo string
 	Subject    string
@@ -313,7 +313,7 @@ func parsePublicKey(key string) (*rsa.PublicKey, error) {
 	return x509.ParsePKCS1PublicKey(block.Bytes)
 }
 
-// formatPEM 补全 PEM 头尾与换行（PHP formatPrivateKey/formatPublicKey 等价）。
+// formatPEM 补全 PEM 头尾与换行。
 func formatPEM(key, typ string) string {
 	if strings.Contains(key, "-----BEGIN") {
 		return key

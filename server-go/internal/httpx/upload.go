@@ -17,7 +17,7 @@ import (
 	"github.com/chizw/ywty/server-go/internal/validate"
 )
 
-// masterImageTypes Intervention FileExtension 全集。
+// masterImageTypes 全部可处理的图片扩展名（原版格式清单）。
 var masterImageTypes = []string{
 	"jpg", "jpeg", "webp", "avif", "bmp", "gif", "png", "tif", "tiff",
 	"jp2", "j2k", "jp2k", "jpf", "jpm", "jpg2", "j2c", "jpc", "jpx", "heic", "heif",

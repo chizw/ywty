@@ -1,5 +1,5 @@
-// Package queue 基于 jobs 表的数据库队列（Laravel database queue 兼容）。
-// Go 版任务 payload 为 {"job": "...", "data": {...}}；遇到 PHP 版遗留 payload
+// Package queue 基于 jobs 表的数据库队列（与原版表结构兼容）。
+// 本版任务 payload 为 {"job": "...", "data": {...}}；遇到原版遗留 payload
 // （含 displayName 字段）时记入 failed_jobs 并跳过。
 package queue
 
@@ -27,7 +27,7 @@ func New(gdb *gorm.DB) *Queue {
 		db:         gdb,
 		handlers:   map[string]Handler{},
 		retryAfter: 90,
-		maxTries:   1, // 与 PHP queue:work 默认一致
+		maxTries:   1, // 与原版 worker 默认一致
 		stop:       make(chan struct{}),
 	}
 }
@@ -40,7 +40,7 @@ func (q *Queue) Register(name string, h Handler) {
 type payload struct {
 	Job  string          `json:"job"`
 	Data json.RawMessage `json:"data"`
-	Name string          `json:"displayName"` // PHP 版遗留 payload 标记
+	Name string          `json:"displayName"` // 原版遗留 payload 标记
 }
 
 // DispatchAt 写入队列并指定可执行时间（延迟任务，秒级时间戳）。
@@ -142,8 +142,8 @@ func (q *Queue) popAndRun() bool {
 		return true
 	}
 	if p.Name != "" {
-		// PHP 版遗留任务，Go 无法执行
-		q.fail(job.ID, job.Payload, "PHP 版遗留队列任务，Go 版已跳过: "+p.Name)
+		// 原版遗留任务，本版无法执行
+		q.fail(job.ID, job.Payload, "原版遗留队列任务，本版已跳过: "+p.Name)
 		return true
 	}
 	h, ok := q.handlers[p.Job]

@@ -1,5 +1,4 @@
-// Package install 移植 PHP 版 app:install（InstallCommand + InitializeSeeder +
-// UserService::createDefaultSuperAdmin）的安装流程。
+// Package install 程序安装流程：系统设置种子、默认角色组与储存策略、超级管理员。
 package install
 
 import (
@@ -13,12 +12,11 @@ import (
 	"github.com/chizw/ywty/server-go/internal/db/types"
 	"github.com/chizw/ywty/server-go/internal/model"
 	"github.com/chizw/ywty/server-go/internal/setting"
-	"github.com/chizw/ywty/server-go/internal/support/laracrypt"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
-// Options 安装参数，字段与 PHP InstallRequest 对应。
+// Options 安装参数（与原版安装接口字段一致）。
 type Options struct {
 	AppName       string
 	AppURL        string
@@ -54,7 +52,7 @@ func (o *Options) Validate() map[string][]string {
 	return errs
 }
 
-// verifyLicense 公益版恒真（对齐 AppService::verifyLicense）。
+// verifyLicense 授权校验（当前版本恒通过）。
 func verifyLicense(string, string) bool { return true }
 
 // Run 执行安装。前提：schema 已就绪（db.Migrate 已执行）、未安装。
@@ -73,16 +71,12 @@ func Run(gdb *gorm.DB, cfg *config.Config, o Options) error {
 
 	now := time.Now().UTC()
 
-	// 1. 系统设置（license_key 用 Laravel Crypt 加密，PHP 版可直接读取）
-	licenseEnc, err := laracrypt.EncryptString(cfg.AppKey, o.LicenseKey)
-	if err != nil {
-		return fmt.Errorf("加密授权密钥失败: %w", err)
-	}
-	if _, err := setting.Seed(gdb, o.AppName, appURL, licenseEnc); err != nil {
+	// 1. 系统设置（license_key 明文存储）
+	if _, err := setting.Seed(gdb, o.AppName, appURL, o.LicenseKey); err != nil {
 		return fmt.Errorf("写入系统设置失败: %w", err)
 	}
 
-	// 2. 默认角色组（InitializeSeeder）
+	// 2. 默认角色组
 	allowTypes := []string{
 		"jpg", "jpeg", "webp", "avif", "bmp", "gif", "png", "tif", "tiff",
 		"jp2", "j2k", "jp2k", "jpf", "jpm", "jpg2", "j2c", "jpc", "jpx", "heic", "heif",
@@ -112,7 +106,7 @@ func Run(gdb *gorm.DB, cfg *config.Config, o Options) error {
 		return fmt.Errorf("创建默认角色组失败: %w", err)
 	}
 
-	// 3. 本地储存策略（Driver::getLocalStorageDefaultOptions）
+	// 3. 本地储存策略
 	storageOptions, err := types.NewJSON(map[string]any{
 		"public_url":         appURL,
 		"naming_rule":        "{Ymd}/{md5}",
@@ -188,7 +182,7 @@ func Run(gdb *gorm.DB, cfg *config.Config, o Options) error {
 	return db.MarkInstalled(cfg)
 }
 
-// AutoInstallFromEnv 对齐 PHP docker/entrypoint.sh：提供 APP_URL + APP_LICENSE_KEY +
+// AutoInstallFromEnv 对齐原版容器启动安装：提供 APP_URL + APP_LICENSE_KEY +
 // ADMIN_* 环境变量时自动安装；否则跳过并提示走 /api/v2/install。
 func AutoInstallFromEnv(gdb *gorm.DB, cfg *config.Config) (bool, error) {
 	if db.IsInstalled(gdb, cfg) {

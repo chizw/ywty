@@ -1,0 +1,2 @@
+time=2026-08-29T10:59:51.100+08:00 level=WARN msg=自动安装未执行 err="程序未安装且缺少安装环境变量（APP_LICENSE_KEY、ADMIN_USERNAME、ADMIN_EMAIL、ADMIN_PASSWORD），可调用 POST /api/v2/install 完成安装"
+time=2026-08-29T10:59:51.107+08:00 level=INFO msg=服务启动 addr=127.0.0.1:3000 db=sqlite app_url=http://localhost

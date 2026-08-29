@@ -16,7 +16,7 @@ import (
 )
 
 // Open 按配置建立数据库连接。
-// MySQL 会话时区固定 +00:00，与 PHP 版 config/database.php ('timezone' => '+00:00') 一致；
+// MySQL 会话时区固定 +00:00（与原版数据库会话一致）；
 // SQLite 开启 WAL、外键与 busy_timeout，保证并发写可靠。
 func Open(cfg *config.Config) (*gorm.DB, error) {
 	var dial gorm.Dialector
@@ -69,7 +69,7 @@ func Open(cfg *config.Config) (*gorm.DB, error) {
 }
 
 // IsInstalled 判断程序是否已安装：installed.lock 存在（Go 版写在 DATA_DIR，
-// 兼容 PHP 版放在运行目录），或 users 表已有数据（PHP 版安装过的库必含管理员行；
+// 兼容原版放在运行目录），或 users 表已有数据（原版安装过的库必含管理员行；
 // 仅建表不算安装，Go 版全新安装流程先建表后种子数据）。
 func IsInstalled(gdb *gorm.DB, cfg *config.Config) bool {
 	for _, p := range []string{
@@ -96,7 +96,7 @@ func MarkInstalled(cfg *config.Config) error {
 	return os.WriteFile(filepath.Join(cfg.DataDir, "installed.lock"), []byte("agreed"), 0o644)
 }
 
-// AgreementAgreed 对应 PHP AppService::isAgreeAgreement()：installed.lock 非空即已同意协议。
+// AgreementAgreed 判断协议同意状态：installed.lock 非空即已同意。
 func AgreementAgreed(cfg *config.Config) bool {
 	for _, p := range []string{
 		filepath.Join(cfg.DataDir, "installed.lock"),

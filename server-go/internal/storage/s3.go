@@ -11,7 +11,7 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-// S3Options 对齐 PHP S3Storage 的 options（含 OSS/COS 的别名键）。
+// S3Options S3 兼容驱动选项（键与原版一致）。
 type S3Options struct {
 	AccessKeyID          string `json:"access_key_id"`
 	SecretAccessKey      string `json:"secret_access_key"`
@@ -30,7 +30,7 @@ type s3FS struct {
 	ctx    context.Context
 }
 
-// NewS3FromRaw 以 options JSON 构建（键与 PHP S3Storage 一致：
+// NewS3FromRaw 以 options JSON 构建（键与原版一致：
 // access_key_id / secret_access_key / endpoint / region / bucket / use_path_style_endpoint）。
 // OSS/COS 需配置各自的 S3 兼容端点。
 func NewS3FromRaw(raw string) (Filesystem, error) {

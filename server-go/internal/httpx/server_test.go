@@ -41,7 +41,6 @@ func newEnv(t *testing.T) *env {
 		DBPath:     filepath.Join(dir, "test.db"),
 		UploadsDir: filepath.Join(dir, "uploads"),
 		StaticDir:  filepath.Join(dir, "public"),
-		AppKey:     "base64:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=",
 		AppURL:     "http://localhost:3000",
 	}
 	// 伪造前端主题产物，验证静态托管与 SPA fallback

@@ -21,7 +21,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// v1 旧版（ywty 1.x / PicGo 插件）兼容接口。
+// v1 旧版（1.x / PicGo 插件）兼容接口。
 // 响应信封与 v2 不同：{"status": true|false, "message": "...", "data": {...}}。
 
 type v1Envelope struct {
@@ -362,7 +362,7 @@ func (d *deps) v1Profile(w http.ResponseWriter, req *http.Request) {
 	})
 }
 
-// v1ImageRow 旧版图片行（对齐 V1 ImageController::getImageRow）。
+// v1ImageRow 旧版图片行（含多格式链接与人性化时间）。
 func v1ImageRow(gdb *gorm.DB, cfg *config.Config, p *model.Photo) map[string]any {
 	publicURL := photostore.PublicURL(gdb, cfg, p)
 	thumbnailURL := photostore.ThumbnailURL(gdb, cfg, p)

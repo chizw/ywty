@@ -26,7 +26,7 @@ func NewServices(cfg *config.Config, gdb *gorm.DB, c *cache.Cache, q *queue.Queu
 // apiRouter 挂载 /api 下所有版本路由。
 //
 // 注意：未匹配路径（含 /api/v2/__nope__）返回 HTTP 200 + {"status":"error"} envelope，
-// 这是 CI 冒烟断言的约定（PHP 版此处为 404，除此外行为一致）。
+// 这是 CI 冒烟断言的约定（原版此处为 404，除此外行为一致）。
 func apiRouter(cfg *config.Config, gdb *gorm.DB, d *deps) http.Handler {
 	notFound := func(w http.ResponseWriter, _ *http.Request) {
 		if !db.IsInstalled(gdb, cfg) {
@@ -55,7 +55,7 @@ func apiRouter(cfg *config.Config, gdb *gorm.DB, d *deps) http.Handler {
 	v2.Group(func(g chi.Router) {
 		g.Use(requireInstalled(cfg, gdb))
 
-		// Fortify 等价
+		// 登录/注册/登出
 		g.Post("/login", d.handleLogin)
 		g.Post("/logout", d.handleLogout)
 		g.Post("/register", d.handleRegister)
@@ -265,7 +265,7 @@ func apiRouter(cfg *config.Config, gdb *gorm.DB, d *deps) http.Handler {
 	})
 	r.Mount("/admin", admin)
 
-	// ---------- /api/v1 legacy（ywty 1.x / PicGo 客户端） ----------
+	// ---------- /api/v1 legacy（旧版 1.x / PicGo 客户端） ----------
 	v1 := chi.NewRouter()
 	v1.NotFound(notFound)
 	v1.MethodNotAllowed(notFound)
@@ -303,7 +303,7 @@ func rateLimit(c *cache.Cache, max int, ttl int) func(http.Handler) http.Handler
 	}
 }
 
-// requireInstalled 未安装时返回与 PHP 一致的错误 envelope（HTTP 200）。
+// requireInstalled 未安装时返回原版一致的错误 envelope（HTTP 200）。
 func requireInstalled(cfg *config.Config, gdb *gorm.DB) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

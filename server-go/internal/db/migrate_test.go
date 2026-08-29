@@ -20,7 +20,6 @@ func newTestDB(t *testing.T) (*gorm.DB, *config.Config) {
 		DBDriver:   "sqlite",
 		DBPath:     filepath.Join(dir, "test.db"),
 		UploadsDir: filepath.Join(dir, "uploads"),
-		AppKey:     "base64:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=",
 	}
 	gdb, err := gorm.Open(sqlite.Open(cfg.DBPath+"?_pragma=foreign_keys(1)"), &gorm.Config{})
 	if err != nil {

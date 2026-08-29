@@ -230,7 +230,7 @@ func Size(data []byte, ext string) (int, int) {
 	return b.Dx(), b.Dy()
 }
 
-// MimeTypeByExt 扩展名 → MIME（与 Intervention MediaType 对齐的常用值）。
+// MimeTypeByExt 扩展名 → MIME 映射。
 func MimeTypeByExt(ext string) string {
 	switch NormalizeExt(ext) {
 	case "jpg", "jpeg":

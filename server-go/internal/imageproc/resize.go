@@ -63,7 +63,7 @@ func FlipH(img image.Image) image.Image {
 	return dst
 }
 
-// AutoOrient 按 EXIF orientation 校正方向（对齐 Intervention autoOrientation）。
+// AutoOrient 按 EXIF orientation 校正方向。
 // orientation 值来自 ExifOrientation。
 func AutoOrient(img image.Image, orientation int) image.Image {
 	switch orientation {

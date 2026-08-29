@@ -1,4 +1,4 @@
-// Package mailx 邮件能力：SMTP 发送、验证码生成/校验（cache 键与 PHP 版一致：
+// Package mailx 邮件能力：SMTP 发送、验证码生成/校验（缓存键：
 // mail_code:{event}:{email}，TTL 900 秒）、邮件模板。
 package mailx
 
@@ -30,7 +30,7 @@ func GenerateCode(c *cache.Cache, key string) string {
 	return code
 }
 
-// VerifyCode 等价 VerifyCodeService::verifyCode（注意 PHP 是松散比较，这里为精确比较）。
+// VerifyCode 校验验证码（精确比较）。
 func VerifyCode(c *cache.Cache, key, code string) bool {
 	stored, ok := c.Get(key)
 	return ok && stored == code
@@ -50,7 +50,7 @@ type SMTPConfig struct {
 }
 
 // ResolveSMTP 从 drivers 表解析当前可用的 SMTP 配置（type='mail' 且 options.provider='smtp'）。
-// 对齐 PHP MailService::instance 的 provider 装配，其余 provider（mailgun 等）在 M5 实现。
+// 其余 provider（mailgun 等）在后续版本实现。
 func ResolveSMTP(gdb *gorm.DB, groupID int64) (*SMTPConfig, error) {
 	var raw *string
 	err := gdb.Raw(

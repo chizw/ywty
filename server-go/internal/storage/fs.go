@@ -85,7 +85,7 @@ type Local struct {
 // NewLocal 构建本地适配器。
 func NewLocal(root string, cfg *config.Config) *Local {
 	if root == "" || root == "/" || root == "." || !dirExists(root) {
-		// 对齐 PHP：回退到 public 磁盘根目录
+		// 对齐原版行为：回退到 public 磁盘根目录
 		if cfg != nil && cfg.UploadsDir != "" && dirExists(cfg.UploadsDir) {
 			root = cfg.UploadsDir
 		} else if root == "" || root == "/" || root == "." {

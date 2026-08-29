@@ -15,11 +15,11 @@ import (
 	"gorm.io/gorm"
 )
 
-// imageExtPattern 对齐 PHP web.php 的图片扩展名正则。
+// imageExtPattern 图片扩展名正则（决定哪些路径走储存直出）。
 var imageExtPattern = regexp.MustCompile(`(?i)\.(jpg|jpeg|webp|avif|bmp|gif|png|tif|tiff|jp2|j2k|jp2k|jpf|jpm|jpg2|j2c|jpc|jpx|heic|heif)$`)
 
 // combinedStatic 图片直出 + 静态资源 + 管理后台 + SPA fallback
-// （对齐 nginx try_files → Laravel 的流转）。
+// （对齐原版 nginx try_files → 程序处理的流转）。
 func combinedStatic(cfg *config.Config, gdb *gorm.DB) http.HandlerFunc {
 	inner := staticHandler(cfg, gdb)
 	adminHandler := adminStaticHandler(cfg)

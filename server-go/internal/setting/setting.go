@@ -1,6 +1,5 @@
-// Package setting 管理 settings 表（spatie/laravel-settings 兼容存储）。
-// payload 列存 JSON 编码后的值本身（如 "xxx" / true / 5120 / []），
-// 加密字段存 Laravel Crypt 格式（见 internal/support/laracrypt）。
+// Package setting 管理 settings 表（与原版存储结构兼容）。
+// payload 列存 JSON 编码后的值本身（如 "xxx" / true / 5120 / []）。
 package setting
 
 import (
@@ -19,13 +18,12 @@ const (
 	GroupUser  = "user"
 )
 
-// 默认设置项与 database/settings/*.php 的种子数据一致。
-// license_key 在安装时以 Laravel Crypt 格式加密写入。
-func defaultEntries(appName, appURL, licenseEncrypted string) []entry {
+// 默认设置项（与原版安装后的设置状态一致）。
+func defaultEntries(appName, appURL, licenseKey string) []entry {
 	return []entry{
 		{GroupApp, "name", appName},
 		{GroupApp, "url", appURL},
-		{GroupApp, "license_key", licenseEncrypted},
+		{GroupApp, "license_key", licenseKey},
 		{GroupApp, "timezone", "Asia/Shanghai"},
 		{GroupApp, "locale", "zh_CN"},
 		{GroupApp, "currency", "CNY"},
@@ -37,8 +35,7 @@ func defaultEntries(appName, appURL, licenseEncrypted string) []entry {
 		{GroupApp, "user_phone_verify", false},
 		{GroupApp, "mail_from_address", "hello@example.com"},
 		{GroupApp, "mail_from_name", appName},
-		// Intervention\Image\Drivers\Imagick\Driver —— 保留原值仅为数据兼容，
-		// Go 版图像管线见 internal/imageproc
+		// 图像处理驱动标识（保留原值仅为数据兼容，Go 版管线见 internal/imageproc）
 		{GroupApp, "image_driver", "Intervention\\Image\\Drivers\\Imagick\\Driver"},
 		{GroupApp, "enable_site", true},
 		{GroupApp, "enable_stat_api", false},
@@ -74,7 +71,7 @@ type entry struct {
 }
 
 // Seed 幂等写入默认设置（已存在的不覆盖），返回是否新建了任何行。
-// 未安装的库（settings 表为空）执行后即达到 PHP 版安装完成时的设置状态。
+// 未安装的库（settings 表为空）执行后即达到原版安装完成时的设置状态。
 func Seed(gdb *gorm.DB, appName, appURL, licenseEncrypted string) (bool, error) {
 	created := false
 	for _, e := range defaultEntries(appName, appURL, licenseEncrypted) {

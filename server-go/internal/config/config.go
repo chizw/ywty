@@ -1,11 +1,8 @@
-// Package config 解析环境变量与 .env 文件。
-// 环境变量命名与 docker-compose.yml / PHP 版 .env 保持兼容。
+// Package config 解析环境变量与 .env 文件（命名与 docker-compose.yml 保持一致）。
 package config
 
 import (
 	"bufio"
-	"crypto/rand"
-	"encoding/base64"
 	"errors"
 	"os"
 	"path/filepath"
@@ -18,7 +15,7 @@ type Config struct {
 	AppURL  string // APP_URL
 	AppName string // APP_NAME
 
-	DataDir    string // DATA_DIR，默认 data（SQLite 数据库、app_key、installed.lock 存放处）
+	DataDir    string // DATA_DIR，默认 data（SQLite 数据库、installed.lock 存放处）
 	UploadsDir string // UPLOADS_DIR，本地存储根目录兜底值
 	StaticDir  string // STATIC_DIR，前端主题静态资源目录
 
@@ -34,8 +31,7 @@ type Config struct {
 	RedisAddr     string
 	RedisPassword string
 	RedisDB       int
-	AppKey        string // APP_KEY，base64: 开头的 32 字节密钥，未提供时自动生成并持久化
-	JWTSecret     string // 保留接收，暂不使用（token 采用 Sanctum 机制）
+	JWTSecret     string // 保留接收，暂不使用（令牌采用原版机制）
 	LicenseKey    string // APP_LICENSE_KEY，docker 一键安装用
 	AdminUsername string // ADMIN_USERNAME，docker 一键安装用
 	AdminEmail    string // ADMIN_EMAIL
@@ -52,7 +48,7 @@ func Load() (*Config, error) {
 		AppName:        getEnv("APP_NAME", "ywty"),
 		DataDir:        getEnv("DATA_DIR", "data"),
 		UploadsDir:     getEnv("UPLOADS_DIR", "uploads"),
-		StaticDir:      getEnv("STATIC_DIR", "public"),
+		StaticDir:      getEnv("STATIC_DIR", "web/dist"),
 		AdminStaticDir: getEnv("ADMIN_STATIC_DIR", "admin/dist"),
 		DBDriver:       strings.ToLower(getEnv("DB_DRIVER", "sqlite")),
 		DBHost:         getEnv("DB_HOST", "127.0.0.1"),
@@ -62,7 +58,6 @@ func Load() (*Config, error) {
 		DBName:         getEnv("DB_NAME", getEnv("DB_DATABASE", "ywty")),
 		RedisAddr:      getEnv("REDIS_ADDR", ""),
 		RedisPassword:  getEnv("REDIS_PASSWORD", ""),
-		AppKey:         getEnv("APP_KEY", ""),
 		JWTSecret:      getEnv("JWT_SECRET", getEnv("JWT_SECRET_FILE", "")),
 		LicenseKey:     getEnv("APP_LICENSE_KEY", "LICENSE_KEY", ""),
 		AdminUsername:  getEnv("ADMIN_USERNAME", ""),
@@ -81,67 +76,34 @@ func Load() (*Config, error) {
 	}
 	cfg.DBPath = getEnv("DB_PATH", filepath.Join(cfg.DataDir, "ywty.db"))
 
-	key, err := resolveAppKey(cfg.AppKey, cfg.DataDir)
-	if err != nil {
-		return nil, err
-	}
-	cfg.AppKey = key
+	// 静态目录就近解析：从 server-go/ 子目录启动时向上回退一级
+	cfg.StaticDir = resolveNearby(cfg.StaticDir)
+	cfg.AdminStaticDir = resolveNearby(cfg.AdminStaticDir)
 
 	return cfg, nil
+}
+
+// resolveNearby 目录不存在时尝试从上级目录解析（本地开发从 server-go/ 启动的场景）。
+func resolveNearby(p string) string {
+	if p == "" || dirExists(p) {
+		return p
+	}
+	parent := filepath.Join("..", p)
+	if dirExists(parent) {
+		return parent
+	}
+	return p
+}
+
+func dirExists(p string) bool {
+	info, err := os.Stat(p)
+	return err == nil && info.IsDir()
 }
 
 func (c *Config) Addr() string {
 	return c.Host + ":" + c.Port
 }
 
-// resolveAppKey 与 Laravel APP_KEY 兼容：接受 base64:xxx 环境变量；
-// 未提供时从 DATA_DIR/app_key 读取；仍无则生成新密钥并写入文件。
-func resolveAppKey(envKey, dataDir string) (string, error) {
-	if envKey != "" {
-		if err := validateAppKey(envKey); err != nil {
-			return "", err
-		}
-		return envKey, nil
-	}
-
-	path := filepath.Join(dataDir, "app_key")
-	if b, err := os.ReadFile(path); err == nil {
-		key := strings.TrimSpace(string(b))
-		if key != "" {
-			if err := validateAppKey(key); err != nil {
-				return "", err
-			}
-			return key, nil
-		}
-	}
-
-	raw := make([]byte, 32)
-	if _, err := rand.Read(raw); err != nil {
-		return "", err
-	}
-	key := "base64:" + base64.StdEncoding.EncodeToString(raw)
-	if err := os.MkdirAll(dataDir, 0o755); err != nil {
-		return "", err
-	}
-	if err := os.WriteFile(path, []byte(key), 0o600); err != nil {
-		return "", err
-	}
-	return key, nil
-}
-
-func validateAppKey(key string) error {
-	v, ok := strings.CutPrefix(key, "base64:")
-	if !ok {
-		return errors.New("config: APP_KEY 必须为 base64: 开头")
-	}
-	decoded, err := base64.StdEncoding.DecodeString(v)
-	if err != nil || (len(decoded) != 32 && len(decoded) != 16) {
-		return errors.New("config: APP_KEY 解码后必须为 32 或 16 字节")
-	}
-	return nil
-}
-
-// getEnv 依次查找环境变量（可传多个备选名），最后一个参数为兜底默认值。
 func getEnv(keys ...string) string {
 	for _, k := range keys[:len(keys)-1] {
 		if v, ok := os.LookupEnv(k); ok && strings.TrimSpace(v) != "" {

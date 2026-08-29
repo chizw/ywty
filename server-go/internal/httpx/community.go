@@ -18,7 +18,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// 多态类型值与 PHP Eloquent 一致（完整类名，未注册 morphMap）。
+// 多态类型值与原版数据库一致（完整类名）。
 const (
 	morphPhoto = "App\\Models\\Photo"
 	morphAlbum = "App\\Models\\Album"
@@ -337,7 +337,7 @@ func (d *deps) handleSharePhotos(w http.ResponseWriter, req *http.Request) {
 		out = append(out, d.explorePhotoRow(authx.From(req).User, &rows[i]))
 	}
 	page := pagination.New(out, total, p)
-	// 对齐 Laravel additional(['is_valid' => true])->response()->getData()：
+	// 对齐原版响应形状（附加数据平级）：
 	// {data, links, meta, is_valid} 平级
 	r.Success(w, map[string]any{
 		"data": page.Data, "links": page.Links, "meta": page.Meta, "is_valid": true,

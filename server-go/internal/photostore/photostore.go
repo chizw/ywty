@@ -1,4 +1,4 @@
-// Package photostore 上传管线核心（对齐 UploadService + PhotoService::store）。
+// Package photostore 上传管线核心（命名、去重、相册与标签同步）。
 package photostore
 
 import (
@@ -32,7 +32,7 @@ type StorageRecord struct {
 	Options  *string
 }
 
-// LoadGroupStorage 按 id 取组内绑定的储存（对齐 $group->storages()->find($id)）。
+// LoadGroupStorage 按 id 取组内绑定的储存。
 func LoadGroupStorage(gdb *gorm.DB, groupID, storageID int64) (*StorageRecord, error) {
 	var row struct {
 		ID       int64
@@ -115,7 +115,7 @@ func (s *StorageRecord) Runtime(cfg *config.Config) *storage.Storage {
 // namingRe 清理命名规则首尾斜杠。
 var namingTrim = regexp.MustCompile(`^/+|/+$`)
 
-// Pathname 按 naming_rule 生成路径（对齐 UploadService::getFilePathname）。
+// Pathname 按 naming_rule 生成路径（支持 {Ymd}/{md5} 等占位符）。
 func Pathname(rule, filename, ext, md5Hex, sha1Hex string, uid int64, now time.Time) string {
 	rule = namingTrim.ReplaceAllString(strings.TrimSpace(rule), "")
 	uniqid := fmt.Sprintf("%x", now.UnixNano())
@@ -174,7 +174,7 @@ type UploadError struct{ Message string }
 
 func (e *UploadError) Error() string { return e.Message }
 
-// Store 对齐 PhotoService::store：firstOrCreate 去重 + 相册/标签同步。
+// Store 入库：按内容指纹去重 + 相册/标签同步。
 func Store(gdb *gorm.DB, in StoreInput) (*model.Photo, error) {
 	var (
 		photo model.Photo

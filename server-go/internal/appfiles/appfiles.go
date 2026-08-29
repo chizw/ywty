@@ -1,6 +1,5 @@
 // Package appfiles 提供 LICENSE.md / CHANGELOG.md 等随包文档的读取。
-// PHP 版从 base_path 读取；Go 版按工作目录向上查找，Docker 镜像中它们被
-// COPY 到工作目录，行为一致。
+// 按工作目录向上查找，Docker 镜像中它们被 COPY 到工作目录。
 package appfiles
 
 import (
@@ -28,7 +27,7 @@ func FindFile(name string) (string, error) {
 	return "", os.ErrNotExist
 }
 
-// ReadFile 读取随包文档内容，找不到时返回空串（对齐 PHP @file_get_contents ?: ”）。
+// ReadFile 读取随包文档内容，找不到时返回空串。
 func ReadFile(name string) string {
 	p, err := FindFile(name)
 	if err != nil {
