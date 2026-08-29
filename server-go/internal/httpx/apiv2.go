@@ -92,6 +92,15 @@ func apiRouter(cfg *config.Config, gdb *gorm.DB, d *deps) http.Handler {
 			pub.Get("/pages", d.handlePagesIndex)
 			pub.Get("/pages/{slug}", d.handlePageShow)
 
+			// 套餐（公共）
+			pub.Get("/plans", d.handlePlansIndex)
+			pub.Get("/plans/{id}", d.handlePlanShow)
+
+			// 支付回调（NotifyController，ANY 方法）
+			pub.HandleFunc("/payment/callback/{id}/{out_trade_no}", func(w http.ResponseWriter, req *http.Request) {
+				d.handlePaymentNotify(w, req)
+			})
+
 			// 分享（公共访问）
 			pub.Get("/shares/{slug}", d.handleShareShow)
 			pub.Get("/shares/{slug}/photos", d.handleSharePhotos)
@@ -171,7 +180,16 @@ func apiRouter(cfg *config.Config, gdb *gorm.DB, d *deps) http.Handler {
 			u.Post("/shares/{slug}/like", d.handleShareLike)
 			u.Delete("/shares/{slug}/unlike", d.handleShareUnlike)
 
-			// 工单/订单路由在 M4 挂载
+			// 订单
+			u.Get("/user/orders", d.handleUserOrders)
+			u.Post("/user/orders", d.handleOrderStore)
+			u.Get("/user/orders/{trade_no}", d.handleOrderShow)
+			u.Delete("/user/orders/{trade_no}", d.handleOrderDestroy)
+			u.Post("/orders/preview", d.handleOrderPreview)
+			u.Put("/orders/{trade_no}/cancel", d.handleOrderCancel)
+			u.Post("/orders/{trade_no}/pay", d.handleOrderPay)
+
+			// 工单在 M4b 挂载
 		})
 	})
 	r.Mount("/v2", v2)

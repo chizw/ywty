@@ -9,6 +9,7 @@ import (
 	"github.com/chizw/ywty/server-go/internal/cache"
 	"github.com/chizw/ywty/server-go/internal/config"
 	"github.com/chizw/ywty/server-go/internal/mailx"
+	"github.com/chizw/ywty/server-go/internal/orderx"
 	"github.com/chizw/ywty/server-go/internal/queue"
 	"gorm.io/gorm"
 )
@@ -37,6 +38,15 @@ func Register(q *queue.Queue, gdb *gorm.DB, c *cache.Cache, cfg *config.Config) 
 	})
 	q.Register("auto_delete_photo", func(data []byte) error {
 		return autoDeletePhoto(gdb, cfg, data)
+	})
+	q.Register("cancel_order", func(data []byte) error {
+		var in struct {
+			OrderID int64 `json:"order_id"`
+		}
+		if err := jsonUnmarshal(data, &in); err != nil {
+			return err
+		}
+		return orderx.CancelIfUnpaid(gdb, in.OrderID)
 	})
 }
 

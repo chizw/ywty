@@ -658,3 +658,131 @@ func TestShareFlow(t *testing.T) {
 		t.Fatalf("explore 开关异常: %d %s", resp5.StatusCode, expEnv.Message)
 	}
 }
+
+func TestOrderFlow(t *testing.T) {
+	e := newEnv(t)
+	_, _, cookies := e.installAndLogin(t, "admin", "password123")
+
+	// 造套餐数据：vip 套餐 → 默认组，价格 0（自动完成）与 1000 分两档
+	var groupID int64
+	e.gdb.Raw("SELECT `id` FROM `groups` WHERE `is_default` = 1 LIMIT 1").Scan(&groupID)
+	now := time.Now().UTC()
+	e.gdb.Exec("INSERT INTO `plans` (`type`, `name`, `intro`, `features`, `badge`, `sort`, `is_up`, `created_at`, `updated_at`) "+
+		"VALUES ('vip', 'VIP套餐', '测试', '[\"功能A\"]', '热', 0, 1, ?, ?)", now, now)
+	var planID int64
+	e.gdb.Raw("SELECT LAST_INSERT_ROWID()").Scan(&planID)
+	e.gdb.Exec("INSERT INTO `plan_groups` (`plan_id`, `group_id`) VALUES (?, ?)", planID, groupID)
+	e.gdb.Exec("INSERT INTO `plan_prices` (`plan_id`, `name`, `duration`, `price`, `created_at`, `updated_at`) "+
+		"VALUES (?, '月付', 43200, 0, ?, ?)", planID, now, now)
+	var priceID int64
+	e.gdb.Raw("SELECT LAST_INSERT_ROWID()").Scan(&priceID)
+
+	// plans 公共列表
+	resp, plansEnv := e.get(t, "/api/v2/plans")
+	if resp.StatusCode != 200 || plansEnv.Status != "success" {
+		t.Fatalf("plans: %d %s", resp.StatusCode, plansEnv.Message)
+	}
+
+	// 0 元订单自动完成
+	ob, _ := json.Marshal(map[string]any{"price_id": priceID})
+	req, _ := http.NewRequest(http.MethodPost, e.ts.URL+"/api/v2/user/orders", bytes.NewReader(ob))
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(cookies[0])
+	resp2, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ordEnv envelope
+	_ = json.NewDecoder(resp2.Body).Decode(&ordEnv)
+	_ = resp2.Body.Close()
+	if resp2.StatusCode != 201 || ordEnv.Status != "success" {
+		t.Fatalf("创建订单失败: %d %s", resp2.StatusCode, ordEnv.Message)
+	}
+	var ord struct {
+		TradeNo string `json:"trade_no"`
+		IsPaid  bool   `json:"is_paid"`
+	}
+	_ = json.Unmarshal(ordEnv.Data, &ord)
+	if !ord.IsPaid {
+		t.Fatalf("0 元订单应自动支付: %+v", ord)
+	}
+
+	// 用户组发放
+	req3, _ := http.NewRequest(http.MethodGet, e.ts.URL+"/api/v2/user/groups", nil)
+	req3.AddCookie(cookies[0])
+	resp3, _ := http.DefaultClient.Do(req3)
+	var groupsEnv envelope
+	_ = json.NewDecoder(resp3.Body).Decode(&groupsEnv)
+	_ = resp3.Body.Close()
+	var groups struct {
+		Data []map[string]any `json:"data"`
+	}
+	_ = json.Unmarshal(groupsEnv.Data, &groups)
+	if len(groups.Data) == 0 {
+		t.Fatalf("0 元订单后应有角色组: %s", string(groupsEnv.Data))
+	}
+	g := groups.Data[0]
+	if g["from"] != "subscribe" {
+		t.Fatalf("来源应为 subscribe: %+v", g)
+	}
+
+	// 付费订单：preview + store + pay（未配置驱动应报错）
+	e.gdb.Exec("INSERT INTO `plan_prices` (`plan_id`, `name`, `duration`, `price`, `created_at`, `updated_at`) "+
+		"VALUES (?, '年付', 525600, 1000, ?, ?)", planID, now, now)
+	var paidPriceID int64
+	e.gdb.Raw("SELECT LAST_INSERT_ROWID()").Scan(&paidPriceID)
+
+	pb, _ := json.Marshal(map[string]any{"price_id": paidPriceID})
+	req4, _ := http.NewRequest(http.MethodPost, e.ts.URL+"/api/v2/orders/preview", bytes.NewReader(pb))
+	req4.Header.Set("Content-Type", "application/json")
+	req4.AddCookie(cookies[0])
+	resp4, _ := http.DefaultClient.Do(req4)
+	var pvEnv envelope
+	_ = json.NewDecoder(resp4.Body).Decode(&pvEnv)
+	_ = resp4.Body.Close()
+	var pv struct {
+		Amount int64 `json:"amount"`
+	}
+	_ = json.Unmarshal(pvEnv.Data, &pv)
+	if pv.Amount != 1000 {
+		t.Fatalf("preview 金额异常: %+v", pv)
+	}
+
+	req5, _ := http.NewRequest(http.MethodPost, e.ts.URL+"/api/v2/user/orders", bytes.NewReader(pb))
+	req5.Header.Set("Content-Type", "application/json")
+	req5.AddCookie(cookies[0])
+	resp5, _ := http.DefaultClient.Do(req5)
+	var ord2Env envelope
+	_ = json.NewDecoder(resp5.Body).Decode(&ord2Env)
+	_ = resp5.Body.Close()
+	var ord2 struct {
+		TradeNo string `json:"trade_no"`
+		IsPaid  bool   `json:"is_paid"`
+	}
+	_ = json.Unmarshal(ord2Env.Data, &ord2)
+	if ord2.IsPaid {
+		t.Fatal("付费订单不应自动支付")
+	}
+
+	// 支付：组未配置支付驱动 → 业务错误
+	payb, _ := json.Marshal(map[string]any{"platform": "epay", "channel": "alipay", "method": "web"})
+	req6, _ := http.NewRequest(http.MethodPost, e.ts.URL+"/api/v2/orders/"+ord2.TradeNo+"/pay", bytes.NewReader(payb))
+	req6.Header.Set("Content-Type", "application/json")
+	req6.AddCookie(cookies[0])
+	resp6, _ := http.DefaultClient.Do(req6)
+	var payEnv envelope
+	_ = json.NewDecoder(resp6.Body).Decode(&payEnv)
+	_ = resp6.Body.Close()
+	if payEnv.Status != "error" || payEnv.Message != "未配置支付驱动，请联系管理员" {
+		t.Fatalf("pay 应报未配置驱动: %s", payEnv.Message)
+	}
+
+	// 取消订单
+	req7, _ := http.NewRequest(http.MethodPut, e.ts.URL+"/api/v2/orders/"+ord2.TradeNo+"/cancel", nil)
+	req7.AddCookie(cookies[0])
+	resp7, _ := http.DefaultClient.Do(req7)
+	_ = resp7.Body.Close()
+	if resp7.StatusCode != 204 {
+		t.Fatalf("取消订单失败: %d", resp7.StatusCode)
+	}
+}

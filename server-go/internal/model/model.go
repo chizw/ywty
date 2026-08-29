@@ -299,3 +299,86 @@ type Notice struct {
 }
 
 func (Notice) TableName() string { return "notices" }
+
+// ---------- plans / coupons / orders ----------
+
+type Plan struct {
+	ID        int64          `gorm:"primaryKey;column:id"`
+	Type      string         `gorm:"column:type"`
+	Name      string         `gorm:"column:name"`
+	Intro     *string        `gorm:"column:intro"`
+	Features  types.JSON     `gorm:"column:features"`
+	Badge     string         `gorm:"column:badge"`
+	Sort      int32          `gorm:"column:sort"`
+	IsUp      bool           `gorm:"column:is_up"`
+	CreatedAt *time.Time     `gorm:"column:created_at"`
+	UpdatedAt *time.Time     `gorm:"column:updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at"`
+}
+
+func (Plan) TableName() string { return "plans" }
+
+type PlanPrice struct {
+	ID        int64      `gorm:"primaryKey;column:id"`
+	PlanID    int64      `gorm:"column:plan_id"`
+	Name      string     `gorm:"column:name"`
+	Duration  int32      `gorm:"column:duration"`
+	Price     int64      `gorm:"column:price"`
+	CreatedAt *time.Time `gorm:"column:created_at"`
+	UpdatedAt *time.Time `gorm:"column:updated_at"`
+}
+
+func (PlanPrice) TableName() string { return "plan_prices" }
+
+type PlanGroup struct {
+	ID      int64  `gorm:"primaryKey;column:id"`
+	PlanID  int64  `gorm:"column:plan_id"`
+	GroupID *int64 `gorm:"column:group_id"`
+}
+
+func (PlanGroup) TableName() string { return "plan_groups" }
+
+type PlanCapacity struct {
+	ID       int64   `gorm:"primaryKey;column:id"`
+	PlanID   int64   `gorm:"column:plan_id"`
+	Capacity float64 `gorm:"column:capacity"`
+}
+
+func (PlanCapacity) TableName() string { return "plan_capacities" }
+
+type Coupon struct {
+	ID         int64          `gorm:"primaryKey;column:id"`
+	Type       string         `gorm:"column:type"`
+	Name       string         `gorm:"column:name"`
+	Code       string         `gorm:"column:code"`
+	Value      float64        `gorm:"column:value"`
+	UsageLimit int64          `gorm:"column:usage_limit"`
+	ExpiredAt  *time.Time     `gorm:"column:expired_at"`
+	CreatedAt  *time.Time     `gorm:"column:created_at"`
+	UpdatedAt  *time.Time     `gorm:"column:updated_at"`
+	DeletedAt  gorm.DeletedAt `gorm:"column:deleted_at"`
+}
+
+func (Coupon) TableName() string { return "coupons" }
+
+type Order struct {
+	ID           int64      `gorm:"primaryKey;column:id"`
+	PlanID       *int64     `gorm:"column:plan_id"`
+	UserID       *int64     `gorm:"column:user_id"`
+	CouponID     *int64     `gorm:"column:coupon_id"`
+	TradeNo      string     `gorm:"column:trade_no"`
+	OutTradeNo   string     `gorm:"column:out_trade_no"`
+	Type         string     `gorm:"column:type"`
+	Amount       int64      `gorm:"column:amount"`
+	DeductAmount int64      `gorm:"column:deduct_amount"`
+	Snapshot     types.JSON `gorm:"column:snapshot"`
+	Product      types.JSON `gorm:"column:product"`
+	PayMethod    string     `gorm:"column:pay_method"`
+	Status       string     `gorm:"column:status"`
+	PaidAt       *time.Time `gorm:"column:paid_at"`
+	CanceledAt   *time.Time `gorm:"column:canceled_at"`
+	CreatedAt    *time.Time `gorm:"column:created_at"`
+	UpdatedAt    *time.Time `gorm:"column:updated_at"`
+}
+
+func (Order) TableName() string { return "orders" }
