@@ -1,0 +1,26 @@
+# syntax=docker/dockerfile:1
+# ============================================================================
+# ywty 发布镜像（release 工作流专用）：直接使用预编译产物组装，秒级构建。
+# 冒烟约定与根 Dockerfile 一致：/healthz、/api/v2 envelope、/ SPA。
+# ============================================================================
+
+FROM alpine:3.21
+# vips CLI：heic/avif/webp 等高级格式处理的可选外挂
+RUN apk add --no-cache vips ca-certificates tzdata
+
+WORKDIR /app
+COPY bin/ywty /app/ywty
+COPY public/ /app/public/
+COPY admin/ /app/admin/
+COPY LICENSE.md CHANGELOG.md /app/
+
+ENV HOST=0.0.0.0 \
+    PORT=3000 \
+    STATIC_DIR=/app/public \
+    ADMIN_STATIC_DIR=/app/admin \
+    DATA_DIR=/app/data \
+    UPLOADS_DIR=/app/uploads
+VOLUME ["/app/data", "/app/uploads"]
+EXPOSE 3000
+
+ENTRYPOINT ["/app/ywty"]

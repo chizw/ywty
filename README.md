@@ -24,9 +24,9 @@ Docker 镜像：node 构建 web + admin → golang 构建 server-go → alpine(+
 - ✅ M2：上传管线（命名/容量/频率限制）、纯 Go 图像处理 + vips 外挂、图片直出、相册、legacy v1
 - ✅ M3：分享（密码/过期）、广场、公告、页面、举报、点赞
 - ✅ M4：套餐/订单/优惠码、支付 SPI（EPay：RSA-SHA256）、支付回调、延时取消
-- ✅ M5(部分)：工单完整闭环
+- ✅ M5：储存驱动扩展——S3 兼容（s3/oss/cos，minio-go）+ WebDAV（七牛/又拍/FTP/SFTP 后续）
 - ✅ M6：`/api/admin` + admin SPA（用户/图片/公告/页面/订单/优惠码/工单/设置/储存/驱动）
-- ⏳ 后续：S3/OSS/COS/WebDAV 储存驱动、支付宝/微信支付、短信与内容审核、OAuth 登录
+- ⏳ 后续：支付宝/微信原生支付驱动、短信与内容审核、OAuth 登录、七牛/又拍/FTP/SFTP
 
 ## 与 PHP 版的兼容承诺
 
