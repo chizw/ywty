@@ -25,6 +25,7 @@ type Filesystem interface {
 
 // Options storages.options JSON 的结构化形式。
 type Options struct {
+	Raw               string `json:"-"` // 原始 JSON（透传给非本地驱动）
 	PublicURL         string `json:"public_url"`
 	NamingRule        string `json:"naming_rule"`
 	GenerateThumbnail *bool  `json:"generate_thumbnail"`
@@ -39,6 +40,7 @@ func ParseOptions(raw string) Options {
 	if raw != "" {
 		_ = json.Unmarshal([]byte(raw), &o)
 	}
+	o.Raw = raw
 	if o.NamingRule == "" {
 		o.NamingRule = "{Ymd}/{md5}"
 	}
@@ -61,12 +63,17 @@ type Storage struct {
 }
 
 // FilesystemFor 按提供者构建适配器。
+// s3/oss/cos 共用 S3 兼容实现（OSS/COS 需配置其 S3 兼容端点）。
 func FilesystemFor(s *Storage, cfg *config.Config) (Filesystem, error) {
 	switch s.Provider {
 	case "local":
 		return NewLocal(s.Options.Root, cfg), nil
+	case "s3", "oss", "cos":
+		return NewS3FromRaw(s.Options.Raw)
+	case "webdav":
+		return NewWebDAV(s.Options.Raw, cfg)
 	default:
-		return nil, fmt.Errorf("暂不支持的储存提供者: %s", s.Provider)
+		return nil, fmt.Errorf("暂不支持的储存提供者: %s（七牛/又拍/FTP/SFTP 在后续版本支持）", s.Provider)
 	}
 }
 
