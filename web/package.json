@@ -36,7 +36,7 @@
   },
   "devDependencies": {
     "@hey-api/client-axios": "^0.8.0",
-    "@hey-api/openapi-ts": "^0.69.2",
+    "@hey-api/openapi-ts": "^0.99.0",
     "@tailwindcss/typography": "^0.5.14",
     "@tsconfig/node20": "^20.1.4",
     "@types/crypto-js": "^4.2.2",
