@@ -241,12 +241,12 @@ const Login = {
       } finally { loading.value = false; }
     }
     return () => h('div', { style: 'display:flex;justify-content:center;align-items:center;height:100vh' },
-      () => h(NCard, { title: 'ywty 管理后台', style: 'width:360px' }, () =>
+      [h(NCard, { title: 'ywty 管理后台', style: 'width:360px' }, () =>
         h(NForm, { onSubmit: (e) => { e.preventDefault(); submit(); } }, () => [
           h(NFormItem, { label: '用户名' }, () => h(NInput, { value: username.value, 'onUpdate:value': (v) => (username.value = v) })),
           h(NFormItem, { label: '密码' }, () => h(NInput, { value: password.value, type: 'password', 'onUpdate:value': (v) => (password.value = v), 'show-password-on': 'click' })),
           h(NButton, { type: 'primary', block: true, loading: loading.value, attrType: 'submit', onClick: submit }, () => '登录'),
-        ])));
+        ]))]);
   },
 };
 
@@ -297,7 +297,7 @@ const Layout = {
           h('div', { style: 'font-weight:600;margin-bottom:12px' }, 'ywty 管理后台'),
           h(NMenu, { value: router.currentRoute.value.path, options: menuOptions, 'onUpdate:value': (k) => router.push(k) }),
         ]),
-        h('main', { style: 'flex:1;overflow:auto;padding:16px' }, () => h(RouterView)),
+        h('main', { style: 'flex:1;overflow:auto;padding:16px' }, [h(RouterView)]),
       ]));
   },
 };

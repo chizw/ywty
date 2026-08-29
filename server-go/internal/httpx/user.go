@@ -3,7 +3,11 @@ package httpx
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -108,16 +112,51 @@ func round2(f float64) float64 {
 
 func (d *deps) handleUpdateProfile(w http.ResponseWriter, req *http.Request) {
 	u := authx.From(req).User
-	var body map[string]any
-	if err := readBody(req, &body); err != nil {
-		r.Error(w, "请求体解析失败")
-		return
-	}
-
 	v := validate.New()
 	updates := map[string]any{}
 
-	if s, ok := body["username"].(string); ok && s != "" {
+	// 请求体：multipart/form-data（openapi 契约，含头像文件）或 application/json
+	fields := map[string]string{}
+	arrays := map[string][]string{}
+	files := map[string][]*multipart.FileHeader{}
+
+	ct := req.Header.Get("Content-Type")
+	if strings.HasPrefix(ct, "multipart/form-data") {
+		if err := req.ParseMultipartForm(8 << 20); err != nil {
+			r.Error(w, "请求体解析失败")
+			return
+		}
+		for k, vals := range req.MultipartForm.Value {
+			if len(vals) > 1 {
+				arrays[k] = vals
+			} else if len(vals) == 1 {
+				fields[k] = vals[0]
+			}
+		}
+		for k, fh := range req.MultipartForm.File {
+			files[k] = fh
+		}
+	} else {
+		var body map[string]any
+		if err := readBody(req, &body); err != nil {
+			r.Error(w, "请求体解析失败")
+			return
+		}
+		for k, val := range body {
+			switch t := val.(type) {
+			case string:
+				fields[k] = t
+			case []any:
+				list := make([]string, 0, len(t))
+				for _, item := range t {
+					list = append(list, fmt.Sprint(item))
+				}
+				arrays[k] = list
+			}
+		}
+	}
+
+	if s, ok := fields["username"]; ok && s != "" {
 		if len(s) > 20 || !d.checkUnique("users", "username", s, u.ID) {
 			v.Add("username", "用户名", "格式不正确或已被占用。")
 		} else {
@@ -125,7 +164,7 @@ func (d *deps) handleUpdateProfile(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	strField := func(key, attr string, max int) {
-		if s, ok := body[key].(string); ok {
+		if s, ok := fields[key]; ok {
 			if len(s) > max {
 				v.Add(key, attr, "过长。")
 				return
@@ -139,7 +178,7 @@ func (d *deps) handleUpdateProfile(w http.ResponseWriter, req *http.Request) {
 	strField("company", "公司", 80)
 	strField("company_title", "职位", 60)
 	strField("location", "位置", 60)
-	if s, ok := body["url"].(string); ok && s != "" {
+	if s, ok := fields["url"]; ok && s != "" {
 		if !validate.URL(s) || len(s) > 200 {
 			v.Add("url", "个人网站", "必须是合法的 URL。")
 		} else {
@@ -147,25 +186,27 @@ func (d *deps) handleUpdateProfile(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	arrField := func(key, attr string) {
-		if raw, ok := body[key]; ok {
-			list, err := json.Marshal(raw)
-			if err != nil {
-				v.Add(key, attr, "格式不正确。")
-				return
-			}
-			var arr []any
-			_ = json.Unmarshal(list, &arr)
-			if len(arr) > 6 {
+		if list, ok := arrays[key]; ok {
+			if len(list) > 6 {
 				v.Add(key, attr, "最多 6 项。")
 				return
 			}
-			updates[key] = string(list)
+			merged, _ := json.Marshal(list)
+			updates[key] = string(merged)
 		}
 	}
 	arrField("interests", "兴趣爱好")
 	arrField("socials", "社交账号")
 
-	// 头像文件上传在 M2 图片管线中实现；此处忽略 avatar 文件字段
+	// 头像文件（可选）
+	if fhList, ok := files["avatar"]; ok && len(fhList) > 0 {
+		fh := fhList[0]
+		if fh.Size > 2*1024*1024 {
+			v.Add("avatar", "头像", "不能超过 2MB。")
+		} else if err := saveAvatar(fh, &updates); err != nil {
+			v.Add("avatar", "头像", "保存失败。")
+		}
+	}
 
 	if v.Fail() {
 		v.Respond(w)
@@ -179,6 +220,35 @@ func (d *deps) handleUpdateProfile(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	r.Success(w, nil)
+}
+
+// saveAvatar 保存头像到 public 磁盘 avatars/ 目录，并写入 avatar 字段。
+func saveAvatar(fh *multipart.FileHeader, updates *map[string]any) error {
+	ext := strings.ToLower(filepath.Ext(fh.Filename))
+	if ext == "" || !validate.In(strings.TrimPrefix(ext, "."), "jpg", "jpeg", "gif", "png") {
+		ext = ".jpg"
+	}
+	name := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+	src, err := fh.Open()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = src.Close() }()
+
+	dir := filepath.Join("storage", "app", "public", "avatars")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	dst, err := os.Create(filepath.Join(dir, name))
+	if err != nil {
+		return err
+	}
+	defer func() { _ = dst.Close() }()
+	if _, err := io.Copy(dst, src); err != nil {
+		return err
+	}
+	(*updates)["avatar"] = "avatars/" + name
+	return nil
 }
 
 // ---------- POST /api/v2/user/setting ----------
