@@ -54,7 +54,7 @@ func (d *deps) handleProfile(w http.ResponseWriter, req *http.Request) {
 		"company_title":     u.CompanyTitle,
 		"interests":         jsonOrNull(u.Interests),
 		"socials":           jsonOrNull(u.Socials),
-		"options":           jsonOrNull(u.Options),
+		"options":           userOptions(u.Options),
 		"is_admin":          u.IsAdmin,
 		"country_code":      u.CountryCode,
 		"login_ip":          u.LoginIP,
@@ -72,6 +72,25 @@ func (d *deps) handleProfile(w http.ResponseWriter, req *http.Request) {
 		"used_storage":   round2(usedStorage),
 		"total_storage":  round2(totalStorage),
 	})
+}
+
+// userOptions 归一化用户 options：为空时返回默认值（前端依赖 options.language）。
+func userOptions(raw []byte) map[string]any {
+	merged := map[string]any{
+		"language":                 "zh-CN",
+		"show_original_photos":     false,
+		"encode_copied_url":        true,
+		"auto_upload_after_select": false,
+	}
+	if len(raw) > 0 && string(raw) != "null" {
+		var stored map[string]any
+		if json.Unmarshal(raw, &stored) == nil {
+			for k, val := range stored {
+				merged[k] = val
+			}
+		}
+	}
+	return merged
 }
 
 func timePtrJSON(t *time.Time) any {

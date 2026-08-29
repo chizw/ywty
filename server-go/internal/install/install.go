@@ -160,6 +160,12 @@ func Run(gdb *gorm.DB, cfg *config.Config, o Options) error {
 		IsAdmin:         true,
 		Status:          "normal",
 		EmailVerifiedAt: &now,
+		Options: types.MustJSON(map[string]any{
+			"language":                 "zh-CN",
+			"show_original_photos":     false,
+			"encode_copied_url":        true,
+			"auto_upload_after_select": false,
+		}),
 	}
 	if err := gdb.Create(&user).Error; err != nil {
 		return fmt.Errorf("创建超级管理员失败: %w", err)
