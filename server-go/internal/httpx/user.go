@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -110,6 +112,16 @@ func round2(f float64) float64 {
 
 // ---------- POST /api/v2/user/profile ----------
 
+var reIndex = regexp.MustCompile(`\[(\d+)\]$`)
+
+func isArrayField(k string) bool {
+	switch k {
+	case "interests", "socials":
+		return true
+	}
+	return false
+}
+
 func (d *deps) handleUpdateProfile(w http.ResponseWriter, req *http.Request) {
 	u := authx.From(req).User
 	v := validate.New()
@@ -126,15 +138,48 @@ func (d *deps) handleUpdateProfile(w http.ResponseWriter, req *http.Request) {
 			r.Error(w, "请求体解析失败")
 			return
 		}
+		// 归一化 PHP 风格的数组键：interests[0]/interests[1]/key[] → interests
+		base := func(k string) string {
+			if i := strings.Index(k, "["); i > 0 {
+				return k[:i]
+			}
+			return k
+		}
+		grouped := map[string]map[int]string{}
 		for k, vals := range req.MultipartForm.Value {
-			if len(vals) > 1 {
-				arrays[k] = vals
-			} else if len(vals) == 1 {
+			b := base(k)
+			if m := reIndex.FindStringSubmatch(k); m != nil {
+				idx, _ := strconv.Atoi(m[1])
+				if grouped[b] == nil {
+					grouped[b] = map[int]string{}
+				}
+				for _, val := range vals {
+					grouped[b][idx] = val
+				}
+			} else if strings.HasSuffix(k, "[]") {
+				for _, val := range vals {
+					grouped[b][len(grouped[b])] = val
+				}
+			} else if isArrayField(b) || len(vals) > 1 {
+				if grouped[b] == nil {
+					grouped[b] = map[int]string{}
+				}
+				for i, val := range vals {
+					grouped[b][i] = val
+				}
+			} else {
 				fields[k] = vals[0]
 			}
 		}
+		for b, idxMap := range grouped {
+			for i := 0; i < len(idxMap); i++ {
+				if val, ok := idxMap[i]; ok {
+					arrays[b] = append(arrays[b], val)
+				}
+			}
+		}
 		for k, fh := range req.MultipartForm.File {
-			files[k] = fh
+			files[base(k)] = fh
 		}
 	} else {
 		var body map[string]any

@@ -566,6 +566,130 @@ func (d *deps) handleAdminCouponDelete(w http.ResponseWriter, req *http.Request)
 
 // ---------- 订单/举报/反馈/工单（管理视角） ----------
 
+// GET /api/admin/albums
+func (d *deps) handleAdminAlbums(w http.ResponseWriter, req *http.Request) {
+	p := pagination.FromRequest(req)
+	where := "a.`deleted_at` IS NULL"
+	args := []any{}
+	if q := p.Q; q != "" {
+		where += " AND (a.`name` LIKE ? OR a.`intro` LIKE ?)"
+		args = append(args, "%"+q+"%", "%"+q+"%")
+	}
+	var total int64
+	d.gdb.Raw("SELECT count(*) FROM `albums` a WHERE "+where, args...).Scan(&total)
+	var rows []struct {
+		ID        int64
+		UserID    *int64
+		Name      string
+		Intro     string
+		IsPublic  bool
+		PhotoCnt  int64
+		CreatedAt *time.Time
+	}
+	d.gdb.Raw(
+		"SELECT a.`id`, a.`user_id`, a.`name`, a.`intro`, a.`is_public`, a.`created_at`, "+
+			"(SELECT count(*) FROM `album_photo` ap INNER JOIN `photos` ph ON ph.id = ap.photo_id AND ph.deleted_at IS NULL WHERE ap.album_id = a.id) AS photo_cnt "+
+			"FROM `albums` a WHERE "+where+" ORDER BY a.`id` DESC LIMIT ? OFFSET ?",
+		append(append([]any{}, args...), p.PerPage, p.Offset())...,
+	).Scan(&rows)
+	out := make([]map[string]any, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, map[string]any{
+			"id": r.ID, "user_id": r.UserID, "name": r.Name, "intro": r.Intro,
+			"is_public": r.IsPublic, "photo_count": r.PhotoCnt, "created_at": timePtrJSON(r.CreatedAt),
+		})
+	}
+	r.Success(w, pagination.New(out, total, p))
+}
+
+// DELETE /api/admin/albums/{id}
+func (d *deps) handleAdminAlbumDelete(w http.ResponseWriter, req *http.Request) {
+	d.gdb.Model(&model.Album{}).Where("id = ?", pathInt(req, "id")).Update("deleted_at", time.Now().UTC())
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// GET /api/admin/shares
+func (d *deps) handleAdminShares(w http.ResponseWriter, req *http.Request) {
+	p := pagination.FromRequest(req)
+	where := "1=1"
+	args := []any{}
+	if q := p.Q; q != "" {
+		where += " AND (`slug` LIKE ? OR `content` LIKE ?)"
+		args = append(args, "%"+q+"%", "%"+q+"%")
+	}
+	var total int64
+	d.gdb.Raw("SELECT count(*) FROM `shares` WHERE "+where, args...).Scan(&total)
+	var rows []struct {
+		ID        int64
+		UserID    int64
+		Type      string
+		Slug      string
+		ViewCount int64
+		ExpiredAt *time.Time
+		CreatedAt *time.Time
+	}
+	d.gdb.Raw("SELECT `id`, `user_id`, `type`, `slug`, `view_count`, `expired_at`, `created_at` FROM `shares` WHERE "+
+		where+" ORDER BY `id` DESC LIMIT ? OFFSET ?",
+		append(append([]any{}, args...), p.PerPage, p.Offset())...,
+	).Scan(&rows)
+	out := make([]map[string]any, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, map[string]any{
+			"id": r.ID, "user_id": r.UserID, "type": r.Type, "slug": r.Slug,
+			"view_count": r.ViewCount, "expired_at": timePtrJSON(r.ExpiredAt), "created_at": timePtrJSON(r.CreatedAt),
+		})
+	}
+	r.Success(w, pagination.New(out, total, p))
+}
+
+// DELETE /api/admin/shares/{id}
+func (d *deps) handleAdminShareDelete(w http.ResponseWriter, req *http.Request) {
+	d.gdb.Delete(&model.Share{}, pathInt(req, "id"))
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// GET /api/admin/violations
+func (d *deps) handleAdminViolations(w http.ResponseWriter, req *http.Request) {
+	p := pagination.FromRequest(req)
+	where := "v.`deleted_at` IS NULL"
+	args := []any{}
+	if s := req.URL.Query().Get("status"); s != "" {
+		where += " AND v.`status` = ?"
+		args = append(args, s)
+	}
+	var total int64
+	d.gdb.Raw("SELECT count(*) FROM `violations` v WHERE "+where, args...).Scan(&total)
+	var rows []struct {
+		ID        int64
+		UserID    *int64
+		PhotoID   *int64
+		Reason    string
+		Status    string
+		HandledAt *time.Time
+		CreatedAt *time.Time
+	}
+	d.gdb.Raw("SELECT v.* FROM `violations` v WHERE "+where+" ORDER BY v.`id` DESC LIMIT ? OFFSET ?",
+		append(append([]any{}, args...), p.PerPage, p.Offset())...,
+	).Scan(&rows)
+	out := make([]map[string]any, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, map[string]any{
+			"id": r.ID, "user_id": r.UserID, "photo_id": r.PhotoID, "reason": r.Reason,
+			"status": r.Status, "handled_at": timePtrJSON(r.HandledAt), "created_at": timePtrJSON(r.CreatedAt),
+		})
+	}
+	r.Success(w, pagination.New(out, total, p))
+}
+
+// PUT /api/admin/violations/{id}（标记已处理）
+func (d *deps) handleAdminViolationUpdate(w http.ResponseWriter, req *http.Request) {
+	id := pathInt(req, "id")
+	d.gdb.Model(&model.Violation{}).Where("id = ?", id).Updates(map[string]any{
+		"status": "handled", "handled_at": time.Now().UTC(),
+	})
+	r.Success(w, nil)
+}
+
 // GET /api/admin/orders
 func (d *deps) handleAdminOrders(w http.ResponseWriter, req *http.Request) {
 	p := pagination.FromRequest(req)

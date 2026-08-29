@@ -239,6 +239,12 @@ func apiRouter(cfg *config.Config, gdb *gorm.DB, d *deps) http.Handler {
 		a.Delete("/coupons/{id}", d.handleAdminCouponDelete)
 
 		a.Get("/orders", d.handleAdminOrders)
+		a.Get("/albums", d.handleAdminAlbums)
+		a.Delete("/albums/{id}", d.handleAdminAlbumDelete)
+		a.Get("/shares", d.handleAdminShares)
+		a.Delete("/shares/{id}", d.handleAdminShareDelete)
+		a.Get("/violations", d.handleAdminViolations)
+		a.Put("/violations/{id}", d.handleAdminViolationUpdate)
 		a.Get("/reports", d.handleAdminReports)
 		a.Put("/reports/{id}", d.handleAdminReportUpdate)
 		a.Get("/feedbacks", d.handleAdminFeedbacks)
