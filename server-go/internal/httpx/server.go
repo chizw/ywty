@@ -14,7 +14,7 @@ import (
 )
 
 // New 构建应用路由。
-func New(cfg *config.Config, gdb *gorm.DB) http.Handler {
+func New(cfg *config.Config, gdb *gorm.DB, d *deps) http.Handler {
 	mux := chi.NewRouter()
 	mux.Use(recoverMiddleware)
 	mux.Use(accessLog)
@@ -24,7 +24,7 @@ func New(cfg *config.Config, gdb *gorm.DB) http.Handler {
 		_, _ = w.Write([]byte("ok"))
 	})
 
-	mux.Mount("/api", apiRouter(cfg, gdb))
+	mux.Mount("/api", apiRouter(cfg, gdb, d))
 	mux.Handle("/*", staticHandler(cfg, gdb))
 
 	return mux

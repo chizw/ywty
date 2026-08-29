@@ -9,9 +9,15 @@ import (
 	"path/filepath"
 	"testing"
 
+	"time"
+
+	"github.com/chizw/ywty/server-go/internal/cache"
+	"github.com/chizw/ywty/server-go/internal/captchax"
 	"github.com/chizw/ywty/server-go/internal/config"
 	"github.com/chizw/ywty/server-go/internal/db"
 	"github.com/chizw/ywty/server-go/internal/httpx"
+	"github.com/chizw/ywty/server-go/internal/jobs"
+	"github.com/chizw/ywty/server-go/internal/queue"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
@@ -50,9 +56,15 @@ func newEnv(t *testing.T) *env {
 	if err := db.Migrate(gdb, "sqlite"); err != nil {
 		t.Fatal(err)
 	}
-	ts := httptest.NewServer(httpx.New(cfg, gdb))
+	c := cache.New(gdb)
+	q := queue.New(gdb)
+	jobs.Register(q, gdb, c, cfg)
+	q.Start(200 * time.Millisecond)
+	cp := captchax.New(c)
+	ts := httptest.NewServer(httpx.NewServices(cfg, gdb, c, q, cp))
 	t.Cleanup(func() {
 		ts.Close()
+		q.Stop()
 		if sqlDB, err := gdb.DB(); err == nil {
 			_ = sqlDB.Close()
 		}
@@ -213,7 +225,11 @@ func TestStaticAndSPA(t *testing.T) {
 	})
 	// 清除标题缓存：新建 server 实例
 	e.ts.Close()
-	e.ts = httptest.NewServer(httpx.New(e.cfg, e.gdb))
+	c := cache.New(e.gdb)
+	q := queue.New(e.gdb)
+	jobs.Register(q, e.gdb, c, e.cfg)
+	q.Start(200 * time.Millisecond)
+	e.ts = httptest.NewServer(httpx.NewServices(e.cfg, e.gdb, c, q, captchax.New(c)))
 	t.Cleanup(e.ts.Close)
 	resp, err = http.Get(e.ts.URL + "/")
 	if err != nil {
@@ -224,5 +240,157 @@ func TestStaticAndSPA(t *testing.T) {
 	_ = resp.Body.Close()
 	if !bytes.Contains(body.Bytes(), []byte("<title>标题测试站 - 您的云上相册。</title>")) {
 		t.Fatalf("标题未注入: %s", body.String())
+	}
+}
+
+// ---------- M1 集成链路 ----------
+
+func (e *env) postJSONCookie(t *testing.T, path string, body any) (*http.Response, envelope, []*http.Cookie) {
+	t.Helper()
+	b, _ := json.Marshal(body)
+	req, _ := http.NewRequest(http.MethodPost, e.ts.URL+path, bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("%s: %v", path, err)
+	}
+	var env envelope
+	_ = json.NewDecoder(resp.Body).Decode(&env)
+	_ = resp.Body.Close()
+	return resp, env, resp.Cookies()
+}
+
+func TestAuthFlow(t *testing.T) {
+	e := newEnv(t)
+
+	// 安装
+	_, installEnv, _ := e.postJSONCookie(t, "/api/v2/install", map[string]any{
+		"app_name": "测试站", "app_url": "https://img.example.com", "app_license_key": "K",
+		"db_connection": "sqlite", "admin_username": "admin", "admin_email": "a@example.com",
+		"admin_password": "password123",
+	})
+	if installEnv.Status != "success" {
+		t.Fatalf("install: %s", installEnv.Message)
+	}
+
+	// configs：is_logged_in=false、注册开启
+	resp, cfgEnv := e.get(t, "/api/v2/configs")
+	if resp.StatusCode != 200 || cfgEnv.Status != "success" {
+		t.Fatalf("configs: %d %s", resp.StatusCode, cfgEnv.Status)
+	}
+	var cfgData struct {
+		App struct {
+			IsLoggedIn         bool  `json:"is_logged_in"`
+			EnableRegistration bool  `json:"enable_registration"`
+			PhotoCount         int   `json:"photo_count"`
+			Countries          []any `json:"countries"`
+		} `json:"app"`
+		Site struct {
+			Title string `json:"title"`
+		} `json:"site"`
+	}
+	_ = json.Unmarshal(cfgEnv.Data, &cfgData)
+	if cfgData.App.IsLoggedIn || !cfgData.App.EnableRegistration || len(cfgData.App.Countries) == 0 {
+		t.Fatalf("configs 数据异常: %+v", cfgData)
+	}
+
+	// 直接注入注册验证码（队列任务需 SMTP，测试环境绕过）
+	_ = putCode(e.gdb, "mail_code:register:newuser@example.com", "123456")
+
+	// 注册
+	resp, regEnv, cookies := e.postJSONCookie(t, "/api/v2/register", map[string]any{
+		"username": "NewUser", "name": "新用户", "email": "newuser@example.com",
+		"password": "password123", "password_confirmation": "password123", "code": "123456",
+	})
+	if resp.StatusCode != 201 {
+		t.Fatalf("register: %d %s %s", resp.StatusCode, regEnv.Status, regEnv.Message)
+	}
+	if len(cookies) == 0 {
+		t.Fatal("注册后应下发会话 cookie")
+	}
+
+	// 会话访问 profile
+	req, _ := http.NewRequest(http.MethodGet, e.ts.URL+"/api/v2/user/profile", nil)
+	req.AddCookie(cookies[0])
+	resp2, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var profEnv envelope
+	_ = json.NewDecoder(resp2.Body).Decode(&profEnv)
+	_ = resp2.Body.Close()
+	if resp2.StatusCode != 200 || profEnv.Status != "success" {
+		t.Fatalf("profile via session: %d %s", resp2.StatusCode, profEnv.Message)
+	}
+	var prof struct {
+		Username  string         `json:"username"`
+		Email     string         `json:"email"`
+		IsAdmin   bool           `json:"is_admin"`
+		UserGroup map[string]any `json:"group"`
+	}
+	_ = json.Unmarshal(profEnv.Data, &prof)
+	if prof.Username != "newuser" || prof.IsAdmin { // 注册用户名会被小写化
+		t.Fatalf("profile 内容异常: %+v", prof)
+	}
+
+	// 创建令牌（会话认证有全部权限）
+	tokBody, _ := json.Marshal(map[string]any{"name": "picgo"})
+	req3, _ := http.NewRequest(http.MethodPost, e.ts.URL+"/api/v2/user/tokens", bytes.NewReader(tokBody))
+	req3.Header.Set("Content-Type", "application/json")
+	req3.AddCookie(cookies[0])
+	resp3, err := http.DefaultClient.Do(req3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var tokEnv envelope
+	_ = json.NewDecoder(resp3.Body).Decode(&tokEnv)
+	_ = resp3.Body.Close()
+	if resp3.StatusCode != 200 {
+		t.Fatalf("token create: %d %s", resp3.StatusCode, tokEnv.Message)
+	}
+	var tok struct {
+		Token     string   `json:"token"`
+		Abilities []string `json:"abilities"`
+	}
+	_ = json.Unmarshal(tokEnv.Data, &tok)
+	if tok.Token == "" {
+		t.Fatal("应返回明文 token")
+	}
+
+	// 用令牌访问 profile
+	req4, _ := http.NewRequest(http.MethodGet, e.ts.URL+"/api/v2/user/profile", nil)
+	req4.Header.Set("Authorization", "Bearer "+tok.Token)
+	resp4, err := http.DefaultClient.Do(req4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var profEnv2 envelope
+	_ = json.NewDecoder(resp4.Body).Decode(&profEnv2)
+	_ = resp4.Body.Close()
+	if resp4.StatusCode != 200 || profEnv2.Status != "success" {
+		t.Fatalf("profile via token: %d %s", resp4.StatusCode, profEnv2.Message)
+	}
+
+	// 登录 + 错误密码
+	resp5, _, loginCookies := e.postJSONCookie(t, "/api/v2/login", map[string]any{
+		"username": "newuser", "password": "password123",
+	})
+	if resp5.StatusCode != 200 {
+		t.Fatalf("login: %d", resp5.StatusCode)
+	}
+	if len(loginCookies) == 0 {
+		t.Fatal("登录应下发会话 cookie")
+	}
+	resp6, badEnv, _ := e.postJSONCookie(t, "/api/v2/login", map[string]any{
+		"username": "newuser", "password": "wrongpass",
+	})
+	if resp6.StatusCode != 422 || badEnv.Status != "error" {
+		t.Fatalf("bad login: %d %s", resp6.StatusCode, badEnv.Message)
+	}
+
+	// 无令牌访问受保护接口
+	resp7, _ := e.get(t, "/api/v2/user/profile")
+	if resp7.StatusCode != 401 {
+		t.Fatalf("unauthenticated profile: %d", resp7.StatusCode)
 	}
 }

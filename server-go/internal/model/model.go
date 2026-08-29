@@ -137,3 +137,81 @@ type UserCapacity struct {
 }
 
 func (UserCapacity) TableName() string { return "user_capacities" }
+
+// ---------- feedbacks ----------
+
+type Feedback struct {
+	ID        int64      `gorm:"primaryKey;column:id"`
+	Type      string     `gorm:"column:type"`
+	Title     string     `gorm:"column:title"`
+	Name      string     `gorm:"column:name"`
+	Email     string     `gorm:"column:email"`
+	Content   string     `gorm:"column:content"`
+	IPAddress *string    `gorm:"column:ip_address"`
+	CreatedAt *time.Time `gorm:"column:created_at"`
+	UpdatedAt *time.Time `gorm:"column:updated_at"`
+}
+
+func (Feedback) TableName() string { return "feedbacks" }
+
+// ---------- photos ----------
+
+type Photo struct {
+	ID        int64          `gorm:"primaryKey;column:id"`
+	UserID    *int64         `gorm:"column:user_id"`
+	GroupID   *int64         `gorm:"column:group_id"`
+	StorageID *int64         `gorm:"column:storage_id"`
+	Name      string         `gorm:"column:name"`
+	Intro     string         `gorm:"column:intro"`
+	Filename  string         `gorm:"column:filename"`
+	Pathname  string         `gorm:"column:pathname"`
+	Mimetype  string         `gorm:"column:mimetype"`
+	Extension string         `gorm:"column:extension"`
+	MD5       string         `gorm:"column:md5"`
+	SHA1      string         `gorm:"column:sha1"`
+	Exif      types.JSON     `gorm:"column:exif"`
+	Size      float64        `gorm:"column:size"`
+	Width     int64          `gorm:"column:width"`
+	Height    int64          `gorm:"column:height"`
+	IsPublic  bool           `gorm:"column:is_public"`
+	Status    string         `gorm:"column:status"`
+	IPAddress *string        `gorm:"column:ip_address"`
+	ExpiredAt *time.Time     `gorm:"column:expired_at"`
+	CreatedAt *time.Time     `gorm:"column:created_at"`
+	UpdatedAt *time.Time     `gorm:"column:updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at"`
+}
+
+func (Photo) TableName() string { return "photos" }
+
+// ---------- albums ----------
+
+type Album struct {
+	ID        int64          `gorm:"primaryKey;column:id"`
+	UserID    *int64         `gorm:"column:user_id"`
+	Name      string         `gorm:"column:name"`
+	Intro     string         `gorm:"column:intro"`
+	IsPublic  bool           `gorm:"column:is_public"`
+	CreatedAt *time.Time     `gorm:"column:created_at"`
+	UpdatedAt *time.Time     `gorm:"column:updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at"`
+}
+
+func (Album) TableName() string { return "albums" }
+
+// ---------- personal_access_tokens ----------
+
+type PersonalAccessToken struct {
+	ID            int64      `gorm:"primaryKey;column:id"`
+	TokenableType string     `gorm:"column:tokenable_type"`
+	TokenableID   int64      `gorm:"column:tokenable_id"`
+	Name          string     `gorm:"column:name"`
+	Token         string     `gorm:"column:token"`
+	Abilities     *string    `gorm:"column:abilities"`
+	LastUsedAt    *time.Time `gorm:"column:last_used_at"`
+	ExpiresAt     *time.Time `gorm:"column:expires_at"`
+	CreatedAt     *time.Time `gorm:"column:created_at"`
+	UpdatedAt     *time.Time `gorm:"column:updated_at"`
+}
+
+func (PersonalAccessToken) TableName() string { return "personal_access_tokens" }

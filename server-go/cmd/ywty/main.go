@@ -1,4 +1,4 @@
-// ywty 单二进制：HTTP 服务 + 数据库队列 worker + 调度器（worker 见后续里程碑）。
+// ywty 单二进制：HTTP 服务 + 数据库队列 worker + 调度器。
 package main
 
 import (
@@ -11,10 +11,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/chizw/ywty/server-go/internal/cache"
+	"github.com/chizw/ywty/server-go/internal/captchax"
 	"github.com/chizw/ywty/server-go/internal/config"
 	"github.com/chizw/ywty/server-go/internal/db"
 	"github.com/chizw/ywty/server-go/internal/httpx"
 	"github.com/chizw/ywty/server-go/internal/install"
+	"github.com/chizw/ywty/server-go/internal/jobs"
+	"github.com/chizw/ywty/server-go/internal/queue"
 )
 
 func main() {
@@ -43,9 +47,17 @@ func main() {
 		slog.Info("程序安装完成")
 	}
 
+	// 基础设施：缓存 / 队列 / 验证码
+	c := cache.New(gdb)
+	q := queue.New(gdb)
+	jobs.Register(q, gdb, c, cfg)
+	q.Start(1 * time.Second)
+	defer q.Stop()
+	cp := captchax.New(c)
+
 	srv := &http.Server{
 		Addr:              cfg.Addr(),
-		Handler:           httpx.New(cfg, gdb),
+		Handler:           httpx.NewServices(cfg, gdb, c, q, cp),
 		ReadHeaderTimeout: 30 * time.Second,
 	}
 
