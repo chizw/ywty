@@ -382,3 +382,31 @@ type Order struct {
 }
 
 func (Order) TableName() string { return "orders" }
+
+type Ticket struct {
+	ID        int64          `gorm:"primaryKey;column:id"`
+	UserID    int64          `gorm:"column:user_id"`
+	IssueNo   string         `gorm:"column:issue_no"`
+	Title     string         `gorm:"column:title"`
+	Level     string         `gorm:"column:level"`
+	Status    string         `gorm:"column:status"`
+	CreatedAt *time.Time     `gorm:"column:created_at"`
+	UpdatedAt *time.Time     `gorm:"column:updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at"`
+}
+
+func (Ticket) TableName() string { return "tickets" }
+
+type TicketReply struct {
+	ID        int64          `gorm:"primaryKey;column:id"`
+	TicketID  int64          `gorm:"column:ticket_id"`
+	UserID    int64          `gorm:"column:user_id"`
+	Content   string         `gorm:"column:content"`
+	IsNotify  bool           `gorm:"column:is_notify"`
+	ReadAt    *time.Time     `gorm:"column:read_at"`
+	CreatedAt *time.Time     `gorm:"column:created_at"`
+	UpdatedAt *time.Time     `gorm:"column:updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"column:deleted_at"`
+}
+
+func (TicketReply) TableName() string { return "ticket_replies" }

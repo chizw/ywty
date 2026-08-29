@@ -189,7 +189,14 @@ func apiRouter(cfg *config.Config, gdb *gorm.DB, d *deps) http.Handler {
 			u.Put("/orders/{trade_no}/cancel", d.handleOrderCancel)
 			u.Post("/orders/{trade_no}/pay", d.handleOrderPay)
 
-			// 工单在 M4b 挂载
+			// 工单
+			u.Get("/user/tickets", d.handleTicketsIndex)
+			u.Post("/user/tickets", d.handleTicketsStore)
+			u.Get("/user/tickets/{issue_no}", d.handleTicketShow)
+			u.Delete("/user/tickets/{issue_no}", d.handleTicketDestroy)
+			u.Get("/user/tickets/{issue_no}/replies", d.handleTicketReplies)
+			u.Post("/user/tickets/{issue_no}/reply", d.handleTicketReply)
+			u.Put("/user/tickets/{issue_no}/close", d.handleTicketClose)
 		})
 	})
 	r.Mount("/v2", v2)
